@@ -1,6 +1,6 @@
 {
   "name": "@calimero-network/agent-skills",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "AI agent skills for Calimero Network development — Rust SDK, JS client, registry publishing, desktop SSO, and more.",
   "keywords": [
     "calimero",
