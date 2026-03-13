@@ -12,13 +12,13 @@
     "mero-sign",
     "calimero-sdk"
   ],
-  "homepage": "https://github.com/calimero-network/agent-skills",
+  "homepage": "https://github.com/calimero-network/calimero-skills",
   "bugs": {
-    "url": "https://github.com/calimero-network/agent-skills/issues"
+    "url": "https://github.com/calimero-network/calimero-skills/issues"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/calimero-network/agent-skills.git"
+    "url": "https://github.com/calimero-network/calimero-skills.git"
   },
   "license": "MIT",
   "bin": {

@@ -234,5 +234,6 @@ Skills should be:
 
 - [Calimero Network](https://calimero.network)
 - [Documentation](https://docs.calimero.network)
+- [Repository](https://github.com/calimero-network/calimero-skills)
 - [GitHub org](https://github.com/calimero-network)
 - [Discord](https://discord.gg/urJeMtRRMu)
