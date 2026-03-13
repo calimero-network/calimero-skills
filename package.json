@@ -1,0 +1,43 @@
+{
+  "name": "@calimero-network/agent-skills",
+  "version": "0.1.0",
+  "description": "AI agent skills for Calimero Network development — Rust SDK, JS client, registry publishing, desktop SSO, and more.",
+  "keywords": [
+    "calimero",
+    "agent-skills",
+    "ai",
+    "p2p",
+    "crdt",
+    "wasm",
+    "mero-sign",
+    "calimero-sdk"
+  ],
+  "homepage": "https://github.com/calimero-network/agent-skills",
+  "bugs": {
+    "url": "https://github.com/calimero-network/agent-skills/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/calimero-network/agent-skills.git"
+  },
+  "license": "MIT",
+  "bin": {
+    "calimero-skills": "./scripts/install.js"
+  },
+  "files": [
+    "skills/",
+    "SKILL.md",
+    "scripts/",
+    "README.md"
+  ],
+  "scripts": {
+    "format": "prettier --write \"**/*.{md,json,js,ts}\"",
+    "format:check": "prettier --check \"**/*.{md,json,js,ts}\"",
+    "lint:md": "markdownlint-cli2 \"**/*.md\" \"!node_modules/**\"",
+    "test": "node scripts/test.js"
+  },
+  "devDependencies": {
+    "markdownlint-cli2": "^0.13.0",
+    "prettier": "^3.3.3"
+  }
+}
