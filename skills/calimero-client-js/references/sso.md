@@ -34,18 +34,29 @@ function readSSOParams(): {
 
 ## Using SSO tokens on app startup
 
+Use the storage helpers from `@calimero-network/calimero-client`:
+
 ```typescript
+import {
+  setAppEndpointKey,
+  setAccessToken,
+  setRefreshToken,
+  setApplicationId,
+  setContextAndIdentityFromJWT,
+} from '@calimero-network/calimero-client';
+
 async function initApp() {
   const sso = readSSOParams();
 
   if (sso.accessToken && sso.nodeUrl) {
     // Opened from Desktop — store tokens and skip login
-    localStorage.setItem('calimero_node_url', sso.nodeUrl);
-    localStorage.setItem('calimero_jwt', JSON.stringify({
-      access_token: sso.accessToken,
-      refresh_token: sso.refreshToken,
-    }));
-    // clear hash so tokens aren't in browser history
+    setAppEndpointKey(sso.nodeUrl);
+    setAccessToken(sso.accessToken);
+    if (sso.refreshToken) setRefreshToken(sso.refreshToken);
+    if (sso.applicationId) setApplicationId(sso.applicationId);
+    // Extract contextId + executorPublicKey from the JWT claims
+    setContextAndIdentityFromJWT(sso.accessToken);
+    // Clear hash so tokens aren't in browser history
     history.replaceState(null, '', window.location.pathname);
     renderApp();
   } else {
@@ -54,12 +65,6 @@ async function initApp() {
   }
 }
 ```
-
-## calimero-client reads hash automatically
-
-If you use `@calimero-network/calimero-client`'s built-in auth helpers, the library
-reads `window.location.hash` automatically and stores the tokens. You don't need the
-manual parsing above unless you're building a custom auth flow.
 
 ## Important
 
