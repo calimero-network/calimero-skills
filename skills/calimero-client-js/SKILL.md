@@ -33,10 +33,53 @@ pnpm add @calimero-network/mero-js
 
 ## Core workflow
 
-1. Read auth tokens (from URL hash if opened by Desktop, otherwise prompt login)
-2. Initialize client with `node_url` + tokens
-3. Call app methods via JSON-RPC
-4. Subscribe to events via WebSocket
+1. On startup: read SSO tokens from URL hash (if opened by Desktop), otherwise check `localStorage` for existing session, otherwise show login
+2. Store tokens using the provided storage helpers (`setAppEndpointKey`, `setAccessToken`, etc.)
+3. Call app methods via the `rpcClient` singleton using `rpcClient.execute()`
+4. Subscribe to events via `WsSubscriptionsClient`
+
+## Minimal working example
+
+```typescript
+import {
+  rpcClient,
+  getContextId,
+  getExecutorPublicKey,
+  getAppEndpointKey,
+  setAppEndpointKey,
+  setAccessToken,
+  setRefreshToken,
+  setContextAndIdentityFromJWT,
+  WsSubscriptionsClient,
+} from '@calimero-network/calimero-client';
+
+// 1. Store auth tokens (after SSO or login)
+setAppEndpointKey('http://localhost:2428');
+setAccessToken(accessToken);
+setRefreshToken(refreshToken);
+setContextAndIdentityFromJWT(accessToken); // extracts contextId + executorPublicKey
+
+// 2. Call an app method
+const response = await rpcClient.execute<{ key: string }, string | null>({
+  contextId: getContextId()!,
+  method: 'get',
+  argsJson: { key: 'hello' },
+  executorPublicKey: getExecutorPublicKey()!,
+});
+console.log(response.result?.output);
+
+// 3. Subscribe to real-time events
+const ws = new WsSubscriptionsClient(getAppEndpointKey()!, '/ws');
+await ws.connect();
+ws.subscribe([getContextId()!]);
+ws.addCallback((event) => {
+  if (event.type === 'ExecutionEvent') {
+    for (const e of event.data.events) {
+      console.log(e.kind, e.data);
+    }
+  }
+});
+```
 
 ## References
 

@@ -2,65 +2,125 @@
 
 Subscribe to real-time events emitted by the application running on the node.
 
+## Event types
+
+The node sends two kinds of events to subscribers:
+
+| type | when | payload |
+|---|---|---|
+| `StateMutation` | Another member mutated shared state | `{ newRoot: string }` |
+| `ExecutionEvent` | App emitted `app::emit!()` | `{ events: ExecutionEvent[] }` |
+
+An `ExecutionEvent` has: `{ kind: string; data: any }` where `kind` matches the Rust event variant name.
+
+---
+
 ## Connect and subscribe
 
 ```typescript
-import { WsSubscriptionsClient } from '@calimero-network/calimero-client';
+import {
+  WsSubscriptionsClient,
+  getAppEndpointKey,
+  getContextId,
+} from '@calimero-network/calimero-client';
 
-const nodeUrl = getStorageAppEndpointKey() ?? 'http://localhost:2428';
-const jwt = getJWTObject();
+const nodeUrl = getAppEndpointKey()!;
+const ws = new WsSubscriptionsClient(nodeUrl, '/ws');
 
-const ws = new WsSubscriptionsClient(nodeUrl, '/ws', jwt?.access_token);
-
-ws.subscribe([contextId], (event) => {
+// Connect first, then subscribe and add callback
+await ws.connect();
+ws.subscribe([getContextId()!]);
+ws.addCallback((event) => {
   console.log('Event received:', event);
-  // event.data contains the serialized app event payload
 });
 ```
 
-## Handling specific event types
+---
+
+## Handling ExecutionEvents from app logic
 
 ```typescript
-interface AppEvent {
-  type: 'ItemAdded' | 'ItemRemoved' | 'MemberJoined';
-  key?: string;
-  value?: string;
-  identity?: string;
-}
+import type {
+  NodeEvent,
+  ExecutionEventPayload,
+  StateMutationPayload,
+} from '@calimero-network/calimero-client';
 
-ws.subscribe([contextId], (event) => {
-  const appEvent = event.data as AppEvent;
+ws.addCallback((event: NodeEvent) => {
+  if (event.type === 'ExecutionEvent') {
+    for (const e of event.data.events) {
+      // e.kind matches the Rust event variant name, e.g. 'ItemAdded'
+      // e.data contains the event payload
+      switch (e.kind) {
+        case 'ItemAdded':
+          console.log('Item added:', e.data);
+          addItemToUI(e.data.key, e.data.value);
+          break;
+        case 'ItemRemoved':
+          removeItemFromUI(e.data.key);
+          break;
+      }
+    }
+  }
 
-  switch (appEvent.type) {
-    case 'ItemAdded':
-      addItemToUI(appEvent.key!, appEvent.value!);
-      break;
-    case 'ItemRemoved':
-      removeItemFromUI(appEvent.key!);
-      break;
+  if (event.type === 'StateMutation') {
+    // Another member changed shared state — refresh data from node
+    console.log('State root changed:', event.data.newRoot);
+    refreshDataFromNode();
   }
 });
 ```
 
+---
+
+## Subscribe to multiple contexts
+
+```typescript
+ws.subscribe([contextId1, contextId2]);
+// Events include event.contextId to identify which context emitted them
+```
+
+---
+
 ## Cleanup
 
 ```typescript
-// Unsubscribe when component unmounts
+// Remove a specific callback
+ws.removeCallback(myCallback);
+
+// Unsubscribe from specific contexts
 ws.unsubscribe([contextId]);
 
-// Or close connection entirely
-ws.close();
+// Close connection entirely
+ws.disconnect();
 ```
+
+---
 
 ## React hook pattern
 
 ```typescript
-useEffect(() => {
-  const ws = new WsSubscriptionsClient(nodeUrl, '/ws', token);
-  ws.subscribe([contextId], handleEvent);
+import { useEffect } from 'react';
+import { WsSubscriptionsClient, getAppEndpointKey, getContextId } from '@calimero-network/calimero-client';
 
-  return () => {
-    ws.unsubscribe([contextId]);
-  };
-}, [contextId, token]);
+function useNodeEvents(onEvent: (event: NodeEvent) => void) {
+  useEffect(() => {
+    const nodeUrl = getAppEndpointKey();
+    const contextId = getContextId();
+    if (!nodeUrl || !contextId) return;
+
+    const ws = new WsSubscriptionsClient(nodeUrl, '/ws');
+
+    ws.connect().then(() => {
+      ws.subscribe([contextId]);
+      ws.addCallback(onEvent);
+    });
+
+    return () => {
+      ws.removeCallback(onEvent);
+      ws.unsubscribe([contextId]);
+      ws.disconnect();
+    };
+  }, [onEvent]);
+}
 ```

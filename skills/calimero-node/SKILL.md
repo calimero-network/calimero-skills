@@ -10,25 +10,63 @@ You are helping a developer manage a **Calimero node** using `merod` and `meroct
 - **Application** — the WASM code; one app can power many contexts
 - Installing an app and creating a context are two separate steps
 
-## Quick reference
+## Node setup (first time)
 
 ```bash
-# Start a node
+# Initialize node configuration
+merod --home ~/.calimero init
+
+# Start the node
 merod --home ~/.calimero run
+# Node listens on http://localhost:2428 by default
+```
 
-# Install an app from a .mpk bundle
-meroctl --node-url http://localhost:2428 app install --path myapp.mpk
+## Complete workflow: app → context → call
 
-# Create a context (instance of an app)
-meroctl --node-url http://localhost:2428 context create --app-id <app-id>
+```bash
+# 1. Install an app
+meroctl --node-url http://localhost:2428 app install \
+  --path myapp.mpk
+# → prints app-id
 
-# List contexts
-meroctl --node-url http://localhost:2428 context ls
+# 2. Create a context (instantiate the app — init() is called)
+meroctl --node-url http://localhost:2428 context create \
+  --app-id <app-id>
+# → prints context-id
 
-# Call a method
-meroctl --node-url http://localhost:2428 call <context-id> <method> --args '{"key":"value"}'
+# 3. Call a mutation (changes state)
+meroctl --node-url http://localhost:2428 call <context-id> set \
+  --args '{"key":"hello","value":"world"}'
+
+# 4. Call a view (read-only)
+meroctl --node-url http://localhost:2428 call <context-id> get \
+  --args '{"key":"hello"}' --view
+
+# 5. Check node is running
+meroctl --node-url http://localhost:2428 node health
+```
+
+## Multi-node context (invite + join)
+
+```bash
+# On node A — invite a member
+meroctl --node-url http://localhost:2428 context invite \
+  <context-id> --identity <identity-on-node-A>
+# → prints invitation payload (JSON)
+
+# On node B — accept the invitation
+meroctl --node-url http://localhost:2429 context join \
+  --invitation '<paste-invitation-payload>'
+# → node B syncs state from node A
+```
+
+## Global flags
+
+```bash
+meroctl --node-url http://localhost:2428 <command>   # connect to specific node
+meroctl --home ~/.calimero <command>                  # use alternate config path
 ```
 
 ## References
 
-See `references/` for node setup, full meroctl command reference, and context lifecycle.
+See `references/` for full meroctl command reference and context lifecycle.
