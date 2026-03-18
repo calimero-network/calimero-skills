@@ -1,6 +1,12 @@
 # calimero-client-js — Agent Instructions
 
-You are helping a developer connect a **browser or Node.js frontend** to a Calimero node using `@calimero-network/calimero-client` or `@calimero-network/mero-js`.
+You are helping a developer connect a **browser or Node.js frontend** to a Calimero node
+using `@calimero-network/calimero-client` or `@calimero-network/mero-js`.
+
+> **NOT this skill** if the developer is building the application logic that *runs on the
+> node* in TypeScript — that is `calimero-sdk-js` (`@calimero-network/calimero-sdk-js`).
+> This skill is for the *client* side: auth, RPC calls, and WebSocket subscriptions from
+> a browser or backend service.
 
 ## Package versions
 
@@ -8,6 +14,10 @@ You are helping a developer connect a **browser or Node.js frontend** to a Calim
 | --- | --- | --- |
 | `@calimero-network/calimero-client` | latest | Stable client for browser/Node — auth, RPC, WebSocket |
 | `@calimero-network/mero-js` | `>=2.0.0-beta.1` | v2 API — all request fields are **camelCase** |
+
+**Which to use:** new projects should prefer `@calimero-network/mero-js` v2. If you are
+maintaining an existing codebase that uses `calimero-client`, check for snake_case field
+names before migrating — do not mix both packages in the same project.
 
 ## Critical: mero-js v2 uses camelCase
 

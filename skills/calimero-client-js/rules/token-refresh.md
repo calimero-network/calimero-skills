@@ -1,41 +1,79 @@
-# Rule: Always handle 401 with token refresh
+# Rule: rpcClient handles token refresh automatically — but not all 401s
 
-Access tokens expire. Any RPC call or WebSocket connection can return `401 Unauthorized`. Never let this surface as an unhandled error.
+`rpcClient` (from `@calimero-network/calimero-client`) automatically retries with a
+refreshed token when the server returns `401 token_expired`. **You do not need to
+implement a refresh wrapper around `rpcClient.execute()` calls.**
 
-## Pattern
+What you DO need to handle: 401s that cannot be refreshed.
+
+## WRONG — manual refresh wrapper (not needed for rpcClient):
 
 ```typescript
-async function callWithRefresh<T>(callFn: () => Promise<T>): Promise<T> {
+// ✗ Don't do this — rpcClient already retries on token_expired
+async function callWithRefresh<T>(fn: () => Promise<T>) {
   try {
-    return await callFn();
+    return await fn();
   } catch (err: any) {
-    if (err?.code === 401 || err?.status === 401) {
-      await refreshAccessToken();
-      return callFn(); // retry once
+    if (err?.code === 401) {
+      await refreshAccessToken(); // rpcClient already does this
+      return fn();
     }
     throw err;
   }
 }
+```
 
-async function refreshAccessToken() {
-  const jwt = getJWTObject();
-  if (!jwt?.refresh_token) {
-    // No refresh token — redirect to login
-    window.location.href = '/login';
+## CORRECT — handle only non-refreshable auth failures:
+
+```typescript
+const response = await rpcClient.execute({ ... });
+
+if (response.error) {
+  const authError = response.error.headers?.['x-auth-error'];
+
+  if (response.error.code === 401) {
+    if (authError === 'token_revoked' || authError === 'invalid_token') {
+      // Token is invalid — cannot be refreshed. Send user to login.
+      clientLogout();
+      return;
+    }
+    // token_expired: rpcClient already retried and the retry failed.
+    // This means the refresh token is also expired — send to login.
+    clientLogout();
     return;
   }
 
-  const newTokens = await client.refreshToken(jwt.refresh_token);
-  localStorage.setItem('calimero_jwt', JSON.stringify(newTokens));
+  throw new Error(response.error.error.cause.info?.message ?? 'Unknown error');
 }
 ```
 
-## Why
+## WebSocket connections are different — no auto-refresh
 
-Access tokens are short-lived by design. Without refresh handling, users will see
-random authentication errors mid-session. The refresh token is longer-lived and
-should be used to silently re-authenticate.
+`WsSubscriptionsClient` does **not** auto-refresh tokens. If the token expires while
+a WebSocket connection is open, events will stop arriving silently. Reconnect manually:
 
-## What to do if refresh also fails
+```typescript
+async function connectWithAuth() {
+  const ws = new WsSubscriptionsClient(getAppEndpointKey()!, '/ws');
+  try {
+    await ws.connect();
+    ws.subscribe([getContextId()!]);
+    ws.addCallback(handleEvent);
+  } catch (err: any) {
+    if (err?.status === 401) {
+      // Token expired before WS connect — logout and re-authenticate
+      clientLogout();
+    }
+    throw err;
+  }
+}
+```
 
-Redirect to login. Do not retry the refresh indefinitely.
+## Summary
+
+| Scenario | Handled by |
+| --- | --- |
+| `401 token_expired` on RPC call | `rpcClient` automatically (transparent retry) |
+| `401 token_revoked` on RPC call | You — redirect to login |
+| `401 invalid_token` on RPC call | You — redirect to login |
+| Auth failure on WebSocket connect | You — catch and redirect to login |

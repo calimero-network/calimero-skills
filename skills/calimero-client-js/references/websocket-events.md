@@ -97,6 +97,39 @@ ws.disconnect();
 
 ---
 
+## Connection errors and reconnection
+
+`WsSubscriptionsClient` does **not** reconnect automatically. If the connection drops
+or the initial connect fails, you must retry manually.
+
+```typescript
+async function connectWithRetry(ws: WsSubscriptionsClient, contextId: string, retries = 3): Promise<void> {
+  for (let i = 0; i < retries; i++) {
+    try {
+      await ws.connect();
+      ws.subscribe([contextId]);
+      return;
+    } catch (err: any) {
+      if (err?.status === 401) {
+        // Token expired — cannot reconnect until re-authenticated
+        clientLogout();
+        return;
+      }
+      if (i === retries - 1) throw err;
+      await new Promise(r => setTimeout(r, 1000 * (i + 1))); // exponential backoff
+    }
+  }
+}
+```
+
+To detect drops after the connection is established, check if events stop arriving and
+reconnect periodically, or listen to `ws.onClose` if exposed.
+
+> WebSocket tokens are **not** auto-refreshed unlike `rpcClient` RPC calls.
+> See `rules/token-refresh.md` for details.
+
+---
+
 ## React hook pattern
 
 ```typescript

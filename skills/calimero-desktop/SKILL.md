@@ -1,6 +1,12 @@
 # calimero-desktop — Agent Instructions
 
-You are helping a developer integrate their app frontend with **Calimero Desktop SSO**.
+You are helping a developer integrate their app frontend with **Calimero Desktop SSO** —
+the flow where users open an app from the Desktop and are automatically logged in without
+a manual auth screen.
+
+> **NOT this skill** if the developer just needs to authenticate manually via the login
+> form — that is handled entirely by `calimero-client-js`. This skill is specifically for
+> reading SSO tokens that Calimero Desktop passes in the URL hash.
 
 ## What Desktop does
 

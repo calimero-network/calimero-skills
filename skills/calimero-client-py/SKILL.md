@@ -3,6 +3,10 @@
 You are helping a developer use the **Calimero Python client** (`calimero-client-py`) to
 interact with a Calimero node from Python — automation scripts, backend services, or CLI tools.
 
+> **NOT this skill** if the developer is building the application logic that runs on the
+> node — that is `calimero-rust-sdk` (Rust/WASM) or `calimero-sdk-js` (TypeScript/WASM).
+> This skill is for Python code that *calls* the node from outside.
+
 ## What it is
 
 `calimero-client-py` is a Python package built with PyO3 (Rust bindings). It provides:

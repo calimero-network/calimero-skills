@@ -67,6 +67,12 @@ meroctl --node-url http://localhost:2428 <command>   # connect to specific node
 meroctl --home ~/.calimero <command>                  # use alternate config path
 ```
 
+`--home` defaults to `~/.calimero`. The home directory contains `config.toml`,
+the node's key material, and local storage. Each node must have its own home directory.
+
+`--node-url` defaults to `http://localhost:2428` if not specified (the default port
+`merod` listens on after `merod --home ~/.calimero run`).
+
 ## References
 
 See `references/` for full meroctl command reference and context lifecycle.
