@@ -11,10 +11,10 @@ pub struct AppState {
 }
 ```
 
-**CORRECT** — use Calimero CRDT collections:
+**CORRECT** — use Calimero CRDT collections from `calimero_storage`:
 
 ```rust
-use calimero_sdk::state::UnorderedMap;
+use calimero_storage::collections::UnorderedMap;
 
 #[derive(Default, BorshDeserialize, BorshSerialize)]
 pub struct AppState {

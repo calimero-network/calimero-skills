@@ -14,20 +14,45 @@ You are helping a developer build a **Calimero WASM application** in Rust using 
 
 ## Cargo.toml setup
 
+> **Version pinning:** always pin to the same git `rev` (or `tag`) as your `merod` binary.
+> Run `merod --version` to find the matching commit or release tag. Using
+> `branch = "master"` will break when the SDK evolves past your local node.
+
 ```toml
 [lib]
 crate-type = ["cdylib"]
 
 [dependencies]
-calimero-sdk = "0.x"
+calimero-sdk     = { git = "https://github.com/calimero-network/core.git", rev = "<same-rev-as-merod>" }
+calimero-storage = { git = "https://github.com/calimero-network/core.git", rev = "<same-rev-as-merod>" }
+
+[build-dependencies]
+calimero-sdk = { git = "https://github.com/calimero-network/core.git", rev = "<same-rev-as-merod>", features = ["macros"] }
+
+[profile.app-release]
+inherits = "release"
+codegen-units = 1
+opt-level = "z"
+lto = true
+debug = false
+panic = "abort"
+overflow-checks = true
 ```
+
+**Three crates are needed:**
+
+| Crate | Section | Why |
+| --- | --- | --- |
+| `calimero-sdk` | `[dependencies]` | App macros (`#[app::state]`, `#[app::logic]`), events, env helpers |
+| `calimero-storage` | `[dependencies]` | CRDT collections (`UnorderedMap`, `Vector`, `LwwRegister`, etc.) |
+| `calimero-sdk` (with `macros` feature) | `[build-dependencies]` | Proc-macro code generation for the WASM ABI |
 
 ## Minimal app skeleton
 
 ```rust
 use calimero_sdk::app;
 use calimero_sdk::borsh::{BorshDeserialize, BorshSerialize};
-use calimero_sdk::state::UnorderedMap;
+use calimero_storage::collections::UnorderedMap;
 
 #[derive(Default, BorshDeserialize, BorshSerialize)]
 pub struct AppState {
@@ -57,14 +82,54 @@ impl AppState {
 
 ## Building
 
+The standard Calimero app build uses a `build.sh` script with a dedicated release profile
+and outputs the `.wasm` file to a `res/` directory:
+
+```bash
+#!/bin/bash
+set -e
+
+# build.sh — standard Calimero app build script
+
+cd "$(dirname $0)"
+
+TARGET="${CARGO_TARGET_DIR:-../../target}"
+
+rustup target add wasm32-unknown-unknown
+
+cargo build --target wasm32-unknown-unknown --profile app-release
+
+mkdir -p res
+
+cp "$TARGET/wasm32-unknown-unknown/app-release/<crate_name>.wasm" res/
+
+echo "Built: res/<crate_name>.wasm"
+```
+
+**Project layout convention:**
+
+```
+my-app/
+├── logic/
+│   ├── Cargo.toml
+│   ├── src/
+│   │   └── lib.rs
+│   └── build.sh
+├── res/
+│   └── my_app.wasm    (output — install this on the node)
+└── .gitignore
+```
+
+Manual build without the script:
+
 ```bash
 # Add WASM target (one-time)
 rustup target add wasm32-unknown-unknown
 
-# Build
-cargo build --target wasm32-unknown-unknown --release
+# Build with the app-release profile
+cargo build --target wasm32-unknown-unknown --profile app-release
 
-# Output: target/wasm32-unknown-unknown/release/<crate_name>.wasm
+# Output: target/wasm32-unknown-unknown/app-release/<crate_name>.wasm
 ```
 
 ## Installing and running on a node (dev workflow)
@@ -103,6 +168,18 @@ use calimero_sdk::env;
 
 // Inside any app method:
 env::log!("Processing key: {}", key);
+```
+
+## .gitignore
+
+When scaffolding a new Calimero app project, always create a `.gitignore` before the first commit:
+
+```gitignore
+target/
+res/*.wasm
+node_modules/
+dist/
+.DS_Store
 ```
 
 ## References
