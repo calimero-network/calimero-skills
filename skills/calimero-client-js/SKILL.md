@@ -91,7 +91,24 @@ ws.addCallback((event) => {
 });
 ```
 
+## CalimeroConnectButton
+
+The standard auth component. **Important:** its "Local" mode hardcodes `node1.127.0.0.1.nip.io`,
+which only works with merobox/Docker setups. If your `merod` is on `localhost:2428`, use "Remote"
+mode instead. See `references/connect-button.md` for full details.
+
+## .gitignore
+
+When scaffolding a new project, always create a `.gitignore` before the first commit:
+
+```gitignore
+node_modules/
+dist/
+.env
+.DS_Store
+```
+
 ## References
 
-See `references/` for auth flow, RPC calls, WebSocket events, and SSO.
+See `references/` for auth flow, RPC calls, WebSocket events, SSO, and CalimeroConnectButton.
 See `rules/` for camelCase API and token refresh requirements.
