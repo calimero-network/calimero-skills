@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calimero | Skills — Rust SDK Skill</title>
+<link rel="stylesheet" href="styles.css">
+<meta name="theme-color" content="#0d1117">
+</head>
+<body>
+<div class="main">
+<div class="content">
+<div class="breadcrumb"><a href="index.html">Home</a><span class="sep">/</span><span>Rust SDK</span></div>
+
+<h1>Rust SDK Skill</h1>
+<p class="page-subtitle">Context injected for building WASM applications with the calimero-sdk Rust crate</p>
+
+<div class="card ga">
+<h2>What This Skill Teaches</h2>
+<p style="margin-bottom:12px;">The <span class="code">rust-sdk</span> skill gives your AI assistant deep knowledge of the Calimero Rust SDK so it can write correct WASM application code without guessing at API shape.</p>
+<div class="g2">
+  <div class="cb"><h4>Covered Topics</h4>
+    <ul style="margin:8px 0 0 16px;color:#c9d1d9;font-size:13px;">
+      <li style="margin-bottom:6px;"><span class="code">#[app]</span> struct annotation</li>
+      <li style="margin-bottom:6px;"><span class="code">#[logic]</span> impl block</li>
+      <li style="margin-bottom:6px;">State serialization (Borsh)</li>
+      <li style="margin-bottom:6px;">Context and identity APIs</li>
+      <li style="margin-bottom:6px;">Event emission</li>
+      <li>Cargo.toml dependencies</li>
+    </ul>
+  </div>
+  <div class="cb"><h4>Install</h4>
+    <div class="typedef" style="margin-top:6px;"><span class="field">npx calimero-skills rust-sdk</span><br><br><span class="comment"># Writes to CLAUDE.md,<br># .cursorrules,<br># copilot-instructions.md</span></div>
+  </div>
+</div>
+</div>
+
+<div class="card gb">
+<h2>Minimal WASM App Pattern</h2>
+<p style="margin-bottom:12px;">The skill teaches this idiomatic structure:</p>
+<div class="typedef">
+<span class="kw">use</span> calimero_sdk::types::Error;<br>
+<span class="kw">use</span> calimero_sdk::&#123;app, env&#125;;<br>
+<span class="kw">use</span> serde::&#123;Deserialize, Serialize&#125;;<br><br>
+<span class="comment">/// Application state — persisted between calls</span><br>
+<span class="kw">#[app::state]</span><br>
+<span class="kw">pub struct</span> <span class="ty">AppState</span> &#123;<br>
+&nbsp;&nbsp;<span class="field">posts</span>: Vec&lt;<span class="ty">Post</span>&gt;,<br>
+&#125;<br><br>
+<span class="kw">#[app::logic]</span><br>
+<span class="kw">impl</span> <span class="ty">AppState</span> &#123;<br>
+&nbsp;&nbsp;<span class="kw">pub fn</span> <span class="ty">create_post</span>(&amp;<span class="kw">mut self</span>, <span class="field">title</span>: <span class="ty">String</span>) -&gt; <span class="ty">Result</span>&lt;(), <span class="ty">Error</span>&gt; &#123;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">self</span>.<span class="field">posts</span>.<span class="ty">push</span>(<span class="ty">Post</span> &#123; <span class="field">title</span> &#125;);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="ty">Ok</span>(())<br>
+&nbsp;&nbsp;&#125;<br><br>
+&nbsp;&nbsp;<span class="kw">pub fn</span> <span class="ty">get_posts</span>(&amp;<span class="kw">self</span>) -&gt; <span class="ty">Result</span>&lt;Vec&lt;<span class="ty">Post</span>&gt;, <span class="ty">Error</span>&gt; &#123;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="ty">Ok</span>(<span class="kw">self</span>.<span class="field">posts</span>.<span class="ty">clone</span>())<br>
+&nbsp;&nbsp;&#125;<br>
+&#125;
+</div>
+</div>
+
+<div class="card gc">
+<h2>Key Concepts Covered</h2>
+<div class="fr"><div class="fp">#[app::state]</div><div class="fd">Marks the struct as application state. The SDK serializes/deserializes this automatically between calls using Borsh.</div></div>
+<div class="fr"><div class="fp">#[app::logic]</div><div class="fd">Marks the <span class="code">impl</span> block. Methods become callable from the node via RPC. <span class="code">&amp;mut self</span> = mutate, <span class="code">&amp;self</span> = query.</div></div>
+<div class="fr"><div class="fp">env::executor_id()</div><div class="fd">Returns the identity (public key) of the caller. Use for access control.</div></div>
+<div class="fr"><div class="fp">env::emit_event()</div><div class="fd">Emits an event that subscribers (SSE/WS) receive in real-time.</div></div>
+<div class="fr"><div class="fp">calimero_sdk::Error</div><div class="fd">Standard error type. Return as <span class="code">Err(...)</span>; the SDK serializes it to a JSON error response.</div></div>
+</div>
+
+<div class="card gd">
+<h2>Cargo.toml Dependencies</h2>
+<div class="typedef">
+[dependencies]<br>
+calimero-sdk = &#123; version = <span class="comment">"0.3"</span>, features = [<span class="comment">"borsh"</span>] &#125;<br>
+borsh = &#123; version = <span class="comment">"1"</span>, features = [<span class="comment">"derive"</span>] &#125;<br>
+serde = &#123; version = <span class="comment">"1"</span>, features = [<span class="comment">"derive"</span>] &#125;<br><br>
+[lib]<br>
+crate-type = [<span class="comment">"cdylib"</span>]<br><br>
+[profile.release]<br>
+opt-level = <span class="comment">"z"</span>&nbsp;&nbsp;<span class="comment"># minimize WASM binary size</span><br>
+lto = <span class="kw">true</span>
+</div>
+</div>
+
+</div>
+</div>
+<script src="nav.js"></script>
+</body>
+</html>

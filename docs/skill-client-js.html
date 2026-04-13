@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calimero | Skills — Client JS Skill</title>
+<link rel="stylesheet" href="styles.css">
+<meta name="theme-color" content="#0d1117">
+</head>
+<body>
+<div class="main">
+<div class="content">
+<div class="breadcrumb"><a href="index.html">Home</a><span class="sep">/</span><span>Client JS</span></div>
+
+<h1>Client JS Skill</h1>
+<p class="page-subtitle">Context for working with mero-js and calimero-client TypeScript SDKs</p>
+
+<div class="card ga">
+<h2>Two SDKs Covered</h2>
+<p style="margin-bottom:12px;">This skill covers both the current and legacy JavaScript/TypeScript SDKs:</p>
+<div class="g2">
+  <div class="cb">
+    <h4>mero-js (current)</h4>
+    <p style="color:#8b949e;font-size:13px;margin:8px 0;">Used by auth-frontend, admin-dashboard, tauri-app. Zero-dependency fetch wrapper with typed clients for auth, admin, RPC, SSE, WebSocket.</p>
+    <div class="typedef" style="font-size:11px;"><span class="kw">import</span> &#123; <span class="ty">MeroJs</span> &#125; <span class="kw">from</span> <span class="comment">'@calimero-network/mero-js'</span>;</div>
+  </div>
+  <div class="cb">
+    <h4>calimero-client (legacy)</h4>
+    <p style="color:#8b949e;font-size:13px;margin:8px 0;">Used by curb and older apps. Separate <span class="code">RpcClient</span> and <span class="code">SubscriptionsClient</span> classes, older auth flow.</p>
+    <div class="typedef" style="font-size:11px;"><span class="kw">import</span> &#123; <span class="ty">RpcClient</span> &#125; <span class="kw">from</span> <span class="comment">'@calimero-network/calimero-client'</span>;</div>
+  </div>
+</div>
+</div>
+
+<div class="card gb">
+<h2>mero-js Usage Patterns</h2>
+<div class="typedef">
+<span class="kw">import</span> &#123; <span class="ty">MeroJs</span>, <span class="ty">HTTPError</span> &#125; <span class="kw">from</span> <span class="comment">'@calimero-network/mero-js'</span>;<br><br>
+<span class="kw">const</span> <span class="field">sdk</span> = <span class="kw">new</span> <span class="ty">MeroJs</span>(&#123; <span class="field">baseUrl</span>: <span class="comment">'http://localhost:2428'</span> &#125;);<br><br>
+<span class="comment">// Auth</span><br>
+<span class="kw">await</span> sdk.<span class="field">auth</span>.<span class="ty">login</span>(&#123; <span class="field">username</span>: <span class="comment">'admin'</span>, <span class="field">password</span>: <span class="comment">'...'</span> &#125;);<br><br>
+<span class="comment">// RPC execution</span><br>
+<span class="kw">const</span> <span class="field">result</span> = <span class="kw">await</span> sdk.<span class="field">rpc</span>.<span class="ty">execute</span>(&#123;<br>
+&nbsp;&nbsp;<span class="field">contextId</span>: <span class="comment">'ctx_...'</span>,<br>
+&nbsp;&nbsp;<span class="field">method</span>: <span class="comment">'get_posts'</span>,<br>
+&nbsp;&nbsp;<span class="field">argsJson</span>: <span class="comment">'{}'</span>,<br>
+&#125;);<br><br>
+<span class="comment">// Admin</span><br>
+<span class="kw">const</span> <span class="field">contexts</span> = <span class="kw">await</span> sdk.<span class="field">admin</span>.<span class="ty">getContexts</span>();
+</div>
+</div>
+
+<div class="card gc">
+<h2>Install This Skill</h2>
+<div class="typedef">
+<span class="comment"># Install the mero-js + calimero-client skill</span><br>
+<span class="field">npx calimero-skills calimero-client-js</span><br><br>
+<span class="comment"># Or together with the core Calimero skill:</span><br>
+<span class="field">npx calimero-skills calimero-core calimero-client-js</span>
+</div>
+<p style="margin-top:12px;color:#8b949e;font-size:13px;">After installing, your AI assistant will know: API shape, camelCase vs snake_case differences between SDK versions, SSO hash reading pattern, error handling with <span class="code">HTTPError</span>, and token refresh flow.</p>
+</div>
+
+<div class="card gd">
+<h2>Key Differences: v1 vs v2 (mero-js)</h2>
+<div class="fr"><div class="fp">generateClientKey params</div><div class="fd">v1: <span class="code">context_id</span>, <span class="code">context_identity</span> (snake_case). v2: <span class="code">contextId</span>, <span class="code">contextIdentity</span> (camelCase).</div></div>
+<div class="fr"><div class="fp">Provider check</div><div class="fd">v1 returns <span class="code">configured</span> field. v2 type expects <span class="code">enabled</span>. Skill documents the <span class="code">(p as any).configured</span> fallback pattern.</div></div>
+<div class="fr"><div class="fp">SSO parsing</div><div class="fd">v2 exports <span class="code">parseAuthCallback(hash)</span> utility. v1 required manual URL parsing.</div></div>
+</div>
+
+</div>
+</div>
+<script src="nav.js"></script>
+</body>
+</html>

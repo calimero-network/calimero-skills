@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calimero | Skills — All Skills</title>
+<link rel="stylesheet" href="styles.css">
+<meta name="theme-color" content="#0d1117">
+</head>
+<body>
+<div class="main">
+<div class="content">
+<div class="breadcrumb"><a href="index.html">Home</a><span class="sep">/</span><span>All Skills</span></div>
+
+<h1>All Skills</h1>
+<p class="page-subtitle">Complete reference for every skill file in this repository</p>
+
+<div class="card ga">
+<h2>Available Skills</h2>
+<p style="margin-bottom:14px;">Each skill is a plain text file. Running <span class="code">npx calimero-skills &lt;skill-name&gt;</span> appends it to the correct file for your editor:</p>
+<div class="fr"><div class="fp">calimero-core</div><div class="fd">Core Calimero concepts: contexts, applications, identities, RPC calls, and the node architecture. Start here for any Calimero work.</div></div>
+<div class="fr"><div class="fp">rust-sdk</div><div class="fd">The <span class="code">calimero-sdk</span> Rust macros (<span class="code">#[app]</span>, <span class="code">#[logic]</span>), state management, and how to structure WASM application logic.</div></div>
+<div class="fr"><div class="fp">mero-js</div><div class="fd">The <span class="code">@calimero-network/mero-js</span> TypeScript SDK — auth, admin API, RPC execution, SSE/WebSocket subscriptions.</div></div>
+<div class="fr"><div class="fp">mero-react</div><div class="fd">The <span class="code">@calimero-network/mero-react</span> hook library — <span class="code">MeroProvider</span>, <span class="code">useCalimero</span>, token persistence, SSO hash parsing.</div></div>
+<div class="fr"><div class="fp">calimero-client-js</div><div class="fd">The legacy <span class="code">calimero-client</span> JS SDK — <span class="code">RpcClient</span> and <span class="code">SubscriptionsClient</span> pattern used by curb and older apps.</div></div>
+<div class="fr"><div class="fp">desktop-sso</div><div class="fd">Tauri desktop app SSO flow — how <span class="code">openAppFrontend()</span> passes JWT tokens via URL hash so apps skip manual auth steps.</div></div>
+<div class="fr"><div class="fp">admin-dashboard</div><div class="fd">Admin dashboard architecture — React pages, context management UI, application installation flow, and the runtime node URL pattern.</div></div>
+<div class="fr"><div class="fp">abi-codegen</div><div class="fd">WASM ABI codegen with mero-devtools-js — the <span class="code">generate</span> CLI command, ABI JSON format, and generated TypeScript output.</div></div>
+</div>
+
+<div class="card gb">
+<h2>Install All Skills at Once</h2>
+<div class="typedef">
+<span class="comment"># Install every skill for Claude Code + Cursor + Copilot</span><br>
+<span class="field">npx calimero-skills all</span><br><br>
+<span class="comment"># Install specific skills</span><br>
+<span class="field">npx calimero-skills calimero-core mero-js rust-sdk</span>
+</div>
+</div>
+
+<div class="card gc">
+<h2>Where Skills Are Written</h2>
+<div class="fr"><div class="fp">Claude Code</div><div class="fd">Appended to <span class="code">CLAUDE.md</span> in your project root (or created if absent).</div></div>
+<div class="fr"><div class="fp">Cursor</div><div class="fd">Appended to <span class="code">.cursorrules</span> in your project root.</div></div>
+<div class="fr"><div class="fp">GitHub Copilot</div><div class="fd">Appended to <span class="code">.github/copilot-instructions.md</span>.</div></div>
+<p style="margin-top:12px;color:#8b949e;font-size:13px;">Run from your project root. Skills are additive — running the same skill twice does not duplicate content.</p>
+</div>
+
+<div class="card gd">
+<h2>Skill File Locations</h2>
+<div class="fr"><div class="fp">skills/calimero-core.md</div><div class="fd">Core node, context, application, identity concepts.</div></div>
+<div class="fr"><div class="fp">skills/rust-sdk.md</div><div class="fd">Rust WASM SDK macros and state management.</div></div>
+<div class="fr"><div class="fp">skills/mero-js.md</div><div class="fd">TypeScript SDK usage patterns.</div></div>
+<div class="fr"><div class="fp">skills/mero-react.md</div><div class="fd">React hooks and provider pattern.</div></div>
+<div class="fr"><div class="fp">skills/calimero-client-js.md</div><div class="fd">Legacy JS client patterns.</div></div>
+<div class="fr"><div class="fp">skills/desktop-sso.md</div><div class="fd">Tauri SSO flow details.</div></div>
+<div class="fr"><div class="fp">skills/admin-dashboard.md</div><div class="fd">Admin UI architecture and patterns.</div></div>
+<div class="fr"><div class="fp">skills/abi-codegen.md</div><div class="fd">ABI codegen pipeline and CLI usage.</div></div>
+</div>
+
+</div>
+</div>
+<script src="nav.js"></script>
+</body>
+</html>

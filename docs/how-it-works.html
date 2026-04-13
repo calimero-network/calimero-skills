@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calimero Skills — How It Works</title>
+<link rel="stylesheet" href="styles.css">
+<meta name="theme-color" content="#0d1117">
+</head>
+<body>
+<div class="main">
+<div class="content">
+<div class="breadcrumb"><a href="index.html">Home</a><span class="sep">/</span><span>How It Works</span></div>
+
+<h1>How It Works</h1>
+<p class="page-subtitle">Skills inject structured API knowledge into your AI assistant's context files</p>
+
+<div class="card ga">
+<h2>The Problem</h2>
+<p>AI coding assistants are trained on public data, but Calimero's APIs evolve rapidly. Without accurate context, assistants will:</p>
+<ul style="margin:12px 0 0 18px;">
+  <li style="margin-bottom:6px;">Invent API methods that don't exist (hallucination)</li>
+  <li style="margin-bottom:6px;">Use deprecated parameter names from older SDK versions</li>
+  <li style="margin-bottom:6px;">Miss Calimero-specific patterns like WASM execution models or URL hash SSO</li>
+  <li style="margin-bottom:6px;">Suggest generic solutions that don't account for node-specific constraints</li>
+</ul>
+<p style="margin-top:12px;">Skills fix this by injecting the <em>current, accurate</em> API reference directly into the files that AI assistants read.</p>
+</div>
+
+<div class="card gb">
+<h2>Skill Files</h2>
+<p style="margin-bottom:14px;">Each skill is a markdown file in <span class="code">skills/</span>. When installed, its content is appended to the appropriate AI context file:</p>
+<div class="fr"><div class="fp">skills/calimero-rust-sdk/</div><div class="fd">Rust WASM SDK: macros (<span class="code">#[calimero_sdk::app]</span>), state types, execution model, RPC handlers.</div></div>
+<div class="fr"><div class="fp">skills/calimero-client-js/</div><div class="fd">JS/TS client: <span class="code">RpcClient</span>, <span class="code">SubscriptionsClient</span>, auth flow, SSO token reading.</div></div>
+<div class="fr"><div class="fp">skills/calimero-registry/</div><div class="fd">App registry: signing keys, manifest format, publish workflow, versioning.</div></div>
+<div class="fr"><div class="fp">skills/calimero-desktop/</div><div class="fd">Desktop integration: SSO URL hash tokens, <span class="code">parseAuthCallback()</span>, window management.</div></div>
+<div class="fr"><div class="fp">skills/calimero-node/</div><div class="fd">Node operations: <span class="code">meroctl</span> CLI commands, config files, health checks.</div></div>
+<div class="fr"><div class="fp">skills/calimero-merobox/</div><div class="fd">Local dev: merobox config, YAML workflows, local NEAR sandbox, CI setup.</div></div>
+<div class="fr"><div class="fp">skills/calimero-client-py/</div><div class="fd">Python SDK: <span class="code">create_connection()</span>, <span class="code">create_client()</span>, <span class="code">AuthMode</span>, async patterns.</div></div>
+<div class="fr"><div class="fp">skills/calimero-abi-codegen/</div><div class="fd">ABI codegen: manifest format, <span class="code">npx calimero-abi-codegen</span>, programmatic API.</div></div>
+</div>
+
+<div class="card gc">
+<h2>Target Files per Editor</h2>
+<div class="g3">
+  <div class="cb">
+    <h4>Claude / Claude Code</h4>
+    <p>Writes to <span class="code">CLAUDE.md</span> in your project root. Claude Code reads this file automatically on every conversation start.</p>
+    <div class="typedef" style="margin-top:8px;"><span class="field">npx</span> @calimero-network/agent-skills &lt;skill&gt;</div>
+  </div>
+  <div class="cb">
+    <h4>Cursor</h4>
+    <p>Writes to <span class="code">.cursorrules</span>. Cursor includes this in every AI request as system-level instructions.</p>
+    <div class="typedef" style="margin-top:8px;"><span class="field">npx</span> @calimero-network/agent-skills &lt;skill&gt; --cursor</div>
+  </div>
+  <div class="cb">
+    <h4>GitHub Copilot</h4>
+    <p>Writes to <span class="code">.github/copilot-instructions.md</span>. Copilot reads this for repository-specific guidance.</p>
+    <div class="typedef" style="margin-top:8px;"><span class="field">npx</span> @calimero-network/agent-skills &lt;skill&gt; --copilot</div>
+  </div>
+</div>
+</div>
+
+<div class="card gd">
+<h2>Installing Multiple Skills</h2>
+<p style="margin-bottom:12px;">Run the command multiple times to stack skills — each appends to the same file:</p>
+<div class="typedef">
+<span class="comment"># Install Rust SDK + client JS skills for a full-stack project</span><br>
+<span class="field">npx</span> @calimero-network/agent-skills calimero-rust-sdk<br>
+<span class="field">npx</span> @calimero-network/agent-skills calimero-client-js<br>
+<span class="field">npx</span> @calimero-network/agent-skills calimero-desktop<br><br>
+<span class="comment"># Or for the Cursor editor:</span><br>
+<span class="field">npx</span> @calimero-network/agent-skills calimero-rust-sdk --cursor<br>
+<span class="field">npx</span> @calimero-network/agent-skills calimero-client-js --cursor
+</div>
+<p style="margin-top:12px;">Each skill is self-contained — order doesn't matter. Install only the skills relevant to your project to keep the context file focused.</p>
+</div>
+
+</div>
+</div>
+<script src="nav.js"></script>
+</body>
+</html>
