@@ -1,54 +1,134 @@
 # calimero-client-js — Agent Instructions
 
 You are helping a developer connect a **browser or Node.js frontend** to a Calimero node
-using `@calimero-network/calimero-client` or `@calimero-network/mero-js`.
+using `@calimero-network/mero-react` (preferred) or `@calimero-network/calimero-client`.
 
 > **NOT this skill** if the developer is building the application logic that *runs on the
-> node* in TypeScript — that is `calimero-sdk-js` (`@calimero-network/calimero-sdk-js`).
-> This skill is for the *client* side: auth, RPC calls, and WebSocket subscriptions from
-> a browser or backend service.
+> node* in TypeScript — that is `calimero-sdk-js`. This skill is for the *client* side:
+> auth, RPC calls, and WebSocket subscriptions from a browser or React app.
 
 ## Package versions
 
-| Package | Version | Notes |
-| --- | --- | --- |
-| `@calimero-network/calimero-client` | latest | Stable client for browser/Node — auth, RPC, WebSocket |
-| `@calimero-network/mero-js` | `>=2.0.0-beta.1` | v2 API — all request fields are **camelCase** |
-
-**Which to use:** new projects should prefer `@calimero-network/mero-js` v2. If you are
-maintaining an existing codebase that uses `calimero-client`, check for snake_case field
-names before migrating — do not mix both packages in the same project.
+| Package | Notes |
+|---|---|
+| `@calimero-network/mero-react` | **Preferred for React apps.** Exports `MeroJs`, `useSubscription`, `MeroProvider`, hooks. |
+| `@calimero-network/mero-js` | Core SDK. Zero deps. Used standalone in non-React contexts. |
+| `@calimero-network/calimero-client` | Legacy client. Still works; new projects should prefer mero-react/mero-js. |
 
 ## Critical: mero-js v2 uses camelCase
 
-v2 changed all request field names from `snake_case` to `camelCase`.
+All request field names changed from `snake_case` to `camelCase` in v2.
 
 ```typescript
-// WRONG (v1 / old):
+// WRONG (v1):
 { context_id: '...', context_identity: '...' }
 
-// CORRECT (v2):
+// CORRECT (v2 / mero-react):
 { contextId: '...', contextIdentity: '...' }
 ```
 
-This applies to `GenerateClientKeyRequest` and all other request types.
+## React app pattern (mero-react) — recommended
 
-## Install
+### Install
 
 ```bash
-pnpm add @calimero-network/calimero-client
-# or
-pnpm add @calimero-network/mero-js
+pnpm add @calimero-network/mero-react
 ```
 
-## Core workflow
+### Setup provider
 
-1. On startup: read SSO tokens from URL hash (if opened by Desktop), otherwise check `localStorage` for existing session, otherwise show login
-2. Store tokens using the provided storage helpers (`setAppEndpointKey`, `setAccessToken`, etc.)
-3. Call app methods via the `rpcClient` singleton using `rpcClient.execute()`
-4. Subscribe to events via `WsSubscriptionsClient`
+```tsx
+import { MeroProvider } from '@calimero-network/mero-react';
 
-## Minimal working example
+function App() {
+  return (
+    <MeroProvider nodeUrl="http://localhost:2428">
+      <YourApp />
+    </MeroProvider>
+  );
+}
+```
+
+### Call app methods
+
+Generated clients (from abi-codegen) import `MeroJs` from `@calimero-network/mero-react`:
+
+```typescript
+import { MeroJs } from '@calimero-network/mero-react';
+
+export class KvClient {
+  constructor(
+    private mero: MeroJs,
+    private contextId: string,
+    private executorPublicKey: string,
+  ) {}
+
+  async set(key: string, value: string): Promise<void> {
+    await this.mero.rpc.execute({
+      contextId: this.contextId,
+      method: 'set',
+      argsJson: { key, value },
+      executorPublicKey: this.executorPublicKey,
+    });
+  }
+
+  async get(key: string): Promise<string | null> {
+    const response = await this.mero.rpc.execute({
+      contextId: this.contextId,
+      method: 'get',
+      argsJson: { key },
+      executorPublicKey: this.executorPublicKey,
+    });
+    return response as string | null;
+  }
+}
+```
+
+### Subscribe to events (mero-react hook)
+
+```typescript
+import { useSubscription } from '@calimero-network/mero-react';
+
+// Subscribe to one or more contexts
+useSubscription([contextId], (event: { contextId: string; data: unknown }) => {
+  // event.data may be:
+  // - { type: 'EventName', ...payload } for direct events
+  // - { events: [{ kind: string, data: unknown }] } for execution event batches
+  console.log('event:', event.data);
+});
+
+// Subscribe to multiple contexts (e.g. game + lobby simultaneously)
+useSubscription([gameContextId, lobbyContextId], (event) => {
+  console.log('from context:', event.contextId);
+});
+```
+
+### Parsing execution event payloads
+
+Events from `app::emit!()` arrive batched in an `events` array. Each entry has `kind` (the variant name) and `data` (the payload, possibly as a byte array):
+
+```typescript
+function decodeEventData(data: unknown): unknown {
+  // If data is a number array, it's JSON-encoded bytes
+  if (Array.isArray(data) && data.every(n => typeof n === 'number')) {
+    return JSON.parse(new TextDecoder().decode(new Uint8Array(data)));
+  }
+  return data;
+}
+
+// In the subscription callback:
+useSubscription([contextId], (event) => {
+  const payload = event.data as any;
+  if (Array.isArray(payload?.events)) {
+    for (const e of payload.events) {
+      const decoded = decodeEventData(e.data);
+      console.log(e.kind, decoded); // e.g. "Inserted", { key: "...", value: "..." }
+    }
+  }
+});
+```
+
+## Legacy calimero-client pattern
 
 ```typescript
 import {
@@ -78,7 +158,7 @@ const response = await rpcClient.execute<{ key: string }, string | null>({
 });
 console.log(response.result?.output);
 
-// 3. Subscribe to real-time events
+// 3. Subscribe to events
 const ws = new WsSubscriptionsClient(getAppEndpointKey()!, '/ws');
 await ws.connect();
 ws.subscribe([getContextId()!]);
@@ -90,6 +170,13 @@ ws.addCallback((event) => {
   }
 });
 ```
+
+## Core workflow
+
+1. On startup: read SSO tokens from URL hash (if opened by Desktop), otherwise check `localStorage`, otherwise show login
+2. Store tokens using storage helpers or the `MeroProvider` (handles this automatically)
+3. Call app methods via the generated typed client or `mero.rpc.execute()`
+4. Subscribe to events via `useSubscription` (React) or `WsSubscriptionsClient`
 
 ## References
 

@@ -10,9 +10,12 @@ interact with a Calimero node from Python — automation scripts, backend servic
 ## What it is
 
 `calimero-client-py` is a Python package built with PyO3 (Rust bindings). It provides:
-- Full async API for managing contexts, applications, identities, blobs
+- Full API for managing contexts, applications, identities, blobs, namespaces, and groups
 - Automatic JWT token caching and refresh (tokens stored in `~/.merobox/auth_cache/`)
 - A CLI for common node operations
+
+> **All methods are synchronous** — the Tokio runtime is managed internally by the Rust
+> bindings. Do NOT use `await` with any client methods.
 
 ## Install
 
@@ -34,16 +37,16 @@ maturin develop --release
 import asyncio
 from calimero_client_py import create_connection, create_client
 
-async def main():
+def main():
     connection = create_connection(
         api_url="http://localhost:2428",
         node_name="my-local-node"   # must be stable — see rules/
     )
     client = create_client(connection)
-    contexts = await client.list_contexts()
+    contexts = client.list_contexts()   # no await — methods are synchronous
     print(contexts)
 
-asyncio.run(main())
+main()
 ```
 
 ## Critical: `node_name` must be stable

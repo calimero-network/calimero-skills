@@ -13,65 +13,63 @@ You are helping a developer manage a **Calimero node** using `merod` and `meroct
 ## Node setup (first time)
 
 ```bash
-# Initialize node configuration
-merod --home ~/.calimero init
+# Initialize node (creates key material and config)
+merod --node node1 init --server-port 2428 --swarm-port 2528
 
 # Start the node
-merod --home ~/.calimero run
+merod --node node1 run
 # Node listens on http://localhost:2428 by default
+```
+
+`--home <PATH>` is optional; defaults to the system config directory. Use it to specify
+a custom data directory: `merod --home ./data --node node1 init`.
+
+## Connecting meroctl to a node
+
+```bash
+# Register a local node by name (one-time)
+meroctl node add node1 /path/to/calimero/home
+
+# Or register a remote node
+meroctl node add mynode http://node.example.com
+
+# Set as default (so you don't need --node on every command)
+meroctl node use node1
+
+# List configured nodes
+meroctl node ls
+```
+
+After setup, use `--node node1` or rely on the active node:
+```bash
+meroctl --node node1 context ls   # explicit
+meroctl context ls                # uses active node
+```
+
+Alternatively, pass a direct URL without registering:
+```bash
+meroctl --api http://localhost:2428 context ls
 ```
 
 ## Complete workflow: app → context → call
 
 ```bash
 # 1. Install an app
-meroctl --node-url http://localhost:2428 app install \
-  --path myapp.mpk
-# → prints app-id
+meroctl --node node1 app install --path myapp.wasm
+# → prints application-id
 
 # 2. Create a context (instantiate the app — init() is called)
-meroctl --node-url http://localhost:2428 context create \
-  --app-id <app-id>
+meroctl --node node1 context create --application-id <application-id>
 # → prints context-id
 
 # 3. Call a mutation (changes state)
-meroctl --node-url http://localhost:2428 call <context-id> set \
+meroctl --node node1 call <context-id> set \
   --args '{"key":"hello","value":"world"}'
 
 # 4. Call a view (read-only)
-meroctl --node-url http://localhost:2428 call <context-id> get \
+meroctl --node node1 call <context-id> get \
   --args '{"key":"hello"}' --view
-
-# 5. Check node is running
-meroctl --node-url http://localhost:2428 node health
 ```
-
-## Multi-node context (invite + join)
-
-```bash
-# On node A — invite a member
-meroctl --node-url http://localhost:2428 context invite \
-  <context-id> --identity <identity-on-node-A>
-# → prints invitation payload (JSON)
-
-# On node B — accept the invitation
-meroctl --node-url http://localhost:2429 context join \
-  --invitation '<paste-invitation-payload>'
-# → node B syncs state from node A
-```
-
-## Global flags
-
-```bash
-meroctl --node-url http://localhost:2428 <command>   # connect to specific node
-meroctl --home ~/.calimero <command>                  # use alternate config path
-```
-
-`--home` defaults to `~/.calimero`. The home directory contains `config.toml`,
-the node's key material, and local storage. Each node must have its own home directory.
-
-`--node-url` defaults to `http://localhost:2428` if not specified (the default port
-`merod` listens on after `merod --home ~/.calimero run`).
 
 ## References
 
