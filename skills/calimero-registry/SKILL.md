@@ -119,6 +119,11 @@ calimero-registry bundle create \
 calimero-registry bundle push myapp-1.1.0.mpk --remote
 ```
 
+## Related skills
+
+- **`calimero-rust-sdk`** — building the WASM app that gets published
+- **`calimero-core`** — application/context model and how the registry integrates with node app install
+
 ## References
 
 See `references/` for manifest format, signing details, and push workflow.

@@ -270,6 +270,12 @@ Node URL with auth: `http://node1.127.0.0.1.nip.io`
 | Quick single command against a live node | meroctl |
 | Managing a production node | meroctl |
 
+## Related skills
+
+- **`calimero-merod`** — `merod` daemon setup (init, ports, health endpoint)
+- **`calimero-meroctl`** — full `meroctl` CLI reference for scripting against a live node
+- **`calimero-core`** — context/app model and namespace/group participation model
+
 ## References
 
 See `references/` for workflow file format, multi-node setup, and CI integration.

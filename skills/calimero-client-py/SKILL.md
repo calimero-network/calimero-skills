@@ -54,7 +54,13 @@ main()
 `node_name` is used to derive the token cache filename. If it changes between runs,
 the client loses its stored tokens and will need to re-authenticate.
 
+## Related skills
+
+- **`calimero-core`** — context/app model and JSON-RPC protocol that the Python client wraps
+- **`calimero-merod`** — `merod` daemon setup if the developer is also running the node
+- **`calimero-meroctl`** — `meroctl` CLI reference for quick manual operations alongside Python scripts
+
 ## References
 
 See `references/` for the full API, authentication flow, and CLI commands.
-See `rules/` for the `node_name` stability requirement and async usage.
+See `rules/` for the `node_name` stability requirement and sync API usage.

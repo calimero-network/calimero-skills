@@ -178,6 +178,12 @@ ws.addCallback((event) => {
 3. Call app methods via the generated typed client or `mero.rpc.execute()`
 4. Subscribe to events via `useSubscription` (React) or `WsSubscriptionsClient`
 
+## Related skills
+
+- **`calimero-core`** — JSON-RPC protocol spec, WebSocket event schemas, context/app/identity model
+- **`calimero-desktop`** — SSO token passing from Calimero Desktop (URL hash flow)
+- **`calimero-node`** — node setup if the developer is also running the node
+
 ## References
 
 See `references/` for auth flow, RPC calls, WebSocket events, and SSO.

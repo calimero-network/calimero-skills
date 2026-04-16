@@ -10,13 +10,17 @@ hallucinating APIs that don't exist.
 
 | Skill | When to use |
 | --- | --- |
+| [`calimero-core`](#calimero-core) | Understanding the runtime model, protocol, and CRDT types |
 | [`calimero-rust-sdk`](#calimero-rust-sdk) | Building Rust WASM applications |
+| [`calimero-sdk-js`](#calimero-sdk-js) | Building TypeScript WASM applications |
 | [`calimero-client-js`](#calimero-client-js) | Frontend / Node.js clients connecting to a node |
-| [`calimero-registry`](#calimero-registry) | Signing and publishing apps to the registry |
-| [`calimero-desktop`](#calimero-desktop) | Integrating apps with Calimero Desktop SSO |
-| [`calimero-node`](#calimero-node) | Node operators and meroctl scripting |
-| [`calimero-merobox`](#calimero-merobox) | Local multi-node dev environments and CI |
 | [`calimero-client-py`](#calimero-client-py) | Python client for node automation and backend services |
+| [`calimero-desktop`](#calimero-desktop) | Integrating apps with Calimero Desktop SSO |
+| [`calimero-node`](#calimero-node) | Node operator quick-start (merod + meroctl overview) |
+| [`calimero-merod`](#calimero-merod) | merod daemon deep-dive — init, config, health |
+| [`calimero-meroctl`](#calimero-meroctl) | Complete meroctl CLI reference and scripting |
+| [`calimero-merobox`](#calimero-merobox) | Local multi-node dev environments and CI |
+| [`calimero-registry`](#calimero-registry) | Signing and publishing apps to the registry |
 | [`calimero-abi-codegen`](#calimero-abi-codegen) | Generate TypeScript clients from WASM ABI manifests |
 
 ## Install
@@ -47,6 +51,29 @@ Running the install again updates the existing block without duplicating it.
 
 ## Skill reference
 
+### calimero-core
+
+The foundational skill for **any Calimero development**. Install this alongside a
+language-specific skill to give the AI full-stack context.
+
+Covers:
+- Context / Application / Identity mental model
+- Full JSON-RPC protocol and endpoint list (`/api/v0/context/{id}/execute`, etc.)
+- WebSocket event schema (`ExecutionEvent`, `StateMutation`) with decoding examples
+- CRDT storage type taxonomy (`UnorderedMap`, `Vector`, `LwwRegister`, `Counter`, etc.)
+- Namespace and group model for multi-node participation
+- Authentication flow (login, refresh, JWT lifespan)
+
+Key rules included:
+- Application ≠ Context — installing an app does not create a context
+- CRDT types only for shared state — no `std::collections`, no plain `Map`/`Array`
+
+```bash
+npx @calimero-network/agent-skills calimero-core
+```
+
+---
+
 ### calimero-rust-sdk
 
 For developers building **Calimero WASM applications** in Rust.
@@ -66,6 +93,29 @@ Key rules included:
 
 ```bash
 npx @calimero-network/agent-skills calimero-rust-sdk
+```
+
+---
+
+### calimero-sdk-js
+
+For developers building **Calimero WASM applications in TypeScript**.
+
+Covers:
+- `@State` class with CRDT collection fields
+- `@Logic(StateClass)` class with callable methods
+- `@Init` static method for seeding initial state
+- `@View()` annotation for read-only query methods
+- `calimero-cli-js` build tool (`pnpm build`, `pnpm deploy`)
+- WASM runtime constraints (no async in state methods, CRDT types only)
+
+Key rules included:
+- State fields must be CRDT types — do not use plain `Map`, `Set`, or arrays for persistent state
+- `@Logic` class must extend the `@State` class
+- `@Init` must be a `static` method returning the state class
+
+```bash
+npx @calimero-network/agent-skills calimero-sdk-js
 ```
 
 ---
@@ -144,6 +194,52 @@ Key rules included:
 
 ```bash
 npx @calimero-network/agent-skills calimero-node
+```
+
+---
+
+### calimero-merod
+
+For developers and operators who need deep knowledge of the **`merod` daemon** — init
+options, configuration, health checking, and Docker deployment.
+
+Covers:
+- `merod init` — all flags, data directory layout
+- `merod run` — startup flags and background execution
+- Config file schema (`config.toml`) and defaults
+- Health endpoint (`GET /health` returns `{ "status": "alive" }`)
+- Docker and Docker Compose health check patterns
+- Multiple nodes on one machine (port management)
+
+Key rules included:
+- Always run `merod init` before `merod run` on a new home directory
+- Never re-init a production node — it destroys the keypair and breaks existing contexts
+- Ports are set at init time; server-port and swarm-port have different consumers
+
+```bash
+npx @calimero-network/agent-skills calimero-merod
+```
+
+---
+
+### calimero-meroctl
+
+Complete **`meroctl` CLI reference** for developers and operators scripting against a
+running node.
+
+Covers:
+- All subcommand groups: `node`, `app`, `context`, `call`, `identity`, `namespace`, `group`
+- Every flag for each command
+- Scripting patterns for CI/CD pipelines
+- Multi-node setup with namespace invite + group join-context
+- Dev-mode hot reload (`context create --watch`)
+
+Key rules included:
+- Register a node once with `meroctl node add` + `meroctl node use`; omit `--node` after
+- Always pass `--view` for read-only method calls
+
+```bash
+npx @calimero-network/agent-skills calimero-meroctl
 ```
 
 ---

@@ -131,6 +131,12 @@ const val = secret.get();
 
 Private entries are never broadcast to other nodes.
 
+## Related skills
+
+- **`calimero-core`** — runtime concepts (context/app model, JSON-RPC protocol, WebSocket events, CRDT type taxonomy)
+- **`calimero-meroctl`** — full `meroctl` CLI reference for deploying and testing the app
+- **`calimero-client-js`** — connecting a browser/React frontend to the node (not building app logic)
+
 ## References
 
 See `references/` for CRDT collections, events, and build pipeline details.

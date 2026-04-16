@@ -54,23 +54,30 @@ meroctl --api http://localhost:2428 context ls
 ## Complete workflow: app → context → call
 
 ```bash
+# (Assumes: meroctl node add node1 ... && meroctl node use node1 already done)
+
 # 1. Install an app
-meroctl --node node1 app install --path myapp.wasm
+meroctl app install --path myapp.wasm
 # → prints application-id
 
 # 2. Create a context (instantiate the app — init() is called)
-meroctl --node node1 context create --application-id <application-id>
+meroctl context create --application-id <application-id>
 # → prints context-id
 
 # 3. Call a mutation (changes state)
-meroctl --node node1 call <context-id> set \
-  --args '{"key":"hello","value":"world"}'
+meroctl call <context-id> set --args '{"key":"hello","value":"world"}'
 
 # 4. Call a view (read-only)
-meroctl --node node1 call <context-id> get \
-  --args '{"key":"hello"}' --view
+meroctl call <context-id> get --args '{"key":"hello"}' --view
 ```
+
+## Related skills
+
+- **`calimero-merod`** — deep-dive on `merod` daemon: all init flags, config file schema, health endpoints, Docker setup
+- **`calimero-meroctl`** — complete `meroctl` CLI reference: every subcommand, every flag, scripting patterns, multi-node namespace/group workflow
+- **`calimero-core`** — context/app/identity model, JSON-RPC protocol, WebSocket events, CRDT storage types
 
 ## References
 
-See `references/` for full meroctl command reference and context lifecycle.
+See `references/` for context lifecycle detail and multi-node namespace/group setup.
+For the full `meroctl` command reference, use the `calimero-meroctl` skill.

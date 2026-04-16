@@ -144,6 +144,12 @@ fn main() {
 }
 ```
 
+## Related skills
+
+- **`calimero-rust-sdk`** — building the WASM app that produces the `abi.json` file
+- **`calimero-client-js`** — using the generated TypeScript client in a browser/React frontend
+- **`calimero-core`** — JSON-RPC protocol that generated clients call underneath
+
 ## References
 
 See `references/` for ABI format, generated output shape, and programmatic API.

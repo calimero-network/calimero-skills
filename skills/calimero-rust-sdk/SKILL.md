@@ -116,23 +116,28 @@ cargo build --target wasm32-unknown-unknown --profile app-release
 ## Installing and running on a node (dev workflow)
 
 ```bash
+# (Assumes: meroctl node add node1 ... && meroctl node use node1 already done)
+
 # 1. Install app from WASM file
-meroctl --node node1 app install \
+meroctl app install \
   --path target/wasm32-unknown-unknown/app-release/myapp.wasm
 # Returns: application-id
 
 # 2. Create a context (instance of the app — init() is called)
-meroctl --node node1 context create --application-id <application-id>
+meroctl context create --application-id <application-id>
 # Returns: context-id
 
 # 3. Call a mutation
-meroctl --node node1 call <context-id> set \
-  --args '{"key":"hello","value":"world"}'
+meroctl call <context-id> set --args '{"key":"hello","value":"world"}'
 
 # 4. Call a view (read-only)
-meroctl --node node1 call <context-id> get \
-  --args '{"key":"hello"}' --view
+meroctl call <context-id> get --args '{"key":"hello"}' --view
+
+# Dev mode: auto-reinstall when WASM changes
+meroctl context create --watch target/wasm32-unknown-unknown/app-release/myapp.wasm
 ```
+
+For `merod` setup and full `meroctl` reference, see `calimero-merod` and `calimero-meroctl` skills.
 
 ## Key rules
 
@@ -195,6 +200,12 @@ env::xcall(context_id: &[u8; 32], method: &str, params: &[u8]);
 - **Migrations** — `#[app::migrate]` for upgrading state schema: see `references/migrations.md`
 - **Blob API** — streaming binary storage from app logic: see `references/blob-api.md`
 - **Nested CRDTs** — `#[derive(Mergeable)]` for custom structs used as map values: see `references/nested-crdts.md`
+
+## Related skills
+
+- **`calimero-core`** — runtime concepts (context/app model, JSON-RPC protocol, WebSocket events, CRDT type taxonomy)
+- **`calimero-meroctl`** — full `meroctl` CLI reference for deploying and testing the app
+- **`calimero-merod`** — `merod` daemon setup and health checks
 
 ## References
 

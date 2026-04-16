@@ -7,13 +7,22 @@
 
   const NAV = [
     { section: 'Overview' },
-    { label: 'Home',         href: 'index.html',       dot: '#e3b341' },
-    { label: 'How It Works', href: 'how-it-works.html',dot: '#a5ff11' },
+    { label: 'Home',         href: 'index.html',            dot: '#e3b341' },
+    { label: 'How It Works', href: 'how-it-works.html',     dot: '#a5ff11' },
     { section: 'Skills' },
-    { label: 'All Skills',   href: 'skills.html',      dot: '#58a6ff' },
-    { label: 'Rust SDK',     href: 'skill-rust.html',  dot: '#f778ba' },
-    { label: 'Client JS',    href: 'skill-client-js.html',dot: '#39d0d8' },
-    { label: 'Desktop SSO',  href: 'skill-desktop.html',dot: '#a371f7' },
+    { label: 'All Skills',      href: 'skills.html',           dot: '#58a6ff' },
+    { label: 'Core',            href: 'skill-core.html',       dot: '#a5ff11' },
+    { label: 'Rust SDK',        href: 'skill-rust.html',       dot: '#f778ba' },
+    { label: 'SDK JS',          href: 'skill-sdk-js.html',     dot: '#f59e0b' },
+    { label: 'Client JS',       href: 'skill-client-js.html',  dot: '#39d0d8' },
+    { label: 'Client Python',   href: 'skill-client-py.html',  dot: '#c084fc' },
+    { label: 'Desktop SSO',     href: 'skill-desktop.html',    dot: '#a371f7' },
+    { label: 'Node',            href: 'skill-node.html',       dot: '#22d3ee' },
+    { label: 'merod',           href: 'skill-merod.html',      dot: '#60a5fa' },
+    { label: 'meroctl',         href: 'skill-meroctl.html',    dot: '#38bdf8' },
+    { label: 'Merobox',         href: 'skill-merobox.html',    dot: '#34d399' },
+    { label: 'Registry',        href: 'skill-registry.html',   dot: '#fb7185' },
+    { label: 'ABI Codegen',     href: 'skill-abi-codegen.html',dot: '#fb923c' },
   ];
 
   function currentPage() {

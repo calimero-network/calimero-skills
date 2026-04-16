@@ -47,6 +47,11 @@ if (accessToken && nodeUrl) {
 Always fall back to manual login when hash params are absent. The app must work when
 opened in a regular browser, not only from Desktop.
 
+## Related skills
+
+- **`calimero-client-js`** — mero-js / mero-react API for auth, RPC, and WebSocket subscriptions
+- **`calimero-core`** — auth flow (JWT tokens, login, refresh) and JSON-RPC protocol detail
+
 ## References
 
 See `references/` for full integration pattern and how Desktop discovers app URLs.

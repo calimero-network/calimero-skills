@@ -16,7 +16,7 @@
 
 <div class="card ga">
 <h2>What This Skill Teaches</h2>
-<p style="margin-bottom:12px;">The <span class="code">rust-sdk</span> skill gives your AI assistant deep knowledge of the Calimero Rust SDK so it can write correct WASM application code without guessing at API shape.</p>
+<p style="margin-bottom:12px;">The <span class="code">calimero-rust-sdk</span> skill gives your AI assistant deep knowledge of the Calimero Rust SDK so it can write correct WASM application code without guessing at API shape.</p>
 <div class="g2">
   <div class="cb"><h4>Covered Topics</h4>
     <ul style="margin:8px 0 0 16px;color:#c9d1d9;font-size:13px;">
@@ -29,7 +29,7 @@
     </ul>
   </div>
   <div class="cb"><h4>Install</h4>
-    <div class="typedef" style="margin-top:6px;"><span class="field">npx calimero-skills rust-sdk</span><br><br><span class="comment"># Writes to CLAUDE.md,<br># .cursorrules,<br># copilot-instructions.md</span></div>
+    <div class="typedef" style="margin-top:6px;"><span class="field">npx @calimero-network/agent-skills calimero-rust-sdk</span><br><br><span class="comment"># Writes to CLAUDE.md,<br># .cursorrules,<br># copilot-instructions.md</span></div>
   </div>
 </div>
 </div>
@@ -72,9 +72,11 @@
 <h2>Cargo.toml Dependencies</h2>
 <div class="typedef">
 [dependencies]<br>
-calimero-sdk = &#123; version = <span class="comment">"0.3"</span>, features = [<span class="comment">"borsh"</span>] &#125;<br>
-borsh = &#123; version = <span class="comment">"1"</span>, features = [<span class="comment">"derive"</span>] &#125;<br>
-serde = &#123; version = <span class="comment">"1"</span>, features = [<span class="comment">"derive"</span>] &#125;<br><br>
+calimero-sdk     = <span class="comment">"0.10"</span><br>
+calimero-storage = <span class="comment">"0.10"</span><br><br>
+[build-dependencies]<br>
+calimero-wasm-abi = <span class="comment">"0.10"</span><br>
+serde_json        = <span class="comment">"1"</span><br><br>
 [lib]<br>
 crate-type = [<span class="comment">"cdylib"</span>]<br><br>
 [profile.release]<br>
