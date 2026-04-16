@@ -330,7 +330,7 @@ npx @calimero-network/agent-skills calimero-abi-codegen
 
 Each skill follows this layout:
 
-```
+```text
 skills/<skill-name>/
 ├── SKILL.md          # Agent instructions: what to know, what to avoid
 ├── references/       # Detailed API guides with real code examples

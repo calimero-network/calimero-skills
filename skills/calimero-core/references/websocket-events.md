@@ -4,7 +4,7 @@ The Calimero node pushes real-time events to subscribers over WebSocket.
 
 ## Connect and subscribe
 
-```
+```text
 ws://localhost:2428/ws
 ```
 

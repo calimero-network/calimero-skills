@@ -152,7 +152,7 @@ pub fn get_frozen(&self, hash_hex: String) -> app::Result<Option<String>> {
 }
 ```
 
-### Key methods
+### Frozen storage key methods
 
 | Method                     | Description                          |
 | -------------------------- | ------------------------------------ |

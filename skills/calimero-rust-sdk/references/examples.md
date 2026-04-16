@@ -2,7 +2,7 @@
 
 ## KV Store (simplest app)
 
-Source: https://github.com/calimero-network/kv-store
+Source: <https://github.com/calimero-network/kv-store>
 
 ```rust
 use calimero_sdk::app;
@@ -119,4 +119,4 @@ pub fn get_item(&self, key: &str) -> app::Result<String> {
 - `battleships` — multi-context game, private storage, xcall, event handlers
 - `calimero-scaffolding-e2e-application` — exercises all CRDT types, blob API, user storage
 - `curb` — chat app, event-driven UI updates
-- Source: https://github.com/calimero-network/
+- Source: <https://github.com/calimero-network/>

@@ -24,7 +24,7 @@ so users are automatically logged in without going through the manual auth flow.
 
 ## Example URL
 
-```
+```text
 https://your-app.com/#access_token=eyJ...&refresh_token=eyJ...&node_url=http://localhost:2428&application_id=abc123
 ```
 

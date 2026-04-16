@@ -14,7 +14,7 @@ One application can power many independent contexts. Each context has completely
 
 ## Lifecycle
 
-```
+```text
 App installed on node
        │
        ▼

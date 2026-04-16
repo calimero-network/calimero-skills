@@ -2,7 +2,7 @@
 
 ## Health check
 
-```
+```text
 GET http://localhost:2428/health
 ```
 
@@ -44,7 +44,7 @@ echo "node is ready"
 
 ## API base URL
 
-```
+```text
 http://localhost:2428/api/v0/
 ```
 

@@ -4,7 +4,7 @@
 
 ## Pipeline stages
 
-```
+```text
 TypeScript  →  Rollup  →  QuickJS  →  WASI-SDK  →  Binaryen  →  .wasm
   Source       Bundle    C bytecode     WASM        Optimized
 ```

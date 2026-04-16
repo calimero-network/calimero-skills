@@ -45,7 +45,7 @@ An **identity** is an Ed25519 keypair managed by the node:
 
 ## Call path for an app method
 
-```
+```text
 Client
   │  POST /api/v0/context/{contextId}/execute
   │  { method, argsJson, executorPublicKey }
@@ -78,7 +78,7 @@ State sync is automatic and happens over the P2P network:
 
 Nodes join contexts through the namespace + group model:
 
-```
+```text
 Node A creates a namespace (trust root)
   → Node A creates a context
   → Node A generates namespace invite token

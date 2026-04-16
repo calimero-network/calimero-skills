@@ -55,7 +55,7 @@ Positional arguments: `<wasm-file> [package] [version]`
 
 After creating, the CLI prints sign instructions:
 
-```
+```text
 1. Sign the manifest:  mero-sign sign <output>/manifest.json --key key.json
 2. Push the bundle:    calimero-registry bundle push <output> --remote
 ```

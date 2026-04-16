@@ -2,7 +2,7 @@
 
 Running `calimero-abi-codegen -i abi.json -o src/generated --client-name KvStoreClient` produces:
 
-```
+```text
 src/generated/
 ├── types.ts
 └── KvStoreClient.ts

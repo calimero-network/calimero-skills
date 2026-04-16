@@ -8,7 +8,7 @@ and primitives that every application, client library, and node operator needs t
 
 ## The three-layer model
 
-```
+```text
 ┌─────────────────────────────────────────────────────┐
 │  Application logic (WASM)                            │  calimero-rust-sdk / calimero-sdk-js
 │  @State / #[app::state], CRDT collections           │
@@ -58,7 +58,7 @@ joins context via group.
 
 All application method calls go through the node's JSON-RPC endpoint:
 
-```
+```text
 POST http://localhost:2428/api/v0/context/{contextId}/execute
 Authorization: Bearer <access_token>
 

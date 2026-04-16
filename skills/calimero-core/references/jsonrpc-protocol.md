@@ -5,7 +5,7 @@ The Calimero node exposes its application and admin APIs over HTTP/REST at
 
 ## Base URL
 
-```
+```text
 http://<node-host>:<server-port>/api/v0
 ```
 
@@ -19,7 +19,7 @@ All endpoints require `Authorization: Bearer <accessToken>` except `/identity/lo
 
 ### Login
 
-```
+```text
 POST /api/v0/identity/login
 
 Body: { "username": "admin", "password": "..." }
@@ -32,7 +32,7 @@ Response: {
 
 ### Refresh
 
-```
+```text
 POST /api/v0/identity/refresh
 
 Body: { "refreshToken": "eyJ..." }
@@ -48,7 +48,7 @@ This is how frontends and clients invoke WASM app logic.
 
 ### Execute a method (mutation or view)
 
-```
+```text
 POST /api/v0/context/{contextId}/execute
 
 Headers:
@@ -84,7 +84,7 @@ Response (error): {
 
 ### List contexts
 
-```
+```text
 GET /api/v0/contexts
 
 Response: [
@@ -95,13 +95,13 @@ Response: [
 
 ### Get context details
 
-```
+```text
 GET /api/v0/contexts/{contextId}
 ```
 
 ### Create context
 
-```
+```text
 POST /api/v0/contexts
 
 Body: { "applicationId": "<app-id>" }
@@ -111,7 +111,7 @@ Response: { "id": "<context-id>" }
 
 ### Delete context
 
-```
+```text
 DELETE /api/v0/contexts/{contextId}
 ```
 
@@ -121,13 +121,13 @@ DELETE /api/v0/contexts/{contextId}
 
 ### List installed applications
 
-```
+```text
 GET /api/v0/applications
 ```
 
 ### Install application from local file
 
-```
+```text
 POST /api/v0/applications
 Content-Type: multipart/form-data
 
@@ -138,7 +138,7 @@ Response: { "applicationId": "<id>" }
 
 ### Get application details
 
-```
+```text
 GET /api/v0/applications/{applicationId}
 ```
 
@@ -148,13 +148,13 @@ GET /api/v0/applications/{applicationId}
 
 ### List identities
 
-```
+```text
 GET /api/v0/identities
 ```
 
 ### Create identity
 
-```
+```text
 POST /api/v0/identities
 
 Response: { "publicKey": "<base58>", "privateKey": "<base58>" }
@@ -164,7 +164,7 @@ Response: { "publicKey": "<base58>", "privateKey": "<base58>" }
 
 ## WebSocket endpoint
 
-```
+```text
 ws://localhost:2428/ws
 ```
 

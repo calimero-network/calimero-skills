@@ -45,14 +45,14 @@ Starts the node daemon. The home directory must already be initialised.
 merod --node <name> run [flags]
 ```
 
-### Flags
+### Run flags
 
 | Flag            | Required | Default       | Description                             |
 | --------------- | -------- | ------------- | --------------------------------------- |
 | `--node <name>` | Yes      | —             | Must match the name used during `init`. |
 | `--home <path>` | No       | OS config dir | Must match the home used during `init`. |
 
-### Examples
+### Run examples
 
 ```bash
 # Run in foreground
@@ -71,7 +71,7 @@ merod --home ./data --node node1 run
 
 After `init`, the following structure is created under `<home>/<node-name>/`:
 
-```
+```text
 <home>/
 └── <node-name>/
     ├── config.toml      # node configuration (server port, swarm port, etc.)

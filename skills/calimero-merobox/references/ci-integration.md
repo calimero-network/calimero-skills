@@ -50,4 +50,4 @@ jobs:
 ## Reference workflow files
 
 The Battleships repo has well-structured workflow examples:
-https://github.com/calimero-network/battleships/tree/main/workflows
+<https://github.com/calimero-network/battleships/tree/main/workflows>

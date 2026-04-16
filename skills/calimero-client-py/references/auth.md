@@ -5,7 +5,7 @@ refreshing on 401.
 
 ## Token cache location
 
-```
+```text
 ~/.merobox/auth_cache/{sanitized_node_name}-{hash}.json
 ```
 

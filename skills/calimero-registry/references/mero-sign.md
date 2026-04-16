@@ -45,7 +45,7 @@ mero-sign sign manifest.json --key key.json
 
 ## How signing works
 
-```
+```text
   manifest.json (signature field absent or empty)
        │
        ▼  Remove signature + all _* prefixed fields
