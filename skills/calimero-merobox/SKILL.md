@@ -5,6 +5,7 @@ You are helping a developer set up and test a **local Calimero network** using M
 ## What Merobox is
 
 Merobox is a Python CLI tool for running Calimero nodes in Docker containers. It handles:
+
 - Starting/stopping nodes with `merobox run` / `merobox stop`
 - App installation and method execution
 - Identity and context management
@@ -111,53 +112,53 @@ steps:
     node: node-1
     path: ./kv_store.wasm
     outputs:
-      app_id: "application_id"
+      app_id: 'application_id'
 
   - type: create_context
     node: node-1
-    application_id: "{{app_id}}"
+    application_id: '{{app_id}}'
     outputs:
-      ctx_id: "context.context_id"
+      ctx_id: 'context.context_id'
 
   - type: create_identity
     node: node-1
     outputs:
-      pub: "public_key"
+      pub: 'public_key'
 
   - type: call
     node: node-1
-    context_id: "{{ctx_id}}"
+    context_id: '{{ctx_id}}'
     method: set
     args:
-      key: "hello"
-      value: "world"
-    executor_public_key: "{{pub}}"
+      key: 'hello'
+      value: 'world'
+    executor_public_key: '{{pub}}'
     outputs:
-      result: "output"
+      result: 'output'
 
   - type: assert
     statements:
-      - "is_set({{result}})"
+      - 'is_set({{result}})'
 ```
 
 ### Available step types
 
-| Step | What it does |
-|---|---|
-| `install_application` | Install WASM app, capture `application_id` |
-| `create_context` | Create context, capture `context_id` and `seed` |
-| `create_identity` | Create identity, capture `private_key` and `public_key` |
-| `join_context` | Join a node to a context (targeted invitation) |
-| `invite_open` | Create open invitation (anyone can join) |
-| `join_open` | Join via open invitation |
-| `call` | Execute app method, capture output |
-| `wait` | Sleep N seconds |
-| `repeat` | Loop with index variable |
-| `assert` | Validate values (`is_set`, `contains`, `==`) |
-| `json_assert` | JSON equality/subset checks |
-| `upload_blob` | Upload file to blob storage, capture `blob_id` |
-| `script` | Run a shell script |
-| `fuzzy_test` | Randomized load test (30-60+ min) |
+| Step                  | What it does                                            |
+| --------------------- | ------------------------------------------------------- |
+| `install_application` | Install WASM app, capture `application_id`              |
+| `create_context`      | Create context, capture `context_id` and `seed`         |
+| `create_identity`     | Create identity, capture `private_key` and `public_key` |
+| `join_context`        | Join a node to a context (targeted invitation)          |
+| `invite_open`         | Create open invitation (anyone can join)                |
+| `join_open`           | Join via open invitation                                |
+| `call`                | Execute app method, capture output                      |
+| `wait`                | Sleep N seconds                                         |
+| `repeat`              | Loop with index variable                                |
+| `assert`              | Validate values (`is_set`, `contains`, `==`)            |
+| `json_assert`         | JSON equality/subset checks                             |
+| `upload_blob`         | Upload file to blob storage, capture `blob_id`          |
+| `script`              | Run a shell script                                      |
+| `fuzzy_test`          | Randomized load test (30-60+ min)                       |
 
 ### Multi-node example
 
@@ -168,61 +169,61 @@ steps:
     node: node-1
     path: ./app.wasm
     outputs:
-      app_id: "application_id"
+      app_id: 'application_id'
 
   - type: create_context
     node: node-1
-    application_id: "{{app_id}}"
+    application_id: '{{app_id}}'
     outputs:
-      ctx: "context.context_id"
+      ctx: 'context.context_id'
 
   - type: create_identity
     node: node-1
     outputs:
-      pub1: "public_key"
+      pub1: 'public_key'
 
   - type: create_identity
     node: node-2
     outputs:
-      pub2: "public_key"
+      pub2: 'public_key'
 
   # invite node-2 to join the context
   - type: invite_open
     node: node-1
-    context_id: "{{ctx}}"
-    granter_id: "{{pub1}}"
+    context_id: '{{ctx}}'
+    granter_id: '{{pub1}}'
     outputs:
-      invite: "invitation"
+      invite: 'invitation'
 
   - type: join_open
     node: node-2
-    invitee_id: "{{pub2}}"
-    invitation: "{{invite}}"
+    invitee_id: '{{pub2}}'
+    invitation: '{{invite}}'
 
   - type: wait
-    seconds: 2  # allow sync
+    seconds: 2 # allow sync
 
   - type: call
     node: node-1
-    context_id: "{{ctx}}"
+    context_id: '{{ctx}}'
     method: set
     args:
-      key: "msg"
-      value: "hello"
-    executor_public_key: "{{pub1}}"
+      key: 'msg'
+      value: 'hello'
+    executor_public_key: '{{pub1}}'
 
   - type: wait
     seconds: 1
 
   - type: call
     node: node-2
-    context_id: "{{ctx}}"
+    context_id: '{{ctx}}'
     method: get
     args:
-      key: "msg"
-    executor_public_key: "{{pub2}}"
+      key: 'msg'
+    executor_public_key: '{{pub2}}'
     outputs:
-      val: "output"
+      val: 'output'
 
   - type: assert
     statements:
@@ -233,17 +234,17 @@ steps:
 
 ```yaml
 name: Workflow with Auth
-auth_service: true  # enables Traefik + auth middleware
+auth_service: true # enables Traefik + auth middleware
 
 nodes:
   count: 1
-  prefix: "calimero-node"
-  image: "ghcr.io/calimero-network/merod:edge"
+  prefix: 'calimero-node'
+  image: 'ghcr.io/calimero-network/merod:edge'
 
 steps:
   - type: wait
     seconds: 5
-    message: "Waiting for auth service..."
+    message: 'Waiting for auth service...'
 ```
 
 Node URL with auth: `http://node1.127.0.0.1.nip.io`
@@ -263,12 +264,12 @@ Node URL with auth: `http://node1.127.0.0.1.nip.io`
 
 ## When to use Merobox vs meroctl
 
-| Task | Use |
-|---|---|
-| Local multi-node dev and testing | Merobox |
-| CI pipeline with multi-step scenarios | Merobox |
+| Task                                     | Use     |
+| ---------------------------------------- | ------- |
+| Local multi-node dev and testing         | Merobox |
+| CI pipeline with multi-step scenarios    | Merobox |
 | Quick single command against a live node | meroctl |
-| Managing a production node | meroctl |
+| Managing a production node               | meroctl |
 
 ## Related skills
 

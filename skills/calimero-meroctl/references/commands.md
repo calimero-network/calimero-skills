@@ -98,9 +98,9 @@ meroctl call <context-id> list_all --args '{}' --view
 meroctl call <context-id> <method> --args '{}' --as <identity-id>
 ```
 
-The `--view` flag should be used for any method that is annotated `@View()` (JS) or
-takes `&self` without state mutation (Rust). Omitting `--view` on a read method is
-not harmful but wastes a storage write.
+The `--view` flag should be used for any method that is annotated `@View()` (JS) or takes `&self`
+without state mutation (Rust). Omitting `--view` on a read method is not harmful but wastes a
+storage write.
 
 ---
 

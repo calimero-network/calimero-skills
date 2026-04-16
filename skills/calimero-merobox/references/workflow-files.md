@@ -1,6 +1,7 @@
 # Merobox Workflow Files
 
-Workflow files define reusable network topologies. Commit them to your repo for repeatable local dev and CI environments.
+Workflow files define reusable network topologies. Commit them to your repo for repeatable local dev
+and CI environments.
 
 ## Minimal workflow
 
@@ -30,16 +31,16 @@ setup:
 
   - step: create_context
     node: node1
-    app_id: "{{ install_app.app_id }}"
+    app_id: '{{ install_app.app_id }}'
 
   - step: invite_member
     node: node1
-    context_id: "{{ create_context.context_id }}"
-    identity: "{{ node2.identity }}"
+    context_id: '{{ create_context.context_id }}'
+    identity: '{{ node2.identity }}'
 
   - step: join_context
     node: node2
-    invitation: "{{ invite_member.invitation }}"
+    invitation: '{{ invite_member.invitation }}'
 ```
 
 ## Commands
@@ -64,6 +65,7 @@ merobox down --purge
 ## Accessing nodes after startup
 
 Each node exposes its JSON-RPC at the configured port:
+
 - `node1` → `http://localhost:2428`
 - `node2` → `http://localhost:2429`
 

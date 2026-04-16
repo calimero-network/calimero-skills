@@ -20,10 +20,10 @@ You can subscribe to multiple context IDs in one message.
 
 ## Event types
 
-| Type | When fired | Payload |
-|---|---|---|
+| Type             | When fired                                            | Payload                        |
+| ---------------- | ----------------------------------------------------- | ------------------------------ |
 | `ExecutionEvent` | App called `app::emit!()` (Rust) or `env.emit()` (JS) | `{ events: ExecutionEvent[] }` |
-| `StateMutation` | Any context member mutated shared state | `{ newRoot: string }` |
+| `StateMutation`  | Any context member mutated shared state               | `{ newRoot: string }`          |
 
 ---
 
@@ -35,7 +35,7 @@ interface WsMessage {
   type: 'ExecutionEvent';
   data: {
     events: Array<{
-      kind: string;   // matches Rust enum variant name or JS event name
+      kind: string; // matches Rust enum variant name or JS event name
       data: number[] | object; // byte array (UTF-8 JSON) or plain object
     }>;
   };
@@ -46,7 +46,7 @@ interface WsMessage {
 
 ```typescript
 function decodeEventData(data: unknown): unknown {
-  if (Array.isArray(data) && data.every(n => typeof n === 'number')) {
+  if (Array.isArray(data) && data.every((n) => typeof n === 'number')) {
     try {
       return JSON.parse(new TextDecoder().decode(new Uint8Array(data as number[])));
     } catch {
@@ -66,8 +66,12 @@ ws.onmessage = (msg) => {
     for (const e of envelope.data.events) {
       const payload = decodeEventData(e.data);
       switch (e.kind) {
-        case 'PostCreated': handlePostCreated(payload); break;
-        case 'PostDeleted': handlePostDeleted(payload); break;
+        case 'PostCreated':
+          handlePostCreated(payload);
+          break;
+        case 'PostDeleted':
+          handlePostDeleted(payload);
+          break;
       }
     }
   }
@@ -92,8 +96,8 @@ interface WsMessage {
 }
 ```
 
-Use `StateMutation` to know when to refetch state from the node — it fires on every
-mutation from any member, including the local node's own mutations.
+Use `StateMutation` to know when to refetch state from the node — it fires on every mutation from
+any member, including the local node's own mutations.
 
 ---
 

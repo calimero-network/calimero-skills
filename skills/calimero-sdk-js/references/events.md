@@ -1,7 +1,7 @@
 # Events
 
-Events let your app push real-time notifications to all context members.
-They are emitted during mutation methods and received by clients via WebSocket.
+Events let your app push real-time notifications to all context members. They are emitted during
+mutation methods and received by clients via WebSocket.
 
 ## Emitting events
 
@@ -22,7 +22,11 @@ Events can only be emitted inside mutation methods (not `@View()` methods).
 Clients use `WsSubscriptionsClient` from `@calimero-network/calimero-client`:
 
 ```typescript
-import { WsSubscriptionsClient, getAppEndpointKey, getContextId } from '@calimero-network/calimero-client';
+import {
+  WsSubscriptionsClient,
+  getAppEndpointKey,
+  getContextId,
+} from '@calimero-network/calimero-client';
 
 const ws = new WsSubscriptionsClient(getAppEndpointKey()!, '/ws');
 await ws.connect();

@@ -1,8 +1,8 @@
 # Rule: rpcClient handles token refresh automatically — but not all 401s
 
-`rpcClient` (from `@calimero-network/calimero-client`) automatically retries with a
-refreshed token when the server returns `401 token_expired`. **You do not need to
-implement a refresh wrapper around `rpcClient.execute()` calls.**
+`rpcClient` (from `@calimero-network/calimero-client`) automatically retries with a refreshed token
+when the server returns `401 token_expired`. **You do not need to implement a refresh wrapper around
+`rpcClient.execute()` calls.**
 
 What you DO need to handle: 401s that cannot be refreshed.
 
@@ -49,8 +49,8 @@ if (response.error) {
 
 ## WebSocket connections are different — no auto-refresh
 
-`WsSubscriptionsClient` does **not** auto-refresh tokens. If the token expires while
-a WebSocket connection is open, events will stop arriving silently. Reconnect manually:
+`WsSubscriptionsClient` does **not** auto-refresh tokens. If the token expires while a WebSocket
+connection is open, events will stop arriving silently. Reconnect manually:
 
 ```typescript
 async function connectWithAuth() {
@@ -71,9 +71,9 @@ async function connectWithAuth() {
 
 ## Summary
 
-| Scenario | Handled by |
-| --- | --- |
-| `401 token_expired` on RPC call | `rpcClient` automatically (transparent retry) |
-| `401 token_revoked` on RPC call | You — redirect to login |
-| `401 invalid_token` on RPC call | You — redirect to login |
-| Auth failure on WebSocket connect | You — catch and redirect to login |
+| Scenario                          | Handled by                                    |
+| --------------------------------- | --------------------------------------------- |
+| `401 token_expired` on RPC call   | `rpcClient` automatically (transparent retry) |
+| `401 token_revoked` on RPC call   | You — redirect to login                       |
+| `401 invalid_token` on RPC call   | You — redirect to login                       |
+| Auth failure on WebSocket connect | You — catch and redirect to login             |

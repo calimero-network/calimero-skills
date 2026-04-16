@@ -17,6 +17,7 @@ calimero-registry config list
 ```
 
 Or use environment variables:
+
 ```bash
 export CALIMERO_REGISTRY_URL=https://apps.calimero.network
 export CALIMERO_API_KEY=your-api-key
@@ -41,18 +42,19 @@ calimero-registry bundle create \
 
 Positional arguments: `<wasm-file> [package] [version]`
 
-| Flag | Required | Description |
-| --- | --- | --- |
-| `-o, --output <path>` | No | Output `.mpk` filename |
-| `-m, --manifest <path>` | No | Read metadata from a manifest JSON file |
-| `--name <name>` | No | App display name |
-| `--description <text>` | No | Short description |
-| `--author <name>` | No | Author name |
-| `--frontend <url>` | No | Frontend URL (Desktop uses this to open the app) |
-| `--github <url>` | No | Source repository URL |
-| `--docs <url>` | No | Documentation URL |
+| Flag                    | Required | Description                                      |
+| ----------------------- | -------- | ------------------------------------------------ |
+| `-o, --output <path>`   | No       | Output `.mpk` filename                           |
+| `-m, --manifest <path>` | No       | Read metadata from a manifest JSON file          |
+| `--name <name>`         | No       | App display name                                 |
+| `--description <text>`  | No       | Short description                                |
+| `--author <name>`       | No       | Author name                                      |
+| `--frontend <url>`      | No       | Frontend URL (Desktop uses this to open the app) |
+| `--github <url>`        | No       | Source repository URL                            |
+| `--docs <url>`          | No       | Documentation URL                                |
 
 After creating, the CLI prints sign instructions:
+
 ```
 1. Sign the manifest:  mero-sign sign <output>/manifest.json --key key.json
 2. Push the bundle:    calimero-registry bundle push <output> --remote

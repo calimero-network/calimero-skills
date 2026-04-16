@@ -22,7 +22,7 @@ The input `abi.json` follows the `wasm-abi/1` schema.
     "Entry": {
       "kind": "record",
       "fields": [
-        { "name": "key",   "type": { "kind": "string" } },
+        { "name": "key", "type": { "kind": "string" } },
         { "name": "value", "type": { "kind": "string" } }
       ]
     }
@@ -31,15 +31,13 @@ The input `abi.json` follows the `wasm-abi/1` schema.
     {
       "name": "set",
       "params": [
-        { "name": "key",   "type": { "kind": "string" } },
+        { "name": "key", "type": { "kind": "string" } },
         { "name": "value", "type": { "kind": "string" } }
       ]
     },
     {
       "name": "get",
-      "params": [
-        { "name": "key", "type": { "kind": "string" } }
-      ],
+      "params": [{ "name": "key", "type": { "kind": "string" } }],
       "returns": { "kind": "string" },
       "returns_nullable": true
     },

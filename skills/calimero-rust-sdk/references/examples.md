@@ -61,11 +61,13 @@ impl KvStore {
 ## Calling from a client (JSON-RPC)
 
 Mutations (state changes):
+
 ```json
-{ "method": "set",  "args": { "key": "hello", "value": "world" } }
+{ "method": "set", "args": { "key": "hello", "value": "world" } }
 ```
 
 Views (read-only):
+
 ```json
 { "method": "get",  "args": { "key": "hello" } }
 { "method": "entries", "args": {} }
@@ -73,8 +75,8 @@ Views (read-only):
 
 ## Lobby + Game pattern (battleships)
 
-Two separate WASM crates — a Lobby context and a Game context.
-The Game context calls back into the Lobby via `env::xcall()` when a match ends.
+Two separate WASM crates — a Lobby context and a Game context. The Game context calls back into the
+Lobby via `env::xcall()` when a match ends.
 
 ```rust
 // In game crate — notify lobby when match finishes

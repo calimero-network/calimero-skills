@@ -12,8 +12,8 @@ Returns `200 OK` with a JSON body when the node is running and ready.
 { "status": "alive" }
 ```
 
-> **Note:** The status value is `"alive"`, not `"healthy"`. Code that checks for
-> `"healthy"` will incorrectly treat a live node as unhealthy.
+> **Note:** The status value is `"alive"`, not `"healthy"`. Code that checks for `"healthy"` will
+> incorrectly treat a live node as unhealthy.
 
 ## Wait for node ready (shell)
 
@@ -53,16 +53,16 @@ All management endpoints are under `/api/v0/`. Clients must authenticate with
 
 ## Key API paths
 
-| Path | Method | Purpose |
-|---|---|---|
-| `/health` | GET | Node liveness check (no auth required) |
-| `/api/v0/identity/login` | POST | Get access + refresh tokens |
-| `/api/v0/identity/refresh` | POST | Refresh access token |
-| `/api/v0/contexts` | GET | List contexts |
-| `/api/v0/contexts` | POST | Create context |
-| `/api/v0/contexts/{id}/execute` | POST | Call app method |
-| `/api/v0/applications` | GET | List installed apps |
-| `/api/v0/applications` | POST | Install app (multipart) |
+| Path                            | Method | Purpose                                |
+| ------------------------------- | ------ | -------------------------------------- |
+| `/health`                       | GET    | Node liveness check (no auth required) |
+| `/api/v0/identity/login`        | POST   | Get access + refresh tokens            |
+| `/api/v0/identity/refresh`      | POST   | Refresh access token                   |
+| `/api/v0/contexts`              | GET    | List contexts                          |
+| `/api/v0/contexts`              | POST   | Create context                         |
+| `/api/v0/contexts/{id}/execute` | POST   | Call app method                        |
+| `/api/v0/applications`          | GET    | List installed apps                    |
+| `/api/v0/applications`          | POST   | Install app (multipart)                |
 
 WebSocket: `ws://localhost:2428/ws`
 
@@ -82,7 +82,7 @@ services:
   node:
     image: calimero/merod:latest
     healthcheck:
-      test: ["CMD", "curl", "-sf", "http://localhost:2428/health"]
+      test: ['CMD', 'curl', '-sf', 'http://localhost:2428/health']
       interval: 5s
       timeout: 3s
       retries: 10

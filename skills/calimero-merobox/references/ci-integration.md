@@ -1,6 +1,7 @@
 # CI Integration
 
-Use Merobox in GitHub Actions or other CI systems to run integration tests against a real multi-node network.
+Use Merobox in GitHub Actions or other CI systems to run integration tests against a real multi-node
+network.
 
 ## GitHub Actions example
 

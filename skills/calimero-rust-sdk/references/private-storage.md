@@ -2,10 +2,10 @@
 
 Calimero apps have two storage scopes:
 
-| Scope | Who can read | Synced across members? |
-|---|---|---|
-| Shared state (CRDT) | All context members | Yes — automatic |
-| Private storage | Only the local node/member | No |
+| Scope               | Who can read               | Synced across members? |
+| ------------------- | -------------------------- | ---------------------- |
+| Shared state (CRDT) | All context members        | Yes — automatic        |
+| Private storage     | Only the local node/member | No                     |
 
 ## Declaring private storage
 

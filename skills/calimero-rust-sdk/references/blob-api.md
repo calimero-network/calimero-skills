@@ -1,10 +1,10 @@
 # Blob API
 
-Blobs are binary objects stored outside the CRDT state — large files, images, documents.
-The app stores a blob **ID** (32-byte hash) in state; the binary data lives in blob storage.
+Blobs are binary objects stored outside the CRDT state — large files, images, documents. The app
+stores a blob **ID** (32-byte hash) in state; the binary data lives in blob storage.
 
-Two separate steps: **upload the binary** (client-side, before calling the app method),
-then **store the metadata + announce** (inside the app method).
+Two separate steps: **upload the binary** (client-side, before calling the app method), then **store
+the metadata + announce** (inside the app method).
 
 ---
 
@@ -46,8 +46,8 @@ env::blob_close(fd);
 
 ## Typical pattern: client uploads, app stores metadata
 
-Most apps let the **client** upload binary data via `blobClient.uploadBlob()` (which
-returns a blob ID), then call an app method that stores the metadata and announces the blob:
+Most apps let the **client** upload binary data via `blobClient.uploadBlob()` (which returns a blob
+ID), then call an app method that stores the metadata and announces the blob:
 
 ```rust
 use calimero_sdk::{app, env};
@@ -84,13 +84,13 @@ impl FileStore {
 
 ## env functions summary
 
-| Function | Signature | Notes |
-|---|---|---|
-| `blob_create()` | `() -> u64` | Returns write fd |
-| `blob_write(fd, data)` | `(u64, &[u8]) -> u64` | Returns bytes written |
-| `blob_close(fd)` | `(u64) -> [u8; 32]` | Finalizes; returns blob ID |
-| `blob_open(id)` | `(&[u8; 32]) -> u64` | Returns read fd, 0 if missing |
-| `blob_read(fd, buf)` | `(u64, &mut [u8]) -> u64` | Returns bytes read, 0 at EOF |
+| Function                                    | Signature                        | Notes                                                                |
+| ------------------------------------------- | -------------------------------- | -------------------------------------------------------------------- |
+| `blob_create()`                             | `() -> u64`                      | Returns write fd                                                     |
+| `blob_write(fd, data)`                      | `(u64, &[u8]) -> u64`            | Returns bytes written                                                |
+| `blob_close(fd)`                            | `(u64) -> [u8; 32]`              | Finalizes; returns blob ID                                           |
+| `blob_open(id)`                             | `(&[u8; 32]) -> u64`             | Returns read fd, 0 if missing                                        |
+| `blob_read(fd, buf)`                        | `(u64, &mut [u8]) -> u64`        | Returns bytes read, 0 at EOF                                         |
 | `blob_announce_to_context(blob_id, ctx_id)` | `(&[u8; 32], &[u8; 32]) -> bool` | Makes blob discoverable to peers; context must match current context |
 
 ---

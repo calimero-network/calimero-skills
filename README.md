@@ -8,20 +8,20 @@ hallucinating APIs that don't exist.
 
 ## Skills
 
-| Skill | When to use |
-| --- | --- |
-| [`calimero-core`](#calimero-core) | Understanding the runtime model, protocol, and CRDT types |
-| [`calimero-rust-sdk`](#calimero-rust-sdk) | Building Rust WASM applications |
-| [`calimero-sdk-js`](#calimero-sdk-js) | Building TypeScript WASM applications |
-| [`calimero-client-js`](#calimero-client-js) | Frontend / Node.js clients connecting to a node |
-| [`calimero-client-py`](#calimero-client-py) | Python client for node automation and backend services |
-| [`calimero-desktop`](#calimero-desktop) | Integrating apps with Calimero Desktop SSO |
-| [`calimero-node`](#calimero-node) | Node operator quick-start (merod + meroctl overview) |
-| [`calimero-merod`](#calimero-merod) | merod daemon deep-dive — init, config, health |
-| [`calimero-meroctl`](#calimero-meroctl) | Complete meroctl CLI reference and scripting |
-| [`calimero-merobox`](#calimero-merobox) | Local multi-node dev environments and CI |
-| [`calimero-registry`](#calimero-registry) | Signing and publishing apps to the registry |
-| [`calimero-abi-codegen`](#calimero-abi-codegen) | Generate TypeScript clients from WASM ABI manifests |
+| Skill                                           | When to use                                               |
+| ----------------------------------------------- | --------------------------------------------------------- |
+| [`calimero-core`](#calimero-core)               | Understanding the runtime model, protocol, and CRDT types |
+| [`calimero-rust-sdk`](#calimero-rust-sdk)       | Building Rust WASM applications                           |
+| [`calimero-sdk-js`](#calimero-sdk-js)           | Building TypeScript WASM applications                     |
+| [`calimero-client-js`](#calimero-client-js)     | Frontend / Node.js clients connecting to a node           |
+| [`calimero-client-py`](#calimero-client-py)     | Python client for node automation and backend services    |
+| [`calimero-desktop`](#calimero-desktop)         | Integrating apps with Calimero Desktop SSO                |
+| [`calimero-node`](#calimero-node)               | Node operator quick-start (merod + meroctl overview)      |
+| [`calimero-merod`](#calimero-merod)             | merod daemon deep-dive — init, config, health             |
+| [`calimero-meroctl`](#calimero-meroctl)         | Complete meroctl CLI reference and scripting              |
+| [`calimero-merobox`](#calimero-merobox)         | Local multi-node dev environments and CI                  |
+| [`calimero-registry`](#calimero-registry)       | Signing and publishing apps to the registry               |
+| [`calimero-abi-codegen`](#calimero-abi-codegen) | Generate TypeScript clients from WASM ABI manifests       |
 
 ## Install
 
@@ -39,10 +39,10 @@ npx @calimero-network/agent-skills --list
 
 ### Where skill files are written
 
-| Flag | File |
-| --- | --- |
-| (default) | `CLAUDE.md` |
-| `--cursor` | `.cursorrules` |
+| Flag        | File                              |
+| ----------- | --------------------------------- |
+| (default)   | `CLAUDE.md`                       |
+| `--cursor`  | `.cursorrules`                    |
 | `--copilot` | `.github/copilot-instructions.md` |
 
 Running the install again updates the existing block without duplicating it.
@@ -53,10 +53,11 @@ Running the install again updates the existing block without duplicating it.
 
 ### calimero-core
 
-The foundational skill for **any Calimero development**. Install this alongside a
-language-specific skill to give the AI full-stack context.
+The foundational skill for **any Calimero development**. Install this alongside a language-specific
+skill to give the AI full-stack context.
 
 Covers:
+
 - Context / Application / Identity mental model
 - Full JSON-RPC protocol and endpoint list (`/api/v0/context/{id}/execute`, etc.)
 - WebSocket event schema (`ExecutionEvent`, `StateMutation`) with decoding examples
@@ -65,6 +66,7 @@ Covers:
 - Authentication flow (login, refresh, JWT lifespan)
 
 Key rules included:
+
 - Application ≠ Context — installing an app does not create a context
 - CRDT types only for shared state — no `std::collections`, no plain `Map`/`Array`
 
@@ -79,6 +81,7 @@ npx @calimero-network/agent-skills calimero-core
 For developers building **Calimero WASM applications** in Rust.
 
 Covers:
+
 - App skeleton with `#[app]` macros
 - CRDT state collections (`UnorderedMap`, `Vector`, `Set`)
 - Event emission with `app::emit!()`
@@ -87,6 +90,7 @@ Covers:
 - Reference examples (kv-store, collaborative-editor)
 
 Key rules included:
+
 - Never use `std::collections` for state — CRDT collections only
 - `#[app]` macro goes on the `impl` block, not the struct
 - No `println!` — use `env::log()`
@@ -102,6 +106,7 @@ npx @calimero-network/agent-skills calimero-rust-sdk
 For developers building **Calimero WASM applications in TypeScript**.
 
 Covers:
+
 - `@State` class with CRDT collection fields
 - `@Logic(StateClass)` class with callable methods
 - `@Init` static method for seeding initial state
@@ -110,6 +115,7 @@ Covers:
 - WASM runtime constraints (no async in state methods, CRDT types only)
 
 Key rules included:
+
 - State fields must be CRDT types — do not use plain `Map`, `Set`, or arrays for persistent state
 - `@Logic` class must extend the `@State` class
 - `@Init` must be a `static` method returning the state class
@@ -125,12 +131,14 @@ npx @calimero-network/agent-skills calimero-sdk-js
 For developers building **frontends or Node.js services** that connect to a Calimero node.
 
 Covers:
+
 - Authentication and token storage
 - JSON-RPC calls (mutations and views)
 - WebSocket event subscriptions
 - SSO token reading from URL hash
 
 Key rules included:
+
 - `mero-js` v2 uses camelCase (`contextId`, not `context_id`)
 - Always handle 401 with token refresh before surfacing errors
 
@@ -145,6 +153,7 @@ npx @calimero-network/agent-skills calimero-client-js
 For developers **publishing apps** to the Calimero App Registry.
 
 Covers:
+
 - `mero-sign` installation (crates.io and from source)
 - Key generation and security
 - `manifest.json` format and required fields
@@ -153,6 +162,7 @@ Covers:
 - Team / org signing patterns
 
 Key rules included:
+
 - Sign the manifest **before** bundling — not after
 - Never commit `key.json` to version control
 
@@ -167,11 +177,13 @@ npx @calimero-network/agent-skills calimero-registry
 For developers **integrating their app frontend** with Calimero Desktop SSO.
 
 Covers:
+
 - Hash params passed by Desktop (`access_token`, `refresh_token`, `node_url`, `application_id`)
 - Full startup integration pattern (React and vanilla JS)
 - How Desktop discovers the app's frontend URL (`manifest.json` `links.frontend`)
 
 Key rules included:
+
 - Always fall back to manual login when hash params are absent
 
 ```bash
@@ -185,11 +197,13 @@ npx @calimero-network/agent-skills calimero-desktop
 For **node operators** and developers scripting against a live node.
 
 Covers:
+
 - `merod` startup and configuration
 - Full `meroctl` command reference (app, context, identity, call)
 - Context lifecycle (app install → context create → invite → join → sync)
 
 Key rules included:
+
 - Application and context are different — installing an app does not create a context
 
 ```bash
@@ -200,10 +214,11 @@ npx @calimero-network/agent-skills calimero-node
 
 ### calimero-merod
 
-For developers and operators who need deep knowledge of the **`merod` daemon** — init
-options, configuration, health checking, and Docker deployment.
+For developers and operators who need deep knowledge of the **`merod` daemon** — init options,
+configuration, health checking, and Docker deployment.
 
 Covers:
+
 - `merod init` — all flags, data directory layout
 - `merod run` — startup flags and background execution
 - Config file schema (`config.toml`) and defaults
@@ -212,6 +227,7 @@ Covers:
 - Multiple nodes on one machine (port management)
 
 Key rules included:
+
 - Always run `merod init` before `merod run` on a new home directory
 - Never re-init a production node — it destroys the keypair and breaks existing contexts
 - Ports are set at init time; server-port and swarm-port have different consumers
@@ -224,10 +240,10 @@ npx @calimero-network/agent-skills calimero-merod
 
 ### calimero-meroctl
 
-Complete **`meroctl` CLI reference** for developers and operators scripting against a
-running node.
+Complete **`meroctl` CLI reference** for developers and operators scripting against a running node.
 
 Covers:
+
 - All subcommand groups: `node`, `app`, `context`, `call`, `identity`, `namespace`, `group`
 - Every flag for each command
 - Scripting patterns for CI/CD pipelines
@@ -235,6 +251,7 @@ Covers:
 - Dev-mode hot reload (`context create --watch`)
 
 Key rules included:
+
 - Register a node once with `meroctl node add` + `meroctl node use`; omit `--node` after
 - Always pass `--view` for read-only method calls
 
@@ -249,12 +266,14 @@ npx @calimero-network/agent-skills calimero-meroctl
 For developers setting up **local multi-node environments** or CI pipelines.
 
 Covers:
+
 - Merobox installation
 - Workflow YAML format
 - Multi-node setup with app deployment and context creation
 - GitHub Actions integration template
 
 Key rules included:
+
 - Docker must be running before any merobox command
 
 ```bash
@@ -268,11 +287,13 @@ npx @calimero-network/agent-skills calimero-merobox
 For developers using the **Python client** to automate or script against a Calimero node.
 
 Covers:
+
 - Full async API (contexts, apps, identities, blobs, aliases, proposals)
 - Authentication and token caching (`~/.merobox/auth_cache/`)
 - First-time token seeding and CI/CD patterns
 
 Key rules included:
+
 - `node_name` must be stable and unique per node — changing it loses cached tokens
 - All client methods are async and must be awaited
 
@@ -287,6 +308,7 @@ npx @calimero-network/agent-skills calimero-client-py
 For developers **generating typed TypeScript clients** from a Calimero app's ABI manifest.
 
 Covers:
+
 - CLI usage (`npx calimero-abi-codegen -i abi.json -o src/generated`)
 - ABI manifest format (`wasm-abi/1` schema, types, methods, events)
 - Generated output shape (`types.ts` + `{ClientName}.ts`)
@@ -294,6 +316,7 @@ Covers:
 - Integrating codegen into your build script
 
 Key rules included:
+
 - ABI must have `"schema_version": "wasm-abi/1"` — other values are rejected
 - Method, event, and type names must all be unique; map keys must be string
 
@@ -314,14 +337,15 @@ skills/<skill-name>/
 └── rules/            # Hard rules: one file per rule, named after the rule
 ```
 
-The install script appends skill content to your editor's context file, wrapped in
-markers so re-running updates the block cleanly.
+The install script appends skill content to your editor's context file, wrapped in markers so
+re-running updates the block cleanly.
 
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for how to add or update a skill.
 
 Skills should be:
+
 - Based on real API surfaces, not pseudocode
 - Focused on code examples over prose
 - Kept up to date with library releases

@@ -6,9 +6,9 @@ Two specialised CRDT collection types for per-member and immutable data.
 
 ## UserStorage\<T\>
 
-Stores a separate value of type `T` per context member (keyed by public key).
-Each member can only read/write their own value via the current executor identity.
-Reading another member's value requires explicitly passing their public key.
+Stores a separate value of type `T` per context member (keyed by public key). Each member can only
+read/write their own value via the current executor identity. Reading another member's value
+requires explicitly passing their public key.
 
 `T` must implement `BorshSerialize + BorshDeserialize + Mergeable + Default`.
 
@@ -92,22 +92,22 @@ impl AppState {
 
 ### Key methods
 
-| Method | Description |
-|---|---|
-| `insert(value: T)?` | Store value for current executor |
-| `get()?` | Get value for current executor |
-| `get_for_user(key: &PublicKey)?` | Get value for a specific user |
+| Method                           | Description                      |
+| -------------------------------- | -------------------------------- |
+| `insert(value: T)?`              | Store value for current executor |
+| `get()?`                         | Get value for current executor   |
+| `get_for_user(key: &PublicKey)?` | Get value for a specific user    |
 
 ---
 
 ## FrozenStorage\<T\>
 
-Content-addressed, **immutable** storage. Values are keyed by their SHA-256 hash.
-Once inserted, a value can never be modified or deleted.
-All members share the same frozen entries (unlike `UserStorage`).
+Content-addressed, **immutable** storage. Values are keyed by their SHA-256 hash. Once inserted, a
+value can never be modified or deleted. All members share the same frozen entries (unlike
+`UserStorage`).
 
-`T` must implement `BorshSerialize + BorshDeserialize + Into<FrozenValue<T>>`.
-Typically `T` is `String` or a `Vec<u8>`.
+`T` must implement `BorshSerialize + BorshDeserialize + Into<FrozenValue<T>>`. Typically `T` is
+`String` or a `Vec<u8>`.
 
 ```rust
 use calimero_storage::collections::FrozenStorage;
@@ -154,10 +154,10 @@ pub fn get_frozen(&self, hash_hex: String) -> app::Result<Option<String>> {
 
 ### Key methods
 
-| Method | Description |
-|---|---|
+| Method                     | Description                          |
+| -------------------------- | ------------------------------------ |
 | `insert(value: T.into())?` | Store value, returns `[u8; 32]` hash |
-| `get(&hash)?` | Retrieve value by hash |
+| `get(&hash)?`              | Retrieve value by hash               |
 
 ---
 

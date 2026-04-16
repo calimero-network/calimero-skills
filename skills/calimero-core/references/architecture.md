@@ -3,29 +3,32 @@
 ## What merod is
 
 `merod` is the Calimero node daemon. It:
+
 - Hosts and executes WASM applications inside isolated contexts
 - Manages persistent CRDT storage per context
 - Exposes a JSON-RPC + WebSocket API on a configurable HTTP port
 - Participates in a P2P network on a separate swarm port for state sync
 - Issues and validates JWT tokens for client auth
 
-One `merod` process = one node. Multiple nodes can be run on the same machine with
-different `--node` names and different ports.
+One `merod` process = one node. Multiple nodes can be run on the same machine with different
+`--node` names and different ports.
 
 ## What a Context is
 
 A **context** is a sandboxed instance of a WASM application with:
+
 - Its own isolated CRDT state (not shared with other contexts, even of the same app)
 - Its own set of **members** (identities that can call methods and receive events)
 - Its own blob storage
 - A unique `context-id` (hex string)
 
-When a context is created, the app's `init()` / `@Init` method is called once to seed
-the initial state.
+When a context is created, the app's `init()` / `@Init` method is called once to seed the initial
+state.
 
 ## What an Application is
 
 An **application** is a compiled WASM binary + optional manifest. It has:
+
 - A unique `application-id` assigned at install time
 - No state of its own — state lives in contexts that instantiate it
 - One app can power many independent contexts
@@ -35,6 +38,7 @@ Installing an app does NOT create a context. These are always two separate steps
 ## What an Identity is
 
 An **identity** is an Ed25519 keypair managed by the node:
+
 - `identityId` — the base58-encoded public key, used as `executorPublicKey` in RPC calls
 - Identities are created per node (`meroctl identity create`)
 - An identity participates in a context as a member
@@ -64,6 +68,7 @@ WebSocket subscribers
 ## Sync model
 
 State sync is automatic and happens over the P2P network:
+
 - All context members receive all mutations from all other members
 - Conflicts are resolved deterministically by the CRDT merge rules
 - Sync works offline — mutations queue and merge on reconnect
@@ -82,15 +87,15 @@ Node A creates a namespace (trust root)
   → Both nodes now sync CRDT state for that context
 ```
 
-Once joined, state sync is fully automatic. Node B receives all future mutations from
-Node A (and vice versa) without any further configuration.
+Once joined, state sync is fully automatic. Node B receives all future mutations from Node A (and
+vice versa) without any further configuration.
 
 ## Port assignment
 
-| Port | Purpose |
-|---|---|
-| `--server-port` (default 2428) | HTTP/WS API — clients and meroctl connect here |
-| `--swarm-port` (default 2528) | P2P swarm — inter-node state sync, invite protocol |
+| Port                           | Purpose                                            |
+| ------------------------------ | -------------------------------------------------- |
+| `--server-port` (default 2428) | HTTP/WS API — clients and meroctl connect here     |
+| `--swarm-port` (default 2528)  | P2P swarm — inter-node state sync, invite protocol |
 
-These ports must be accessible to meroctl and app clients (server port), and to other
-nodes for sync (swarm port).
+These ports must be accessible to meroctl and app clients (server port), and to other nodes for sync
+(swarm port).

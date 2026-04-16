@@ -18,9 +18,9 @@ function assert(condition, message) {
   }
 }
 
-const skills = fs.readdirSync(SKILLS_DIR).filter((f) =>
-  fs.statSync(path.join(SKILLS_DIR, f)).isDirectory()
-);
+const skills = fs
+  .readdirSync(SKILLS_DIR)
+  .filter((f) => fs.statSync(path.join(SKILLS_DIR, f)).isDirectory());
 
 console.log(`\nChecking ${skills.length} skills...\n`);
 
@@ -28,18 +28,9 @@ for (const skill of skills) {
   console.log(`[${skill}]`);
   const skillDir = path.join(SKILLS_DIR, skill);
 
-  assert(
-    fs.existsSync(path.join(skillDir, 'SKILL.md')),
-    'SKILL.md exists'
-  );
-  assert(
-    fs.existsSync(path.join(skillDir, 'references')),
-    'references/ directory exists'
-  );
-  assert(
-    fs.existsSync(path.join(skillDir, 'rules')),
-    'rules/ directory exists'
-  );
+  assert(fs.existsSync(path.join(skillDir, 'SKILL.md')), 'SKILL.md exists');
+  assert(fs.existsSync(path.join(skillDir, 'references')), 'references/ directory exists');
+  assert(fs.existsSync(path.join(skillDir, 'rules')), 'rules/ directory exists');
 
   const skillMd = path.join(skillDir, 'SKILL.md');
   if (fs.existsSync(skillMd)) {

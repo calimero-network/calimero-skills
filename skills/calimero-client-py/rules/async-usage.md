@@ -1,7 +1,7 @@
 # Rule: All client methods are synchronous — do NOT use await
 
-Despite being built on an async Rust/Tokio runtime internally, all `client.*` methods
-are **synchronous** from Python's perspective. Do NOT use `async`/`await`.
+Despite being built on an async Rust/Tokio runtime internally, all `client.*` methods are
+**synchronous** from Python's perspective. Do NOT use `async`/`await`.
 
 ## WRONG:
 
@@ -44,5 +44,5 @@ print(result)
 
 ## Note
 
-The Tokio async runtime is embedded in the Rust bindings and blocks internally.
-From Python's view, every call is a normal blocking function call.
+The Tokio async runtime is embedded in the Rust bindings and blocks internally. From Python's view,
+every call is a normal blocking function call.

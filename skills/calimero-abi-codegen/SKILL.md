@@ -1,11 +1,12 @@
 # calimero-abi-codegen — Agent Instructions
 
-You are helping a developer use **`calimero-abi-codegen`** to generate typed TypeScript
-clients from a Calimero WASM application's ABI manifest.
+You are helping a developer use **`calimero-abi-codegen`** to generate typed TypeScript clients from
+a Calimero WASM application's ABI manifest.
 
 ## What it does
 
 Takes an `abi.json` file (exported by `calimero-wasm-abi` during the Rust build) and generates:
+
 - TypeScript type definitions matching all Rust types (structs, enums)
 - A typed client class with methods for every app function
 - A `CalimeroBytes` class for handling `Vec<u8>` / byte array types
@@ -26,14 +27,14 @@ calimero-abi-codegen -i abi.json -o src/generated
 
 ## CLI flags
 
-| Flag | Default | Description |
-|---|---|---|
-| `-i, --input <file>` | `abi.json` | Input ABI JSON file |
-| `-o, --outDir <dir>` | `src` | Output directory |
-| `--client-name <Name>` | `Client` | Class name for generated client |
-| `--name-from <path>` | — | Derive class name from a WASM filename |
-| `--import-path <path>` | `@calimero-network/mero-react` | Import for `MeroJs` |
-| `--validate` | — | Validate ABI only, no code generation |
+| Flag                   | Default                        | Description                            |
+| ---------------------- | ------------------------------ | -------------------------------------- |
+| `-i, --input <file>`   | `abi.json`                     | Input ABI JSON file                    |
+| `-o, --outDir <dir>`   | `src`                          | Output directory                       |
+| `--client-name <Name>` | `Client`                       | Class name for generated client        |
+| `--name-from <path>`   | —                              | Derive class name from a WASM filename |
+| `--import-path <path>` | `@calimero-network/mero-react` | Import for `MeroJs`                    |
+| `--validate`           | —                              | Validate ABI only, no code generation  |
 
 ## Quick examples
 
@@ -58,7 +59,10 @@ npx calimero-abi-codegen --validate -i abi.json
 import { MeroJs } from '@calimero-network/mero-react';
 
 // Rust structs → TS interfaces
-export interface Post { id: number; title: string; }
+export interface Post {
+  id: number;
+  title: string;
+}
 
 // Rust enums → discriminated unions
 export type StatusPayload = { name: 'Active' } | { name: 'Archived' };
@@ -69,15 +73,15 @@ export const Status = {
 
 // AbiEvent union (all events the app emits)
 export type AbiEvent =
-  | { name: "Inserted"; payload: Event_Inserted }
-  | { name: "Removed";  payload: Event_Removed };
+  | { name: 'Inserted'; payload: Event_Inserted }
+  | { name: 'Removed'; payload: Event_Removed };
 
 // The generated client class
 export class KvClient {
   constructor(
     private mero: MeroJs,
     private contextId: string,
-    private executorPublicKey: string,
+    private executorPublicKey: string
   ) {}
 
   async set(params: { key: string; value: string }): Promise<void> {
@@ -112,7 +116,7 @@ function MyComponent({ contextId, executorKey }) {
   const mero = useMeroJs();
   const client = useMemo(
     () => new KvClient(mero, contextId, executorKey),
-    [mero, contextId, executorKey],
+    [mero, contextId, executorKey]
   );
 
   const handleSet = async () => {
@@ -123,8 +127,8 @@ function MyComponent({ contextId, executorKey }) {
 
 ## CalimeroBytes
 
-When a Rust method uses `Vec<u8>` or `[u8; N]`, the generator emits `CalimeroBytes`.
-The class handles hex strings, number arrays, and Uint8Array transparently:
+When a Rust method uses `Vec<u8>` or `[u8; N]`, the generator emits `CalimeroBytes`. The class
+handles hex strings, number arrays, and Uint8Array transparently:
 
 ```typescript
 // WASM returns byte arrays as number[] — convertWasmResultToCalimeroBytes handles this
@@ -135,8 +139,8 @@ const bytes: Uint8Array = board.board.toUint8Array();
 
 ## ABI schema version
 
-The input JSON must have `"schema_version": "wasm-abi/1"`. This is produced automatically
-by the `calimero-wasm-abi` build dependency — just add it to `build.rs`:
+The input JSON must have `"schema_version": "wasm-abi/1"`. This is produced automatically by the
+`calimero-wasm-abi` build dependency — just add it to `build.rs`:
 
 ```rust
 fn main() {
@@ -152,5 +156,5 @@ fn main() {
 
 ## References
 
-See `references/` for ABI format, generated output shape, and programmatic API.
-See `rules/` for schema version and unique name requirements.
+See `references/` for ABI format, generated output shape, and programmatic API. See `rules/` for
+schema version and unique name requirements.

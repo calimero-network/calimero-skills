@@ -1,11 +1,11 @@
 # Event Handlers
 
-Event handlers are app methods that run **automatically on every peer** when an event is
-emitted with a named handler. The emitting peer runs the handler immediately; all other
-peers run it when they receive the event during sync.
+Event handlers are app methods that run **automatically on every peer** when an event is emitted
+with a named handler. The emitting peer runs the handler immediately; all other peers run it when
+they receive the event during sync.
 
-This lets you trigger side effects (CRDT updates, counters, bookkeeping) that happen
-consistently on every node without requiring explicit RPC calls.
+This lets you trigger side effects (CRDT updates, counters, bookkeeping) that happen consistently on
+every node without requiring explicit RPC calls.
 
 ---
 
@@ -108,15 +108,15 @@ Handlers must be:
 - **Idempotent** — safe to replay (sync may re-deliver events during catch-up)
 - **Pure w.r.t. CRDT state** — only mutate CRDT fields; avoid logic that depends on exact ordering
 
-Handlers receive the same arguments as the event variant fields. The method signature
-must match exactly.
+Handlers receive the same arguments as the event variant fields. The method signature must match
+exactly.
 
 ---
 
 ## When to use handlers vs regular methods
 
-| Use handler when | Use regular method when |
-|---|---|
+| Use handler when                                         | Use regular method when                      |
+| -------------------------------------------------------- | -------------------------------------------- |
 | You want something to happen on every node automatically | You want a node to call something explicitly |
-| Maintaining derived CRDT counters / aggregates | One-off mutations triggered by one actor |
-| Bookkeeping that must stay consistent across peers | Operations that require authorization checks |
+| Maintaining derived CRDT counters / aggregates           | One-off mutations triggered by one actor     |
+| Bookkeeping that must stay consistent across peers       | Operations that require authorization checks |

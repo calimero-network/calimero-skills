@@ -11,7 +11,8 @@ You are helping a developer build a **Calimero WASM application** in Rust using 
 - `app::Result<T>` is the correct return type for public methods (not `Result<T, String>`)
 - Use `app::bail!(err)` to early-return errors
 - Use `app::log!()` not `env::log!()` or `println!()`
-- Events are declared with `#[app::event]` on an enum and declared on state with `emits = for<'a> Event<'a>`
+- Events are declared with `#[app::event]` on an enum and declared on state with
+  `emits = for<'a> Event<'a>`
 - Private storage uses `#[app::private]` struct + `StructName::private_load_or_default()?`
 - There is no `main()` — the SDK provides the entry point
 
@@ -144,8 +145,10 @@ For `merod` setup and full `meroctl` reference, see `calimero-merod` and `calime
 - State struct derives `BorshDeserialize, BorshSerialize` — **not** `Default`
 - Add `#[borsh(crate = "calimero_sdk::borsh")]` to all borsh types
 - Add `#[serde(crate = "calimero_sdk::serde")]` to all serde types
-- Never use `HashMap`, `Vec`, `BTreeMap` directly for **persisted shared state** — use CRDT collections
-- `Vec<T>` and `Option<T>` are fine for local / return types — just not for fields that need CRDT sync
+- Never use `HashMap`, `Vec`, `BTreeMap` directly for **persisted shared state** — use CRDT
+  collections
+- `Vec<T>` and `Option<T>` are fine for local / return types — just not for fields that need CRDT
+  sync
 - Mutations use `&mut self`, views use `&self`
 - Return `app::Result<T>` for all public methods; use `?` on collection ops
 - Use `app::bail!(err)` to return errors early (like `return Err(err.into())`)
@@ -194,20 +197,25 @@ env::xcall(context_id: &[u8; 32], method: &str, params: &[u8]);
 
 ## Additional features
 
-- **UserStorage** — per-member isolated storage (not synced to others): see `references/user-and-frozen-storage.md`
-- **FrozenStorage** — immutable content-addressed entries: see `references/user-and-frozen-storage.md`
-- **Event handlers** — named callbacks triggered when an event is emitted on any peer: see `references/event-handlers.md`
+- **UserStorage** — per-member isolated storage (not synced to others): see
+  `references/user-and-frozen-storage.md`
+- **FrozenStorage** — immutable content-addressed entries: see
+  `references/user-and-frozen-storage.md`
+- **Event handlers** — named callbacks triggered when an event is emitted on any peer: see
+  `references/event-handlers.md`
 - **Migrations** — `#[app::migrate]` for upgrading state schema: see `references/migrations.md`
 - **Blob API** — streaming binary storage from app logic: see `references/blob-api.md`
-- **Nested CRDTs** — `#[derive(Mergeable)]` for custom structs used as map values: see `references/nested-crdts.md`
+- **Nested CRDTs** — `#[derive(Mergeable)]` for custom structs used as map values: see
+  `references/nested-crdts.md`
 
 ## Related skills
 
-- **`calimero-core`** — runtime concepts (context/app model, JSON-RPC protocol, WebSocket events, CRDT type taxonomy)
+- **`calimero-core`** — runtime concepts (context/app model, JSON-RPC protocol, WebSocket events,
+  CRDT type taxonomy)
 - **`calimero-meroctl`** — full `meroctl` CLI reference for deploying and testing the app
 - **`calimero-merod`** — `merod` daemon setup and health checks
 
 ## References
 
-See `references/` for CRDT collections, events, private storage, and examples.
-See `rules/` for hard constraints the compiler won't catch.
+See `references/` for CRDT collections, events, private storage, and examples. See `rules/` for hard
+constraints the compiler won't catch.

@@ -6,12 +6,13 @@ Subscribe to real-time events emitted by the application running on the node.
 
 The node sends two kinds of events to subscribers:
 
-| type | when | payload |
-|---|---|---|
-| `StateMutation` | Another member mutated shared state | `{ newRoot: string }` |
-| `ExecutionEvent` | App emitted `app::emit!()` | `{ events: ExecutionEvent[] }` |
+| type             | when                                | payload                        |
+| ---------------- | ----------------------------------- | ------------------------------ |
+| `StateMutation`  | Another member mutated shared state | `{ newRoot: string }`          |
+| `ExecutionEvent` | App emitted `app::emit!()`          | `{ events: ExecutionEvent[] }` |
 
-An `ExecutionEvent` entry: `{ kind: string; data: any }` where `kind` matches the Rust event variant name and `data` may be a byte array (UTF-8 JSON) or a plain object.
+An `ExecutionEvent` entry: `{ kind: string; data: any }` where `kind` matches the Rust event variant
+name and `data` may be a byte array (UTF-8 JSON) or a plain object.
 
 ---
 
@@ -29,8 +30,12 @@ function MyComponent({ contextId }: { contextId: string }) {
       for (const e of payload.events) {
         const data = decodeEventData(e.data);
         switch (e.kind) {
-          case 'Inserted': console.log('inserted', data); break;
-          case 'Removed':  console.log('removed', data); break;
+          case 'Inserted':
+            console.log('inserted', data);
+            break;
+          case 'Removed':
+            console.log('removed', data);
+            break;
         }
       }
     }
@@ -39,7 +44,7 @@ function MyComponent({ contextId }: { contextId: string }) {
 
 // Byte-array payloads are JSON-encoded; decode them:
 function decodeEventData(data: unknown): unknown {
-  if (Array.isArray(data) && data.every(n => typeof n === 'number')) {
+  if (Array.isArray(data) && data.every((n) => typeof n === 'number')) {
     try {
       return JSON.parse(new TextDecoder().decode(new Uint8Array(data)));
     } catch {
@@ -86,6 +91,7 @@ ws.addCallback((event) => {
 ```
 
 Cleanup:
+
 ```typescript
 ws.removeCallback(myCallback);
 ws.unsubscribe([contextId]);
@@ -98,7 +104,11 @@ ws.disconnect();
 
 ```typescript
 import { useEffect } from 'react';
-import { WsSubscriptionsClient, getAppEndpointKey, getContextId } from '@calimero-network/calimero-client';
+import {
+  WsSubscriptionsClient,
+  getAppEndpointKey,
+  getContextId,
+} from '@calimero-network/calimero-client';
 
 function useNodeEvents(onEvent: (event: any) => void) {
   useEffect(() => {

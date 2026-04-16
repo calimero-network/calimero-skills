@@ -72,8 +72,8 @@ document.addEventListener('DOMContentLoaded', bootstrap);
 
 ## How Desktop discovers your app's frontend URL
 
-Desktop reads the `links.frontend` field from your app's `manifest.json` inside the
-installed bundle. Set this field so Desktop can open your app:
+Desktop reads the `links.frontend` field from your app's `manifest.json` inside the installed
+bundle. Set this field so Desktop can open your app:
 
 ```json
 {

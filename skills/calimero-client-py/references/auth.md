@@ -1,7 +1,7 @@
 # Authentication & Token Caching
 
-The Python client automatically manages JWT tokens — loading from cache, using them in
-requests, and refreshing on 401.
+The Python client automatically manages JWT tokens — loading from cache, using them in requests, and
+refreshing on 401.
 
 ## Token cache location
 
@@ -18,8 +18,8 @@ path = get_token_cache_path("my-node")
 
 ## First-time authentication
 
-On the first run there are no cached tokens. You need to complete an auth flow (login via
-the admin dashboard or meroctl) and then seed the cache manually:
+On the first run there are no cached tokens. You need to complete an auth flow (login via the admin
+dashboard or meroctl) and then seed the cache manually:
 
 ```python
 import json
@@ -54,8 +54,8 @@ client = create_client(connection)
 
 ## Token refresh
 
-The client automatically retries with a refreshed token on `401 Unauthorized`.
-Refreshed tokens are written back to the cache file automatically.
+The client automatically retries with a refreshed token on `401 Unauthorized`. Refreshed tokens are
+written back to the cache file automatically.
 
 ## CI / automated environments
 

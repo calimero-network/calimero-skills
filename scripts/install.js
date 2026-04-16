@@ -5,9 +5,9 @@ const fs = require('fs');
 const path = require('path');
 
 const SKILLS_DIR = path.join(__dirname, '..', 'skills');
-const VALID_SKILLS = fs.readdirSync(SKILLS_DIR).filter((f) =>
-  fs.statSync(path.join(SKILLS_DIR, f)).isDirectory()
-);
+const VALID_SKILLS = fs
+  .readdirSync(SKILLS_DIR)
+  .filter((f) => fs.statSync(path.join(SKILLS_DIR, f)).isDirectory());
 
 const TARGETS = {
   claude: 'CLAUDE.md',

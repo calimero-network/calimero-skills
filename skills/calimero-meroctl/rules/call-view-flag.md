@@ -4,10 +4,10 @@
 
 ## Why
 
-Without `--view`, the node treats the call as a mutation — it persists the state after
-the call and broadcasts a `StateMutation` event to all context members. For read-only
-methods this is wasteful (unnecessary writes and network traffic) and may cause
-unexpected state mutation events in subscribers.
+Without `--view`, the node treats the call as a mutation — it persists the state after the call and
+broadcasts a `StateMutation` event to all context members. For read-only methods this is wasteful
+(unnecessary writes and network traffic) and may cause unexpected state mutation events in
+subscribers.
 
 ## How to identify view methods
 

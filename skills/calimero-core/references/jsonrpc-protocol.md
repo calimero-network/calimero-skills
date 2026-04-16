@@ -75,8 +75,8 @@ Response (error): {
 
 - `argsJson` is a **JSON string** (double-encoded) — not an inline object.
 - `executorPublicKey` is the base58 public key of the identity making the call.
-- Mutations and views use the same endpoint; views skip state persistence.
-  The `mero-js` / `mero-react` SDK handles this transparently.
+- Mutations and views use the same endpoint; views skip state persistence. The `mero-js` /
+  `mero-react` SDK handles this transparently.
 
 ---
 
@@ -174,19 +174,19 @@ After connecting, send a subscribe message:
 { "action": "subscribe", "contextIds": ["<context-id>"] }
 ```
 
-The node will push `ExecutionEvent` and `StateMutation` messages.
-See `websocket-events.md` for the full schema.
+The node will push `ExecutionEvent` and `StateMutation` messages. See `websocket-events.md` for the
+full schema.
 
 ---
 
 ## Error codes
 
-| HTTP status | Meaning |
-|---|---|
-| `400` | Bad request — malformed JSON, missing fields |
-| `401` | Unauthorized — missing or expired access token |
-| `403` | Forbidden — identity not a context member |
-| `404` | Not found — unknown context or application ID |
-| `500` | Internal server error — WASM execution panic or storage error |
+| HTTP status | Meaning                                                       |
+| ----------- | ------------------------------------------------------------- |
+| `400`       | Bad request — malformed JSON, missing fields                  |
+| `401`       | Unauthorized — missing or expired access token                |
+| `403`       | Forbidden — identity not a context member                     |
+| `404`       | Not found — unknown context or application ID                 |
+| `500`       | Internal server error — WASM execution panic or storage error |
 
 On `401`, refresh the access token and retry.

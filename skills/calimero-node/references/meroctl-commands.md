@@ -11,6 +11,7 @@ meroctl --home ~/.calimero <command>        # alternate config path
 ```
 
 Register a node once, then use by name:
+
 ```bash
 meroctl node add node1 /path/to/home       # local node
 meroctl node add mynode http://node.com    # remote node

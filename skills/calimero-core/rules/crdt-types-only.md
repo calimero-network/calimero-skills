@@ -17,8 +17,8 @@ struct AppState {
 // WRONG — same problem in TypeScript:
 @State
 class AppState {
-  items: Map<string, string> = new Map();  // ❌
-  log:   string[]            = [];         // ❌
+  items: Map<string, string> = new Map(); // ❌
+  log: string[] = []; // ❌
 }
 ```
 
@@ -40,16 +40,16 @@ import { UnorderedMap, Vector } from '@calimero-network/calimero-sdk-js/collecti
 
 @State
 class AppState {
-  items: UnorderedMap<string, string> = new UnorderedMap();  // ✓
-  log:   Vector<string>               = new Vector();         // ✓
+  items: UnorderedMap<string, string> = new UnorderedMap(); // ✓
+  log: Vector<string> = new Vector(); // ✓
 }
 ```
 
 ## Why
 
-Standard collections have no merge semantics. When two context members both write to a
-`HashMap` while offline, merging their states is undefined — the CRDT engine cannot
-resolve conflicts automatically and data will be silently lost or overwritten.
+Standard collections have no merge semantics. When two context members both write to a `HashMap`
+while offline, merging their states is undefined — the CRDT engine cannot resolve conflicts
+automatically and data will be silently lost or overwritten.
 
-CRDT collections are designed for exactly this scenario: they guarantee that all members
-converge to the same state regardless of write order or network partitions.
+CRDT collections are designed for exactly this scenario: they guarantee that all members converge to
+the same state regardless of write order or network partitions.

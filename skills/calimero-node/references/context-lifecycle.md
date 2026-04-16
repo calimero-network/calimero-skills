@@ -1,13 +1,14 @@
 # Context Lifecycle
 
-A **context** is an isolated instance of an application with its own members, CRDT state, and storage.
+A **context** is an isolated instance of an application with its own members, CRDT state, and
+storage.
 
 ## App vs Context
 
-| Concept | What it is | Analogy |
-| --- | --- | --- |
-| Application | WASM binary + manifest | A class / template |
-| Context | Running instance of an app | An object / instance |
+| Concept     | What it is                 | Analogy              |
+| ----------- | -------------------------- | -------------------- |
+| Application | WASM binary + manifest     | A class / template   |
+| Context     | Running instance of an app | An object / instance |
 
 One application can power many independent contexts. Each context has completely isolated state.
 
@@ -38,6 +39,7 @@ meroctl --node node1 context create --application-id <application-id>
 ```
 
 Dev mode — auto-reinstalls when the WASM file changes:
+
 ```bash
 meroctl --node node1 context create --watch path/to/app.wasm
 ```

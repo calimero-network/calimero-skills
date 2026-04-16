@@ -1,24 +1,24 @@
 # CRDT State Collections
 
-Calimero provides conflict-free replicated data types for application state.
-All collections are imported from `calimero_storage::collections`.
+Calimero provides conflict-free replicated data types for application state. All collections are
+imported from `calimero_storage::collections`.
 
-> **Critical:** Do NOT use `calimero_sdk::state::*` — that path no longer exists.
-> The correct import is `calimero_storage::collections::*`.
+> **Critical:** Do NOT use `calimero_sdk::state::*` — that path no longer exists. The correct import
+> is `calimero_storage::collections::*`.
 
 ## Available Collections
 
-| Type | Use for | Notes |
-|---|---|---|
-| `UnorderedMap<K, V>` | Key-value mapping | Most collection ops return `Result<>` — use `?` |
-| `UnorderedSet<T>` | Unique value set | |
-| `Vector<T>` | Ordered list (append-only) | |
-| `LwwRegister<T>` | Single last-write-wins value | Wrap map values: `UnorderedMap<K, LwwRegister<V>>` |
-| `Counter` | Grow-only counter (GCounter by default) | `.increment()`, `.value()` |
-| `Counter<true>` | PN-Counter (supports decrement) | Same API + `.decrement()` |
-| `FrozenStorage<T>` | Immutable content-addressed entries | |
-| `UserStorage<T>` | Per-member isolated storage | Not synced to other members |
-| `ReplicatedGrowableArray` | CRDT text / ordered sequence | Collaborative editing |
+| Type                      | Use for                                 | Notes                                              |
+| ------------------------- | --------------------------------------- | -------------------------------------------------- |
+| `UnorderedMap<K, V>`      | Key-value mapping                       | Most collection ops return `Result<>` — use `?`    |
+| `UnorderedSet<T>`         | Unique value set                        |                                                    |
+| `Vector<T>`               | Ordered list (append-only)              |                                                    |
+| `LwwRegister<T>`          | Single last-write-wins value            | Wrap map values: `UnorderedMap<K, LwwRegister<V>>` |
+| `Counter`                 | Grow-only counter (GCounter by default) | `.increment()`, `.value()`                         |
+| `Counter<true>`           | PN-Counter (supports decrement)         | Same API + `.decrement()`                          |
+| `FrozenStorage<T>`        | Immutable content-addressed entries     |                                                    |
+| `UserStorage<T>`          | Per-member isolated storage             | Not synced to other members                        |
+| `ReplicatedGrowableArray` | CRDT text / ordered sequence            | Collaborative editing                              |
 
 ## Import
 
@@ -122,13 +122,14 @@ pub fn init() -> AppState {
 ## Keys and values must implement
 
 - `BorshSerialize + BorshDeserialize`
-- Values in UnorderedMap are typically wrapped in `LwwRegister<V>` — this handles conflict resolution automatically
+- Values in UnorderedMap are typically wrapped in `LwwRegister<V>` — this handles conflict
+  resolution automatically
 
 ## Important
 
-CRDT collections handle concurrent writes from different context members automatically —
-you never need to manually resolve conflicts. Writes from different members are merged
-deterministically using the DAG-based sync engine.
+CRDT collections handle concurrent writes from different context members automatically — you never
+need to manually resolve conflicts. Writes from different members are merged deterministically using
+the DAG-based sync engine.
 
-Collection operations are **fallible** — always propagate errors with `?`. Panicking inside
-a WASM method aborts the execution and rolls back state.
+Collection operations are **fallible** — always propagate errors with `?`. Panicking inside a WASM
+method aborts the execution and rolls back state.

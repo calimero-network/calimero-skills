@@ -4,10 +4,10 @@ You are helping a developer **build and publish a Calimero app bundle** to the A
 
 ## Two tools
 
-| Tool | Install | Purpose |
-| --- | --- | --- |
-| `calimero-registry` | `npm install -g @calimero-network/registry-cli` | Bundle creation and registry push |
-| `mero-sign` | `cargo install mero-sign` | Ed25519 key management and manifest signing (for ownership) |
+| Tool                | Install                                         | Purpose                                                     |
+| ------------------- | ----------------------------------------------- | ----------------------------------------------------------- |
+| `calimero-registry` | `npm install -g @calimero-network/registry-cli` | Bundle creation and registry push                           |
+| `mero-sign`         | `cargo install mero-sign`                       | Ed25519 key management and manifest signing (for ownership) |
 
 ## Quick workflow
 
@@ -40,9 +40,8 @@ calimero-registry bundle push myapp-1.0.0.mpk --remote
 
 ## Signing for ownership (optional but recommended)
 
-The registry tracks package ownership via Ed25519 signatures. If you sign the manifest,
-your key becomes the package owner — only your key (or keys in `manifest.owners`) can
-push future versions.
+The registry tracks package ownership via Ed25519 signatures. If you sign the manifest, your key
+becomes the package owner — only your key (or keys in `manifest.owners`) can push future versions.
 
 ```bash
 # Generate signing key (one-time)
@@ -58,19 +57,19 @@ calimero-registry bundle push myapp-1.0.0.mpk --remote
 
 ## Bundle create flags
 
-| Flag | Required | Description |
-| --- | --- | --- |
-| `<wasm-file>` | Yes | Path to WASM binary (positional) |
-| `[package]` | Yes | Reverse-domain package name (e.g. `com.yourorg.myapp`) |
-| `[version]` | Yes | SemVer version (e.g. `1.0.0`) |
-| `-o, --output <path>` | No | Output `.mpk` filename |
-| `-m, --manifest <path>` | No | Read config from a manifest JSON file |
-| `--name <name>` | No | App display name |
-| `--description <text>` | No | Short description |
-| `--author <name>` | No | Author name |
-| `--frontend <url>` | No | Frontend URL (used by Desktop to open the app) |
-| `--github <url>` | No | Source repository URL |
-| `--docs <url>` | No | Documentation URL |
+| Flag                    | Required | Description                                            |
+| ----------------------- | -------- | ------------------------------------------------------ |
+| `<wasm-file>`           | Yes      | Path to WASM binary (positional)                       |
+| `[package]`             | Yes      | Reverse-domain package name (e.g. `com.yourorg.myapp`) |
+| `[version]`             | Yes      | SemVer version (e.g. `1.0.0`)                          |
+| `-o, --output <path>`   | No       | Output `.mpk` filename                                 |
+| `-m, --manifest <path>` | No       | Read config from a manifest JSON file                  |
+| `--name <name>`         | No       | App display name                                       |
+| `--description <text>`  | No       | Short description                                      |
+| `--author <name>`       | No       | Author name                                            |
+| `--frontend <url>`      | No       | Frontend URL (used by Desktop to open the app)         |
+| `--github <url>`        | No       | Source repository URL                                  |
+| `--docs <url>`          | No       | Documentation URL                                      |
 
 ## Bundle push flags
 
@@ -122,9 +121,10 @@ calimero-registry bundle push myapp-1.1.0.mpk --remote
 ## Related skills
 
 - **`calimero-rust-sdk`** — building the WASM app that gets published
-- **`calimero-core`** — application/context model and how the registry integrates with node app install
+- **`calimero-core`** — application/context model and how the registry integrates with node app
+  install
 
 ## References
 
-See `references/` for manifest format, signing details, and push workflow.
-See `rules/` for hard constraints.
+See `references/` for manifest format, signing details, and push workflow. See `rules/` for hard
+constraints.

@@ -5,6 +5,7 @@ You are helping a developer run and configure the **`merod` Calimero node daemon
 ## What merod is
 
 `merod` is the Calimero node runtime. It:
+
 - Executes WASM applications inside isolated contexts
 - Manages persistent CRDT storage
 - Exposes a JSON-RPC + WebSocket HTTP API (default port 2428)
@@ -27,19 +28,19 @@ merod --node node1 run
 
 ## Key flags
 
-| Flag | Purpose | Default |
-|---|---|---|
-| `--node <name>` | Node identity name (used to namespace config files) | required |
-| `--home <path>` | Base directory for all config and data | system config dir |
-| `--server-port <port>` | HTTP/WS API port (init only) | `2428` |
-| `--swarm-port <port>` | P2P swarm port (init only) | `2528` |
+| Flag                   | Purpose                                             | Default           |
+| ---------------------- | --------------------------------------------------- | ----------------- |
+| `--node <name>`        | Node identity name (used to namespace config files) | required          |
+| `--home <path>`        | Base directory for all config and data              | system config dir |
+| `--server-port <port>` | HTTP/WS API port (init only)                        | `2428`            |
+| `--swarm-port <port>`  | P2P swarm port (init only)                          | `2528`            |
 
 ## Port responsibilities
 
-| Port | What connects to it |
-|---|---|
-| `--server-port` (2428) | meroctl, app clients, browser frontends, Python client |
-| `--swarm-port` (2528) | Other `merod` nodes (P2P state sync, namespace invite protocol) |
+| Port                   | What connects to it                                             |
+| ---------------------- | --------------------------------------------------------------- |
+| `--server-port` (2428) | meroctl, app clients, browser frontends, Python client          |
+| `--swarm-port` (2528)  | Other `merod` nodes (P2P state sync, namespace invite protocol) |
 
 Both ports must be open / reachable for multi-node setups.
 

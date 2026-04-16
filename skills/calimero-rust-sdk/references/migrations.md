@@ -1,11 +1,11 @@
 # State Schema Migrations
 
-When you need to change the shape of your app's state (add a field, rename a field,
-change a type), use `#[app::migrate]` to write a migration function that converts
-the old Borsh bytes to the new state struct.
+When you need to change the shape of your app's state (add a field, rename a field, change a type),
+use `#[app::migrate]` to write a migration function that converts the old Borsh bytes to the new
+state struct.
 
-The migration runs **once** when the upgraded WASM is installed on a context that has
-existing state. New contexts (no prior state) call `#[app::init]` as normal.
+The migration runs **once** when the upgraded WASM is installed on a context that has existing
+state. New contexts (no prior state) call `#[app::init]` as normal.
 
 ---
 
@@ -97,20 +97,20 @@ use calimero_sdk::state::read_raw;
 let bytes: Option<Vec<u8>> = read_raw();
 ```
 
-Returns the raw Borsh-encoded bytes of the current state, or `None` if no state exists
-(fresh context). Always `unwrap` with a clear panic message — a missing state during
-migration is a programmer error.
+Returns the raw Borsh-encoded bytes of the current state, or `None` if no state exists (fresh
+context). Always `unwrap` with a clear panic message — a missing state during migration is a
+programmer error.
 
 ---
 
 ## Migration scenarios
 
-| Change | How to handle |
-|---|---|
-| Add a field | New field with default value in migrate fn |
-| Remove a field | Simply don't include it in new struct |
-| Rename a field | Map old field name to new field name |
-| Change a type | Deserialize old, convert value, assign to new type |
+| Change         | How to handle                                      |
+| -------------- | -------------------------------------------------- |
+| Add a field    | New field with default value in migrate fn         |
+| Remove a field | Simply don't include it in new struct              |
+| Rename a field | Map old field name to new field name               |
+| Change a type  | Deserialize old, convert value, assign to new type |
 
 ---
 
@@ -118,5 +118,6 @@ migration is a programmer error.
 
 - The migration function must return the **exact** new state type decorated with `#[app::state]`
 - The old struct needs only `BorshDeserialize` — do NOT put `#[app::state]` on it
-- Keep old struct definitions in the source file (or a `migrations` module) as long as the migration exists
+- Keep old struct definitions in the source file (or a `migrations` module) as long as the migration
+  exists
 - Do NOT call `read_raw()` outside of `#[app::migrate]` — it's only valid in that context

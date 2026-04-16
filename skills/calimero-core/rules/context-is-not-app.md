@@ -4,13 +4,13 @@
 
 ## What this means
 
-- `meroctl app install` → registers the WASM binary. Returns an `application-id`.
-  No state exists yet. No context exists yet.
-- `meroctl context create --application-id <id>` → creates a context. Calls `init()`.
-  State now exists. The context has a `context-id`.
+- `meroctl app install` → registers the WASM binary. Returns an `application-id`. No state exists
+  yet. No context exists yet.
+- `meroctl context create --application-id <id>` → creates a context. Calls `init()`. State now
+  exists. The context has a `context-id`.
 
-These are always **two separate commands**. You cannot skip the first step and jump
-straight to calling methods.
+These are always **two separate commands**. You cannot skip the first step and jump straight to
+calling methods.
 
 ## Why this matters
 
@@ -31,6 +31,5 @@ meroctl call ???                             # WRONG — no context yet
 
 ## Analogy
 
-Think of an Application as a class definition and a Context as an instance of that class.
-You can have many contexts (instances) from one application (class), each with completely
-isolated state.
+Think of an Application as a class definition and a Context as an instance of that class. You can
+have many contexts (instances) from one application (class), each with completely isolated state.

@@ -14,15 +14,15 @@ merod --node node1 run
 
 ## What goes wrong without init
 
-Running `merod run` on an uninitialised home fails immediately — the node has no
-config file, no keypair, and no storage directory. The error will be something like
-`config not found` or `identity not found`.
+Running `merod run` on an uninitialised home fails immediately — the node has no config file, no
+keypair, and no storage directory. The error will be something like `config not found` or
+`identity not found`.
 
 ## Re-initialising loses all data
 
-Running `merod init` on a home that already has data will **overwrite the config and
-generate a new keypair**, effectively destroying the node's identity and making all
-existing contexts unreachable (their members' trust roots refer to the old keypair).
+Running `merod init` on a home that already has data will **overwrite the config and generate a new
+keypair**, effectively destroying the node's identity and making all existing contexts unreachable
+(their members' trust roots refer to the old keypair).
 
 **Never re-init a production node home.**
 

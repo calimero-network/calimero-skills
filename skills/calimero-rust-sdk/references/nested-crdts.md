@@ -1,8 +1,7 @@
 # Nested CRDTs and Mergeable
 
-When you use a custom struct as a value in `UnorderedMap<K, V>` or `UserStorage<T>`,
-that struct must implement `Mergeable` so the CRDT engine knows how to resolve concurrent
-writes.
+When you use a custom struct as a value in `UnorderedMap<K, V>` or `UserStorage<T>`, that struct
+must implement `Mergeable` so the CRDT engine knows how to resolve concurrent writes.
 
 Two ways: derive macro (easiest) or manual impl.
 
@@ -88,8 +87,8 @@ impl Mergeable for UserProfile {
 }
 ```
 
-For structs with non-CRDT primitive fields (e.g. `u64` timestamps), pick a merge strategy
-explicitly — typically last-write-wins based on a timestamp field:
+For structs with non-CRDT primitive fields (e.g. `u64` timestamps), pick a merge strategy explicitly
+— typically last-write-wins based on a timestamp field:
 
 ```rust
 impl Mergeable for FileRecord {

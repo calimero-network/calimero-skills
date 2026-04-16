@@ -26,8 +26,7 @@ meroctl --node node1 call <ctx-id> get --args '{}' --view
 
 ## Exception: multiple nodes
 
-When scripting across multiple nodes in one session, use explicit `--node` to avoid
-ambiguity:
+When scripting across multiple nodes in one session, use explicit `--node` to avoid ambiguity:
 
 ```bash
 meroctl --node node1 namespace invite <ns-id>   # Node A generates invite

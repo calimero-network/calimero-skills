@@ -2,8 +2,8 @@
 
 ## merod init
 
-Initialises a new node home directory: generates key material, writes the config file,
-and creates the storage directory. Run **once** per node, before the first `merod run`.
+Initialises a new node home directory: generates key material, writes the config file, and creates
+the storage directory. Run **once** per node, before the first `merod run`.
 
 ```bash
 merod --node <name> init [flags]
@@ -11,12 +11,12 @@ merod --node <name> init [flags]
 
 ### Flags
 
-| Flag | Required | Default | Description |
-|---|---|---|---|
-| `--node <name>` | Yes | — | Node identity name. Namespaces config files under `<home>/<name>/`. |
-| `--home <path>` | No | OS config dir | Base directory. All node data lives under `<home>/<name>/`. |
-| `--server-port <port>` | No | `2428` | HTTP/WS API port. Clients and meroctl connect here. |
-| `--swarm-port <port>` | No | `2528` | P2P port. Other merod nodes connect here for state sync. |
+| Flag                   | Required | Default       | Description                                                         |
+| ---------------------- | -------- | ------------- | ------------------------------------------------------------------- |
+| `--node <name>`        | Yes      | —             | Node identity name. Namespaces config files under `<home>/<name>/`. |
+| `--home <path>`        | No       | OS config dir | Base directory. All node data lives under `<home>/<name>/`.         |
+| `--server-port <port>` | No       | `2428`        | HTTP/WS API port. Clients and meroctl connect here.                 |
+| `--swarm-port <port>`  | No       | `2528`        | P2P port. Other merod nodes connect here for state sync.            |
 
 ### Examples
 
@@ -47,10 +47,10 @@ merod --node <name> run [flags]
 
 ### Flags
 
-| Flag | Required | Default | Description |
-|---|---|---|---|
-| `--node <name>` | Yes | — | Must match the name used during `init`. |
-| `--home <path>` | No | OS config dir | Must match the home used during `init`. |
+| Flag            | Required | Default       | Description                             |
+| --------------- | -------- | ------------- | --------------------------------------- |
+| `--node <name>` | Yes      | —             | Must match the name used during `init`. |
+| `--home <path>` | No       | OS config dir | Must match the home used during `init`. |
 
 ### Examples
 
@@ -79,6 +79,6 @@ After `init`, the following structure is created under `<home>/<node-name>/`:
     └── data/            # CRDT storage, application binaries
 ```
 
-**Do not edit `config.toml` manually unless you know what you are changing.**
-Port numbers are written to config during `init` and cannot be changed without
-re-initialising or manually editing the config.
+**Do not edit `config.toml` manually unless you know what you are changing.** Port numbers are
+written to config during `init` and cannot be changed without re-initialising or manually editing
+the config.

@@ -25,16 +25,16 @@ Produces:
 ```json
 {
   "private_key": "PZbZ5yM9t63qOHMM-CCzExbNv8u79XTxZT9UW8GQJ60",
-  "public_key":  "yuKE404BaldXazEIUC4XrVGFyXxxyoRVjrrGhcKk1P4",
-  "signer_id":   "did:key:z6Mkt7Ejb12a1BxvRiUpd5YWkMrk8KVjaShW2vMt6trm7FGH"
+  "public_key": "yuKE404BaldXazEIUC4XrVGFyXxxyoRVjrrGhcKk1P4",
+  "signer_id": "did:key:z6Mkt7Ejb12a1BxvRiUpd5YWkMrk8KVjaShW2vMt6trm7FGH"
 }
 ```
 
-| Field | Description |
-| --- | --- |
-| `private_key` | Base64url Ed25519 secret (32 bytes). Never share or commit. |
-| `public_key` | Base64url public key (32 bytes). Embedded in every signed manifest. |
-| `signer_id` | `did:key` DID representation. Used as identity reference in the registry. |
+| Field         | Description                                                               |
+| ------------- | ------------------------------------------------------------------------- |
+| `private_key` | Base64url Ed25519 secret (32 bytes). Never share or commit.               |
+| `public_key`  | Base64url public key (32 bytes). Embedded in every signed manifest.       |
+| `signer_id`   | `did:key` DID representation. Used as identity reference in the registry. |
 
 ## Sign a manifest
 
@@ -63,7 +63,8 @@ mero-sign sign manifest.json --key key.json
 
 ## Team workflow
 
-Each developer keeps their own key — the registry validates org membership via authenticated email, not by which key was used.
+Each developer keeps their own key — the registry validates org membership via authenticated email,
+not by which key was used.
 
 ```bash
 # Each developer once:

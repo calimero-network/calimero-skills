@@ -1,7 +1,7 @@
 # Python Client API Reference
 
-> All methods are **synchronous** — no `await` needed. The async Tokio runtime is managed
-> internally by the Rust bindings.
+> All methods are **synchronous** — no `await` needed. The async Tokio runtime is managed internally
+> by the Rust bindings.
 
 ## Setup
 

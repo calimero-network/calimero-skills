@@ -10,8 +10,8 @@ CTX_ID=$(meroctl context create --application-id "$APP_ID" | grep -oP '(?<=conte
 meroctl call "$CTX_ID" set --args '{"key":"hello","value":"world"}'
 ```
 
-> Check the actual output format of your `merod` version — the label text may vary.
-> Use `--as-json` if available to get machine-readable output.
+> Check the actual output format of your `merod` version — the label text may vary. Use `--as-json`
+> if available to get machine-readable output.
 
 ## JSON output (if supported)
 
@@ -48,8 +48,8 @@ meroctl --as-json app ls
 
 ## Dev-mode hot reload
 
-Use `--watch` during development to automatically reinstall the WASM and update the
-context whenever the file changes:
+Use `--watch` during development to automatically reinstall the WASM and update the context whenever
+the file changes:
 
 ```bash
 # Watches app.wasm, reinstalls on change
