@@ -1,13 +1,13 @@
 # Rule: Use env.log() — not console.log()
 
-`console` is not available in the QuickJS/WASM runtime. Calling `console.log()` will
-throw a runtime error. Use `env.log()` from the SDK's env module instead.
+`console` is not available in the QuickJS/WASM runtime. Calling `console.log()` will throw a runtime
+error. Use `env.log()` from the SDK's env module instead.
 
 ## WRONG:
 
 ```typescript
-console.log('Processing item:', key);        // ✗ — throws at runtime
-console.error('Something went wrong');       // ✗ — throws at runtime
+console.log('Processing item:', key); // ✗ — throws at runtime
+console.error('Something went wrong'); // ✗ — throws at runtime
 ```
 
 ## CORRECT:
@@ -15,8 +15,8 @@ console.error('Something went wrong');       // ✗ — throws at runtime
 ```typescript
 import * as env from '@calimero-network/calimero-sdk-js/env';
 
-env.log(`Processing item: ${key}`);          // ✓ — output appears in node logs
-env.log(`Error: ${error}`);                  // ✓
+env.log(`Processing item: ${key}`); // ✓ — output appears in node logs
+env.log(`Error: ${error}`); // ✓
 ```
 
 ## env.log() format

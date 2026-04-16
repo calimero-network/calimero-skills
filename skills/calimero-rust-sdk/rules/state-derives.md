@@ -1,8 +1,7 @@
 # Rule: State struct must derive Default, BorshDeserialize, BorshSerialize
 
-The three derives are all required. Missing any one of them causes a **runtime panic**,
-not a compile error — the app will install and start, then crash when the context is
-first accessed.
+The three derives are all required. Missing any one of them causes a **runtime panic**, not a
+compile error — the app will install and start, then crash when the context is first accessed.
 
 ## WRONG — missing derives:
 
@@ -30,11 +29,11 @@ pub struct AppState {
 
 ## What each derive does
 
-| Derive | Required for |
-| --- | --- |
-| `Default` | `#[app::init]` calls `AppState::default()` as the baseline |
-| `BorshDeserialize` | Loading state from node storage on every method call |
-| `BorshSerialize` | Saving state to node storage after every mutation |
+| Derive             | Required for                                               |
+| ------------------ | ---------------------------------------------------------- |
+| `Default`          | `#[app::init]` calls `AppState::default()` as the baseline |
+| `BorshDeserialize` | Loading state from node storage on every method call       |
+| `BorshSerialize`   | Saving state to node storage after every mutation          |
 
 ## Import
 
@@ -42,5 +41,5 @@ pub struct AppState {
 use calimero_sdk::borsh::{BorshDeserialize, BorshSerialize};
 ```
 
-Do not use `borsh` crate directly — import from `calimero_sdk::borsh` to ensure
-version compatibility.
+Do not use `borsh` crate directly — import from `calimero_sdk::borsh` to ensure version
+compatibility.

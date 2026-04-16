@@ -1,16 +1,31 @@
 # Bundle Create & Push
 
-## calimero-registry CLI
+## Install
 
 ```bash
-npm install -g calimero-registry
+npm install -g @calimero-network/registry-cli
 # or
-pnpm add -g calimero-registry
+pnpm add -g @calimero-network/registry-cli
+```
+
+## One-time configuration
+
+```bash
+calimero-registry config set registry-url https://apps.calimero.network
+calimero-registry config set api-key your-api-key
+calimero-registry config list
+```
+
+Or use environment variables:
+
+```bash
+export CALIMERO_REGISTRY_URL=https://apps.calimero.network
+export CALIMERO_API_KEY=your-api-key
 ```
 
 ## Bundle create
 
-Packages the signed manifest and WASM binary into a `.mpk` file:
+Creates an `.mpk` bundle from a WASM file:
 
 ```bash
 calimero-registry bundle create \
@@ -18,52 +33,102 @@ calimero-registry bundle create \
   --name "My App" \
   --description "Does something useful" \
   --author "Your Name" \
-  --frontend "https://my-app-frontend.com" \
-  --github "https://github.com/yourorg/your-app" \
+  --frontend "https://my-app.com" \
+  --github "https://github.com/yourorg/myapp" \
   path/to/app.wasm \
-  com.yourorg.myapp
+  com.yourorg.myapp \
+  1.0.0
 ```
 
-| Flag | Required | Description |
-| --- | --- | --- |
-| `--output` | Yes | Output `.mpk` filename |
-| `--name` | Yes | App display name |
-| `--description` | Yes | Short description |
-| `--author` | Yes | Author name |
-| `--frontend` | No | Frontend URL (used by Desktop) |
-| `--github` | No | Source repository URL |
+Positional arguments: `<wasm-file> [package] [version]`
 
-The positional args are: `<wasm-path>` `<app-id>` (reverse-domain, e.g. `com.yourorg.appname`).
+| Flag                    | Required | Description                                      |
+| ----------------------- | -------- | ------------------------------------------------ |
+| `-o, --output <path>`   | No       | Output `.mpk` filename                           |
+| `-m, --manifest <path>` | No       | Read metadata from a manifest JSON file          |
+| `--name <name>`         | No       | App display name                                 |
+| `--description <text>`  | No       | Short description                                |
+| `--author <name>`       | No       | Author name                                      |
+| `--frontend <url>`      | No       | Frontend URL (Desktop uses this to open the app) |
+| `--github <url>`        | No       | Source repository URL                            |
+| `--docs <url>`          | No       | Documentation URL                                |
+
+After creating, the CLI prints sign instructions:
+
+```text
+1. Sign the manifest:  mero-sign sign <output>/manifest.json --key key.json
+2. Push the bundle:    calimero-registry bundle push <output> --remote
+```
 
 ## Bundle push
 
 ```bash
-calimero-registry bundle push myapp-1.0.0.mpk --key my-key.json
+# Push to remote registry (uses config file values)
+calimero-registry bundle push myapp-1.0.0.mpk --remote
+
+# Push to local registry
+calimero-registry bundle push myapp-1.0.0.mpk --local
+
+# Override config
+calimero-registry bundle push myapp-1.0.0.mpk \
+  --remote \
+  --url https://apps.calimero.network \
+  --api-key your-api-key
 ```
 
-The registry will:
-1. Unpack the `.mpk`
-2. Verify the Ed25519 signature against the manifest
-3. Validate your authenticated email against org membership (if publishing to an org)
-4. Store the bundle and make it discoverable
+## Full publish workflow
 
-## On signature mismatch
+```bash
+# 1. Build WASM
+./build.sh
 
-If the manifest was modified after signing, the push returns:
+# 2. Create bundle
+calimero-registry bundle create \
+  --output myapp-1.0.0.mpk \
+  --name "My App" \
+  --frontend "https://my-app.com" \
+  path/to/app.wasm \
+  com.yourorg.myapp \
+  1.0.0
+
+# 3. (Optional) Sign manifest for ownership
+mero-sign sign myapp-1.0.0/manifest.json --key my-key.json
+
+# 4. Push
+calimero-registry bundle push myapp-1.0.0.mpk --remote
 ```
-400 invalid_signature
-```
-
-Re-sign the manifest and recreate the bundle.
 
 ## Updating an existing app (new version)
 
 ```bash
-# Bump version in manifest.json
-mero-sign sign dist/myapp-1.1.0/manifest.json --key my-key.json
-calimero-registry bundle create --output myapp-1.1.0.mpk ...
-calimero-registry bundle push myapp-1.1.0.mpk --key my-key.json
+calimero-registry bundle create \
+  --output myapp-1.1.0.mpk \
+  --name "My App" \
+  path/to/app.wasm \
+  com.yourorg.myapp \
+  1.1.0
+
+calimero-registry bundle push myapp-1.1.0.mpk --remote
 ```
 
-The registry accepts any new semver version. The first publisher of an app name becomes
-the owner; only org members can push subsequent versions (validated by email).
+## CI/CD (GitHub Actions)
+
+```yaml
+- name: Install Registry CLI
+  run: npm install -g @calimero-network/registry-cli
+
+- name: Create Bundle
+  run: |
+    calimero-registry bundle create \
+      --output app-${{ github.event.release.tag_name }}.mpk \
+      --name "My Application" \
+      ./app.wasm \
+      com.yourorg.myapp \
+      ${{ github.event.release.tag_name }}
+
+- name: Publish Bundle
+  env:
+    CALIMERO_API_KEY: ${{ secrets.CALIMERO_API_KEY }}
+  run: |
+    calimero-registry bundle push app-${{ github.event.release.tag_name }}.mpk --remote
+```

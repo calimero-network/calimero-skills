@@ -2,7 +2,7 @@
 
 Running `calimero-abi-codegen -i abi.json -o src/generated --client-name KvStoreClient` produces:
 
-```
+```text
 src/generated/
 ├── types.ts
 └── KvStoreClient.ts
@@ -36,7 +36,10 @@ import { CalimeroApp, Context } from '@calimero-network/calimero-client';
 import type { Entry } from './types';
 
 export class KvStoreClient {
-  constructor(private app: CalimeroApp, private context: Context) {}
+  constructor(
+    private app: CalimeroApp,
+    private context: Context
+  ) {}
 
   async set(key: string, value: string): Promise<void> {
     await this.app.mutate(this.context, 'set', { key, value });
@@ -55,7 +58,12 @@ export class KvStoreClient {
 ## Using the generated client
 
 ```typescript
-import { CalimeroApp, Context, getJWTObject, getStorageAppEndpointKey } from '@calimero-network/calimero-client';
+import {
+  CalimeroApp,
+  Context,
+  getJWTObject,
+  getStorageAppEndpointKey,
+} from '@calimero-network/calimero-client';
 import { KvStoreClient } from './generated/KvStoreClient';
 
 const app = new CalimeroApp(getStorageAppEndpointKey(), getJWTObject()?.access_token);
@@ -65,7 +73,7 @@ const client = new KvStoreClient(app, context);
 // Fully typed — IDE autocomplete works
 await client.set('hello', 'world');
 const value = await client.get('hello'); // string | null
-const all = await client.entries();      // Entry[]
+const all = await client.entries(); // Entry[]
 ```
 
 ## Regenerating after app changes

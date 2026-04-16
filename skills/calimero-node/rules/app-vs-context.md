@@ -26,8 +26,8 @@ meroctl call <context-id> get --args '{"key":"hello"}' --view
 
 ## Why this matters
 
-API calls take a `context-id`, not an `app-id`. If you try to call a method with an
-`app-id` instead of a `context-id` you will get a "context not found" error.
+API calls take a `context-id`, not an `app-id`. If you try to call a method with an `app-id` instead
+of a `context-id` you will get a "context not found" error.
 
-One app can have multiple independent contexts — each with its own members and state.
-For example, a chat app might have one context per chat room.
+One app can have multiple independent contexts — each with its own members and state. For example, a
+chat app might have one context per chat room.

@@ -4,15 +4,11 @@ Calling application methods on a Calimero node.
 
 ## The `rpcClient` singleton
 
-`@calimero-network/calimero-client` exports a pre-configured `rpcClient` singleton.
-Import it directly — do not construct `JsonRpcClient` manually.
+`@calimero-network/calimero-client` exports a pre-configured `rpcClient` singleton. Import it
+directly — do not construct `JsonRpcClient` manually.
 
 ```typescript
-import {
-  rpcClient,
-  getContextId,
-  getExecutorPublicKey,
-} from '@calimero-network/calimero-client';
+import { rpcClient, getContextId, getExecutorPublicKey } from '@calimero-network/calimero-client';
 ```
 
 ---
@@ -23,7 +19,9 @@ import {
 const response = await rpcClient.execute<ArgsType, OutputType>({
   contextId: getContextId()!,
   method: 'methodName',
-  argsJson: { /* your args */ },
+  argsJson: {
+    /* your args */
+  },
   executorPublicKey: getExecutorPublicKey()!,
 });
 
@@ -96,20 +94,20 @@ if (!response.error) {
 
 ## Error names
 
-| name | meaning |
-|---|---|
-| `FunctionCallError` | App method returned an error |
-| `RpcExecutionError` | Node couldn't execute the method |
+| name                  | meaning                                            |
+| --------------------- | -------------------------------------------------- |
+| `FunctionCallError`   | App method returned an error                       |
+| `RpcExecutionError`   | Node couldn't execute the method                   |
 | `InvalidRequestError` | Malformed request (wrong context-id, missing args) |
-| `AuthenticationError` | JWT expired, revoked, or missing |
-| `UnknownServerError` | Unexpected server error |
+| `AuthenticationError` | JWT expired, revoked, or missing                   |
+| `UnknownServerError`  | Unexpected server error                            |
 
 ---
 
 ## Error handling with 401
 
-The HTTP client inside `rpcClient` automatically refreshes tokens on `401 token_expired`.
-For `token_revoked` or `invalid_token` you need to re-authenticate:
+The HTTP client inside `rpcClient` automatically refreshes tokens on `401 token_expired`. For
+`token_revoked` or `invalid_token` you need to re-authenticate:
 
 ```typescript
 const response = await rpcClient.execute({ ... });
@@ -133,11 +131,7 @@ if (response.error) {
 ## Complete example: typed wrapper
 
 ```typescript
-import {
-  rpcClient,
-  getContextId,
-  getExecutorPublicKey,
-} from '@calimero-network/calimero-client';
+import { rpcClient, getContextId, getExecutorPublicKey } from '@calimero-network/calimero-client';
 
 async function setItem(key: string, value: string): Promise<void> {
   const response = await rpcClient.execute<{ key: string; value: string }, void>({

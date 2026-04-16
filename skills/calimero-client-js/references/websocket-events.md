@@ -6,16 +6,67 @@ Subscribe to real-time events emitted by the application running on the node.
 
 The node sends two kinds of events to subscribers:
 
-| type | when | payload |
-|---|---|---|
-| `StateMutation` | Another member mutated shared state | `{ newRoot: string }` |
-| `ExecutionEvent` | App emitted `app::emit!()` | `{ events: ExecutionEvent[] }` |
+| type             | when                                | payload                        |
+| ---------------- | ----------------------------------- | ------------------------------ |
+| `StateMutation`  | Another member mutated shared state | `{ newRoot: string }`          |
+| `ExecutionEvent` | App emitted `app::emit!()`          | `{ events: ExecutionEvent[] }` |
 
-An `ExecutionEvent` has: `{ kind: string; data: any }` where `kind` matches the Rust event variant name.
+An `ExecutionEvent` entry: `{ kind: string; data: any }` where `kind` matches the Rust event variant
+name and `data` may be a byte array (UTF-8 JSON) or a plain object.
 
 ---
 
-## Connect and subscribe
+## mero-react: useSubscription hook (preferred for React)
+
+```typescript
+import { useSubscription } from '@calimero-network/mero-react';
+
+function MyComponent({ contextId }: { contextId: string }) {
+  useSubscription([contextId], (event: { contextId: string; data: unknown }) => {
+    const payload = event.data as any;
+
+    // ExecutionEvent: data has an `events` array
+    if (Array.isArray(payload?.events)) {
+      for (const e of payload.events) {
+        const data = decodeEventData(e.data);
+        switch (e.kind) {
+          case 'Inserted':
+            console.log('inserted', data);
+            break;
+          case 'Removed':
+            console.log('removed', data);
+            break;
+        }
+      }
+    }
+  });
+}
+
+// Byte-array payloads are JSON-encoded; decode them:
+function decodeEventData(data: unknown): unknown {
+  if (Array.isArray(data) && data.every((n) => typeof n === 'number')) {
+    try {
+      return JSON.parse(new TextDecoder().decode(new Uint8Array(data)));
+    } catch {
+      return data;
+    }
+  }
+  return data;
+}
+```
+
+## Subscribe to multiple contexts
+
+```typescript
+// Subscribe to game context + lobby context simultaneously
+useSubscription([gameContextId, lobbyContextId], (event) => {
+  console.log('event from context:', event.contextId);
+});
+```
+
+---
+
+## Legacy calimero-client: WsSubscriptionsClient
 
 ```typescript
 import {
@@ -24,126 +75,48 @@ import {
   getContextId,
 } from '@calimero-network/calimero-client';
 
-const nodeUrl = getAppEndpointKey()!;
-const ws = new WsSubscriptionsClient(nodeUrl, '/ws');
-
-// Connect first, then subscribe and add callback
+const ws = new WsSubscriptionsClient(getAppEndpointKey()!, '/ws');
 await ws.connect();
 ws.subscribe([getContextId()!]);
 ws.addCallback((event) => {
-  console.log('Event received:', event);
-});
-```
-
----
-
-## Handling ExecutionEvents from app logic
-
-```typescript
-import type {
-  NodeEvent,
-  ExecutionEventPayload,
-  StateMutationPayload,
-} from '@calimero-network/calimero-client';
-
-ws.addCallback((event: NodeEvent) => {
   if (event.type === 'ExecutionEvent') {
     for (const e of event.data.events) {
-      // e.kind matches the Rust event variant name, e.g. 'ItemAdded'
-      // e.data contains the event payload
-      switch (e.kind) {
-        case 'ItemAdded':
-          console.log('Item added:', e.data);
-          addItemToUI(e.data.key, e.data.value);
-          break;
-        case 'ItemRemoved':
-          removeItemFromUI(e.data.key);
-          break;
-      }
+      console.log(e.kind, e.data);
     }
   }
-
   if (event.type === 'StateMutation') {
-    // Another member changed shared state — refresh data from node
-    console.log('State root changed:', event.data.newRoot);
     refreshDataFromNode();
   }
 });
 ```
 
----
-
-## Subscribe to multiple contexts
+Cleanup:
 
 ```typescript
-ws.subscribe([contextId1, contextId2]);
-// Events include event.contextId to identify which context emitted them
-```
-
----
-
-## Cleanup
-
-```typescript
-// Remove a specific callback
 ws.removeCallback(myCallback);
-
-// Unsubscribe from specific contexts
 ws.unsubscribe([contextId]);
-
-// Close connection entirely
 ws.disconnect();
 ```
 
 ---
 
-## Connection errors and reconnection
-
-`WsSubscriptionsClient` does **not** reconnect automatically. If the connection drops
-or the initial connect fails, you must retry manually.
-
-```typescript
-async function connectWithRetry(ws: WsSubscriptionsClient, contextId: string, retries = 3): Promise<void> {
-  for (let i = 0; i < retries; i++) {
-    try {
-      await ws.connect();
-      ws.subscribe([contextId]);
-      return;
-    } catch (err: any) {
-      if (err?.status === 401) {
-        // Token expired — cannot reconnect until re-authenticated
-        clientLogout();
-        return;
-      }
-      if (i === retries - 1) throw err;
-      await new Promise(r => setTimeout(r, 1000 * (i + 1))); // exponential backoff
-    }
-  }
-}
-```
-
-To detect drops after the connection is established, check if events stop arriving and
-reconnect periodically, or listen to `ws.onClose` if exposed.
-
-> WebSocket tokens are **not** auto-refreshed unlike `rpcClient` RPC calls.
-> See `rules/token-refresh.md` for details.
-
----
-
-## React hook pattern
+## React hook for legacy client
 
 ```typescript
 import { useEffect } from 'react';
-import { WsSubscriptionsClient, getAppEndpointKey, getContextId } from '@calimero-network/calimero-client';
+import {
+  WsSubscriptionsClient,
+  getAppEndpointKey,
+  getContextId,
+} from '@calimero-network/calimero-client';
 
-function useNodeEvents(onEvent: (event: NodeEvent) => void) {
+function useNodeEvents(onEvent: (event: any) => void) {
   useEffect(() => {
     const nodeUrl = getAppEndpointKey();
     const contextId = getContextId();
     if (!nodeUrl || !contextId) return;
 
     const ws = new WsSubscriptionsClient(nodeUrl, '/ws');
-
     ws.connect().then(() => {
       ws.subscribe([contextId]);
       ws.addCallback(onEvent);
@@ -157,3 +130,11 @@ function useNodeEvents(onEvent: (event: NodeEvent) => void) {
   }, [onEvent]);
 }
 ```
+
+---
+
+## Connection notes
+
+- `WsSubscriptionsClient` does **not** reconnect automatically — handle reconnect manually
+- `useSubscription` from `mero-react` manages the connection lifecycle for you
+- WebSocket tokens are **not** auto-refreshed unlike `rpcClient` HTTP calls

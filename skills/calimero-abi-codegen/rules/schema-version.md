@@ -1,19 +1,24 @@
 # Rule: ABI manifest must have schema_version "wasm-abi/1"
 
-The codegen tool rejects any ABI file that doesn't have the exact string `"wasm-abi/1"` as its `schema_version`.
+The codegen tool rejects any ABI file that doesn't have the exact string `"wasm-abi/1"` as its
+`schema_version`.
 
 ## WRONG:
 
 ```json
 {
   "schema_version": "1",
-  "types": {}, "methods": [], "events": []
+  "types": {},
+  "methods": [],
+  "events": []
 }
 ```
 
 ```json
 {
-  "types": {}, "methods": [], "events": []
+  "types": {},
+  "methods": [],
+  "events": []
 }
 ```
 
@@ -22,7 +27,9 @@ The codegen tool rejects any ABI file that doesn't have the exact string `"wasm-
 ```json
 {
   "schema_version": "wasm-abi/1",
-  "types": {}, "methods": [], "events": []
+  "types": {},
+  "methods": [],
+  "events": []
 }
 ```
 

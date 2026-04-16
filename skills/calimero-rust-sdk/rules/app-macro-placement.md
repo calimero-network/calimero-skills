@@ -29,6 +29,9 @@ impl AppState {
 }
 ```
 
-**Why:** `#[app::state]` and `#[app::logic]` are proc macros that transform impl blocks to register the type with the SDK runtime. The struct itself only needs the derive macros (`Default`, `BorshDeserialize`, `BorshSerialize`).
+**Why:** `#[app::state]` and `#[app::logic]` are proc macros that transform impl blocks to register
+the type with the SDK runtime. The struct itself only needs the derive macros (`Default`,
+`BorshDeserialize`, `BorshSerialize`).
 
-**Also:** `#[app::init]` marks the constructor — called once when the context is created. It must return the state type, not `Self`.
+**Also:** `#[app::init]` marks the constructor — called once when the context is created. It must
+return the state type, not `Self`.

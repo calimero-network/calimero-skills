@@ -1,12 +1,12 @@
 # calimero-sdk-js — Agent Instructions
 
 You are helping a developer **build a Calimero P2P application in TypeScript** using
-`@calimero-network/calimero-sdk-js`. The app compiles to WebAssembly and runs inside the
-`merod` node runtime.
+`@calimero-network/calimero-sdk-js`. The app compiles to WebAssembly and runs inside the `merod`
+node runtime.
 
-> **NOT this skill** if the developer is connecting a browser/Node.js *frontend* to a node
-> (that's `calimero-client-js` / `@calimero-network/calimero-client`). This skill is for
-> writing the application logic that *runs on the node*.
+> **NOT this skill** if the developer is connecting a browser/Node.js _frontend_ to a node (that's
+> `calimero-client-js` / `@calimero-network/calimero-client`). This skill is for writing the
+> application logic that _runs on the node_.
 
 ## Install
 
@@ -15,18 +15,18 @@ pnpm add @calimero-network/calimero-sdk-js
 pnpm add -D @calimero-network/calimero-cli-js typescript
 ```
 
-The CLI's `postinstall` hook downloads QuickJS, WASI-SDK, and Binaryen automatically.
-If you used `--ignore-scripts`, re-run with `pnpm install --ignore-scripts=false`.
+The CLI's `postinstall` hook downloads QuickJS, WASI-SDK, and Binaryen automatically. If you used
+`--ignore-scripts`, re-run with `pnpm install --ignore-scripts=false`.
 
 ## Core concepts
 
-| Concept | What it is |
-| --- | --- |
-| `@State` class | Persisted data — fields must be CRDT types |
-| `@Logic(StateClass)` class | Entry points callable via JSON-RPC; must extend the state class |
-| `@Init` static method | Seeds the initial state when context is first created |
-| `@View()` method | Read-only — skips persistence; required for query methods |
-| CRDT collection | Conflict-free type (`Counter`, `UnorderedMap`, etc.) — all state fields must use these |
+| Concept                    | What it is                                                                             |
+| -------------------------- | -------------------------------------------------------------------------------------- |
+| `@State` class             | Persisted data — fields must be CRDT types                                             |
+| `@Logic(StateClass)` class | Entry points callable via JSON-RPC; must extend the state class                        |
+| `@Init` static method      | Seeds the initial state when context is first created                                  |
+| `@View()` method           | Read-only — skips persistence; required for query methods                              |
+| CRDT collection            | Conflict-free type (`Counter`, `UnorderedMap`, etc.) — all state fields must use these |
 
 ## Minimal app
 
@@ -61,16 +61,15 @@ export class KvLogic extends KvState {
 
 ## CRDT collections quick reference
 
-| Type | Use case | Key ops |
-| --- | --- | --- |
-| `Counter` | Distributed counting (returns `bigint`) | `increment()`, `incrementBy(n)`, `value()` |
-| `UnorderedMap<K,V>` | Key-value store (LWW per key) | `set()`, `get()`, `has()`, `remove()`, `entries()` |
-| `UnorderedSet<T>` | Unique membership (LWW per element) | `add()`, `has()`, `delete()`, `toArray()` |
-| `Vector<T>` | Ordered list | `push()`, `get(i)`, `pop()`, `len()` |
-| `LwwRegister<T>` | Single value (timestamp LWW) | `set()`, `get()` |
+| Type                | Use case                                | Key ops                                            |
+| ------------------- | --------------------------------------- | -------------------------------------------------- |
+| `Counter`           | Distributed counting (returns `bigint`) | `increment()`, `incrementBy(n)`, `value()`         |
+| `UnorderedMap<K,V>` | Key-value store (LWW per key)           | `set()`, `get()`, `has()`, `remove()`, `entries()` |
+| `UnorderedSet<T>`   | Unique membership (LWW per element)     | `add()`, `has()`, `delete()`, `toArray()`          |
+| `Vector<T>`         | Ordered list                            | `push()`, `get(i)`, `pop()`, `len()`               |
+| `LwwRegister<T>`    | Single value (timestamp LWW)            | `set()`, `get()`                                   |
 
-Nested collections (`Map<K, Set<V>>`) propagate changes automatically — no manual
-re-serialization.
+Nested collections (`Map<K, Set<V>>`) propagate changes automatically — no manual re-serialization.
 
 ## Build & deploy
 
@@ -105,7 +104,8 @@ meroctl --node-name <NODE> call \
 - `@Init` must be a static method that returns the state class instance
 - `@Logic(StateClass)` must extend the state class
 - No async, no I/O, no threads in app logic — the WASM runtime is synchronous
-- **Windows: building is not supported natively — use WSL** (QuickJS/WASI-SDK toolchain requires Linux/macOS)
+- **Windows: building is not supported natively — use WSL** (QuickJS/WASI-SDK toolchain requires
+  Linux/macOS)
 
 ## Events
 
@@ -131,7 +131,15 @@ const val = secret.get();
 
 Private entries are never broadcast to other nodes.
 
+## Related skills
+
+- **`calimero-core`** — runtime concepts (context/app model, JSON-RPC protocol, WebSocket events,
+  CRDT type taxonomy)
+- **`calimero-meroctl`** — full `meroctl` CLI reference for deploying and testing the app
+- **`calimero-client-js`** — connecting a browser/React frontend to the node (not building app
+  logic)
+
 ## References
 
-See `references/` for CRDT collections, events, and build pipeline details.
-See `rules/` for hard constraints.
+See `references/` for CRDT collections, events, and build pipeline details. See `rules/` for hard
+constraints.

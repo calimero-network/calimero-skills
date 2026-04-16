@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calimero | Skills — All Skills</title>
+<link rel="stylesheet" href="styles.css">
+<meta name="theme-color" content="#0d1117">
+</head>
+<body>
+<div class="main">
+<div class="content">
+<div class="breadcrumb"><a href="index.html">Home</a><span class="sep">/</span><span>All Skills</span></div>
+
+<h1>All Skills</h1>
+<p class="page-subtitle">Complete reference for every skill file in this repository</p>
+
+<div class="card ga">
+<h2>Available Skills</h2>
+<p style="margin-bottom:14px;">Each skill is a plain text file. Running <span class="code">npx calimero-skills &lt;skill-name&gt;</span> appends it to the correct file for your editor:</p>
+<div class="fr"><div class="fp">calimero-core</div><div class="fd">Core runtime concepts every developer needs — context/app/identity model, JSON-RPC protocol, WebSocket event schema, CRDT storage types, namespaces and groups.</div></div>
+<div class="fr"><div class="fp">calimero-rust-sdk</div><div class="fd">Rust WASM application development — <span class="code">#[app::state]</span>/<span class="code">#[app::logic]</span> macros, CRDT collections from <span class="code">calimero_storage</span>, event emission, and private storage.</div></div>
+<div class="fr"><div class="fp">calimero-sdk-js</div><div class="fd">TypeScript WASM application development — <span class="code">@State</span>/<span class="code">@Logic</span> decorators, CRDT collections, <span class="code">@Init</span> / <span class="code">@View</span> method annotations, and the <span class="code">calimero-cli-js</span> build tool.</div></div>
+<div class="fr"><div class="fp">calimero-client-js</div><div class="fd">Frontend and Node.js clients that connect to a Calimero node — <span class="code">mero-js</span> v2 (current) and <span class="code">calimero-client</span> (legacy). Covers auth, RPC, SSE/WebSocket, and SSO hash reading.</div></div>
+<div class="fr"><div class="fp">calimero-client-py</div><div class="fd">Python client for node automation, backend scripts, and CI pipelines — full sync API for contexts, apps, identities, blobs, namespaces, and groups.</div></div>
+<div class="fr"><div class="fp">calimero-desktop</div><div class="fd">Integrating app frontends with Calimero Desktop SSO — URL hash token passing, <span class="code">parseAuthCallback()</span>, and the auth-skip pattern.</div></div>
+<div class="fr"><div class="fp">calimero-node</div><div class="fd">Node operator quick-start — <span class="code">merod</span> setup and the full context lifecycle (install → create → invite → join → sync).</div></div>
+<div class="fr"><div class="fp">calimero-merod</div><div class="fd"><span class="code">merod</span> daemon deep-dive — init flags and defaults, config file schema, health endpoint (<span class="code">/health</span>), Docker health checks.</div></div>
+<div class="fr"><div class="fp">calimero-meroctl</div><div class="fd">Complete <span class="code">meroctl</span> CLI reference — every subcommand (node, app, context, call, identity, namespace, group), all flags, scripting patterns, CI workflows.</div></div>
+<div class="fr"><div class="fp">calimero-merobox</div><div class="fd">Local multi-node test environments and CI pipelines — merobox install, workflow YAML format, multi-node orchestration, and GitHub Actions integration.</div></div>
+<div class="fr"><div class="fp">calimero-registry</div><div class="fd">Publishing apps to the Calimero App Registry — <span class="code">mero-sign</span> key management, Ed25519 manifest signing, <span class="code">registry bundle create</span> / <span class="code">push</span>.</div></div>
+<div class="fr"><div class="fp">calimero-abi-codegen</div><div class="fd">Generating typed TypeScript clients from WASM ABI JSON — CLI usage, ABI manifest format, generated output shape, and build script integration.</div></div>
+</div>
+
+<div class="card gb">
+<h2>Install All Skills at Once</h2>
+<div class="typedef">
+<span class="comment"># Install every skill for Claude Code + Cursor + Copilot</span><br>
+<span class="field">npx @calimero-network/agent-skills all</span><br><br>
+<span class="comment"># Install specific skills</span><br>
+<span class="field">npx @calimero-network/agent-skills calimero-node calimero-rust-sdk calimero-client-js</span>
+</div>
+</div>
+
+<div class="card gc">
+<h2>Where Skills Are Written</h2>
+<div class="fr"><div class="fp">Claude Code</div><div class="fd">Appended to <span class="code">CLAUDE.md</span> in your project root (or created if absent).</div></div>
+<div class="fr"><div class="fp">Cursor</div><div class="fd">Appended to <span class="code">.cursorrules</span> in your project root.</div></div>
+<div class="fr"><div class="fp">GitHub Copilot</div><div class="fd">Appended to <span class="code">.github/copilot-instructions.md</span>.</div></div>
+<p style="margin-top:12px;color:#8b949e;font-size:13px;">Run from your project root. Skills are additive — running the same skill twice does not duplicate content.</p>
+</div>
+
+<div class="card gd">
+<h2>Skill File Locations</h2>
+<div class="fr"><div class="fp">skills/calimero-core/</div><div class="fd">Core concepts, JSON-RPC protocol, WebSocket events, CRDT types, namespaces.</div></div>
+<div class="fr"><div class="fp">skills/calimero-rust-sdk/</div><div class="fd">Rust WASM SDK macros, CRDT collections, state and event model.</div></div>
+<div class="fr"><div class="fp">skills/calimero-sdk-js/</div><div class="fd">TypeScript WASM SDK decorators and collections.</div></div>
+<div class="fr"><div class="fp">skills/calimero-client-js/</div><div class="fd">mero-js v2 and calimero-client JS/TS client patterns.</div></div>
+<div class="fr"><div class="fp">skills/calimero-client-py/</div><div class="fd">Python client API, auth caching, and CI patterns.</div></div>
+<div class="fr"><div class="fp">skills/calimero-desktop/</div><div class="fd">Desktop SSO token-passing flow.</div></div>
+<div class="fr"><div class="fp">skills/calimero-node/</div><div class="fd">Node quick-start combining merod and meroctl.</div></div>
+<div class="fr"><div class="fp">skills/calimero-merod/</div><div class="fd">merod daemon init, config, health endpoints.</div></div>
+<div class="fr"><div class="fp">skills/calimero-meroctl/</div><div class="fd">Complete meroctl CLI reference and scripting patterns.</div></div>
+<div class="fr"><div class="fp">skills/calimero-merobox/</div><div class="fd">Multi-node local environment and CI workflow format.</div></div>
+<div class="fr"><div class="fp">skills/calimero-registry/</div><div class="fd">App signing, bundling, and registry push.</div></div>
+<div class="fr"><div class="fp">skills/calimero-abi-codegen/</div><div class="fd">ABI codegen CLI, manifest format, and generated output.</div></div>
+</div>
+
+</div>
+</div>
+<script src="nav.js"></script>
+</body>
+</html>

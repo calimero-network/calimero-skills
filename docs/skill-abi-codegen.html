@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calimero | Skills — ABI Codegen Skill</title>
+<link rel="stylesheet" href="styles.css">
+<meta name="theme-color" content="#0d1117">
+</head>
+<body>
+<div class="main">
+<div class="content">
+<div class="breadcrumb"><a href="index.html">Home</a><span class="sep">/</span><span>ABI Codegen</span></div>
+
+<h1>ABI Codegen Skill</h1>
+<p class="page-subtitle">Context for generating typed TypeScript clients from a Calimero WASM application's ABI manifest</p>
+
+<div class="card ga">
+<h2>What This Skill Covers</h2>
+<p style="margin-bottom:12px;">The <span class="code">calimero-abi-codegen</span> skill gives your AI assistant knowledge of the codegen CLI so it can generate correct TypeScript clients from ABI JSON files and integrate codegen into build scripts.</p>
+<div class="g2">
+  <div class="cb"><h4>Covered Topics</h4>
+    <ul style="margin:8px 0 0 16px;color:#c9d1d9;font-size:13px;">
+      <li style="margin-bottom:6px;">CLI flags (<span class="code">-i</span>, <span class="code">-o</span>, <span class="code">--client-name</span>, <span class="code">--validate</span>)</li>
+      <li style="margin-bottom:6px;">ABI manifest format (<span class="code">wasm-abi/1</span> schema)</li>
+      <li style="margin-bottom:6px;">Generated output shape (<span class="code">types.ts</span> + client class)</li>
+      <li style="margin-bottom:6px;">Programmatic API for custom pipelines</li>
+      <li>Build script integration</li>
+    </ul>
+  </div>
+  <div class="cb"><h4>Install</h4>
+    <div class="typedef" style="margin-top:6px;"><span class="field">npx @calimero-network/agent-skills calimero-abi-codegen</span><br><br><span class="comment"># Recommended with Rust SDK:</span><br><span class="field">npx @calimero-network/agent-skills calimero-rust-sdk calimero-abi-codegen</span></div>
+  </div>
+</div>
+</div>
+
+<div class="card gb">
+<h2>CLI Usage</h2>
+<div class="typedef">
+<span class="comment"># One-off (no install needed)</span><br>
+<span class="field">npx calimero-abi-codegen -i abi.json -o src/generated</span><br><br>
+<span class="comment"># With custom class name</span><br>
+<span class="field">npx calimero-abi-codegen -i abi.json -o src/generated --client-name PostsClient</span><br><br>
+<span class="comment"># Derive class name from WASM filename</span><br>
+<span class="field">npx calimero-abi-codegen -i abi.json -o src/generated --name-from app.wasm</span><br><br>
+<span class="comment"># Validate ABI only — no code generation</span><br>
+<span class="field">npx calimero-abi-codegen --validate -i abi.json</span>
+</div>
+</div>
+
+<div class="card gc">
+<h2>Generated Output</h2>
+<div class="fr"><div class="fp">types.ts</div><div class="fd">TypeScript interfaces and enums for all Rust types defined in the ABI. Structs become interfaces, enums become TypeScript enums.</div></div>
+<div class="fr"><div class="fp">{ClientName}.ts</div><div class="fd">Typed client class with one method per app function. Imports from <span class="code">@calimero-network/mero-react</span> by default (overridable with <span class="code">--import-path</span>).</div></div>
+<div class="fr"><div class="fp">AbiEvent type</div><div class="fd">Union type listing all event variants emitted by the app.</div></div>
+<div class="fr"><div class="fp">CalimeroBytes class</div><div class="fd">Helper for <span class="code">Vec&lt;u8&gt;</span> / byte array types from Rust.</div></div>
+</div>
+
+<div class="card gd">
+<h2>Key Rules</h2>
+<div class="fr"><div class="fp">schema_version required</div><div class="fd">ABI file must have <span class="code">"schema_version": "wasm-abi/1"</span> — other values are rejected by the CLI.</div></div>
+<div class="fr"><div class="fp">Unique names required</div><div class="fd">Method names, event names, and type names must all be unique within the ABI. Map key types must be <span class="code">string</span>.</div></div>
+<div class="fr"><div class="fp">ABI is auto-generated</div><div class="fd">The <span class="code">abi.json</span> file is produced by <span class="code">calimero-wasm-abi</span> during the Rust build step. Do not write it by hand.</div></div>
+</div>
+
+</div>
+</div>
+<script src="nav.js"></script>
+</body>
+</html>

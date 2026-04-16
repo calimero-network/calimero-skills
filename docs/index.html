@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calimero | Agent Skills</title>
+<link rel="stylesheet" href="styles.css">
+<meta name="description" content="Calimero Agent Skills — install accurate Calimero API knowledge into Claude, Cursor, and GitHub Copilot.">
+<meta name="theme-color" content="#0d1117">
+</head>
+<body>
+<div class="main">
+<div class="content">
+
+<div class="hero">
+  <h1>Calimero <em>Skills</em></h1>
+  <p class="tagline">Give your AI coding assistant accurate Calimero knowledge — no more hallucinated APIs. One command installs the right context into Claude, Cursor, or Copilot.</p>
+
+  <div class="g4" style="margin-bottom:36px;">
+    <div class="stat"><div class="v">12</div><div class="l">skills</div></div>
+    <div class="stat"><div class="v">3</div><div class="l">AI editors</div></div>
+    <div class="stat"><div class="v">npx</div><div class="l">install</div></div>
+    <div class="stat"><div class="v">0</div><div class="l">config needed</div></div>
+  </div>
+</div>
+
+<div class="card ga">
+<h2>Install a Skill</h2>
+<div class="g3">
+  <div class="step"><div class="n">1</div><h4>Pick a skill</h4><p>Choose which Calimero domain your AI assistant needs to know about. See the <a href="skills.html">skills list</a> for all options.</p></div>
+  <div class="step"><div class="n">2</div><h4>Run npx</h4>
+    <div class="typedef" style="margin-top:6px;"><span class="comment"># Claude (writes to CLAUDE.md)</span><br><span class="field">npx</span> @calimero-network/agent-skills calimero-rust-sdk<br><br><span class="comment"># Cursor (.cursorrules)</span><br><span class="field">npx</span> @calimero-network/agent-skills calimero-rust-sdk --cursor<br><br><span class="comment"># Copilot (.github/copilot-instructions.md)</span><br><span class="field">npx</span> @calimero-network/agent-skills calimero-rust-sdk --copilot</div>
+  </div>
+  <div class="step"><div class="n">3</div><h4>Your AI knows Calimero</h4><p>The skill is written to your project's AI instructions file. Your assistant now has accurate API knowledge for that domain.</p></div>
+</div>
+</div>
+
+<div class="card gb">
+<h2>How It Works</h2>
+<svg viewBox="0 0 820 260" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <filter id="glow-sk"><feDropShadow dx="0" dy="0" stdDeviation="3" flood-color="#a5ff11" flood-opacity="0.25"/></filter>
+  </defs>
+
+  <!-- Dev -->
+  <rect x="20" y="90" width="130" height="70" rx="10" fill="#58a6ff10" stroke="#58a6ff" stroke-width="1.2"/>
+  <text x="85" y="118" text-anchor="middle" fill="#58a6ff" font-family="JetBrains Mono" font-size="11" font-weight="700">Developer</text>
+  <text x="85" y="136" text-anchor="middle" fill="#6b6b80" font-family="DM Sans" font-size="10">runs npx</text>
+  <text x="85" y="152" text-anchor="middle" fill="#6b6b80" font-family="DM Sans" font-size="10">in project dir</text>
+
+  <!-- CLI -->
+  <rect x="220" y="60" width="200" height="120" rx="12" fill="#a5ff1108" stroke="#a5ff11" stroke-width="1.6" filter="url(#glow-sk)"/>
+  <text x="320" y="88" text-anchor="middle" fill="#a5ff11" font-family="JetBrains Mono" font-size="12" font-weight="700">skills CLI</text>
+  <text x="320" y="108" text-anchor="middle" fill="#6b6b80" font-family="DM Sans" font-size="10">reads skill markdown</text>
+  <text x="320" y="126" text-anchor="middle" fill="#6b6b80" font-family="DM Sans" font-size="10">detects target editor</text>
+  <text x="320" y="144" text-anchor="middle" fill="#6b6b80" font-family="DM Sans" font-size="10">appends to config file</text>
+  <text x="320" y="168" text-anchor="middle" fill="#a5ff1180" font-family="JetBrains Mono" font-size="8">@calimero-network/agent-skills</text>
+
+  <!-- Output files -->
+  <rect x="490" y="40" width="170" height="50" rx="8" fill="#3fb95010" stroke="#3fb950" stroke-width="1"/>
+  <text x="575" y="62" text-anchor="middle" fill="#3fb950" font-family="JetBrains Mono" font-size="10" font-weight="600">CLAUDE.md</text>
+  <text x="575" y="78" text-anchor="middle" fill="#6b6b80" font-family="DM Sans" font-size="9">Claude / Claude Code</text>
+
+  <rect x="490" y="105" width="170" height="50" rx="8" fill="#58a6ff10" stroke="#58a6ff" stroke-width="1"/>
+  <text x="575" y="127" text-anchor="middle" fill="#58a6ff" font-family="JetBrains Mono" font-size="10" font-weight="600">.cursorrules</text>
+  <text x="575" y="143" text-anchor="middle" fill="#6b6b80" font-family="DM Sans" font-size="9">Cursor editor</text>
+
+  <rect x="490" y="170" width="170" height="50" rx="8" fill="#a371f710" stroke="#a371f7" stroke-width="1"/>
+  <text x="575" y="192" text-anchor="middle" fill="#a371f7" font-family="JetBrains Mono" font-size="9" font-weight="600">copilot-instructions.md</text>
+  <text x="575" y="208" text-anchor="middle" fill="#6b6b80" font-family="DM Sans" font-size="9">GitHub Copilot</text>
+
+  <!-- AI assistant -->
+  <rect x="720" y="90" width="80" height="70" rx="10" fill="#f59e0b10" stroke="#f59e0b" stroke-width="1.2"/>
+  <text x="760" y="118" text-anchor="middle" fill="#f59e0b" font-family="JetBrains Mono" font-size="10" font-weight="700">AI</text>
+  <text x="760" y="136" text-anchor="middle" fill="#6b6b80" font-family="DM Sans" font-size="9">reads file</text>
+  <text x="760" y="152" text-anchor="middle" fill="#6b6b80" font-family="DM Sans" font-size="9">knows API</text>
+
+  <!-- Arrows -->
+  <line x1="152" y1="125" x2="218" y2="125" stroke="#58a6ff" stroke-width="1.5"/>
+  <polygon points="218,125 210,121 210,129" fill="#58a6ff"/>
+  <line x1="422" y1="95" x2="488" y2="68" stroke="#a5ff11" stroke-width="1.2"/>
+  <polygon points="488,68 481,71 484,62" fill="#a5ff11"/>
+  <line x1="422" y1="125" x2="488" y2="128" stroke="#a5ff11" stroke-width="1.2"/>
+  <polygon points="488,128 480,124 480,132" fill="#a5ff11"/>
+  <line x1="422" y1="155" x2="488" y2="190" stroke="#a5ff11" stroke-width="1.2"/>
+  <polygon points="488,190 481,183 490,183" fill="#a5ff11"/>
+  <line x1="662" y1="128" x2="718" y2="128" stroke="#f59e0b" stroke-width="1.5"/>
+  <polygon points="718,128 710,124 710,132" fill="#f59e0b"/>
+</svg>
+</div>
+
+<h2 style="margin-top:40px;">Skills Available</h2>
+<div class="g2">
+
+<div class="fr"><div class="fp">calimero-core</div><div class="fd">Core runtime concepts — context/app/identity model, JSON-RPC protocol, WebSocket events, CRDT storage types, namespaces and groups.</div></div>
+<div class="fr"><div class="fp">calimero-rust-sdk</div><div class="fd">Rust WASM application development — SDK macros, CRDT collections, state management, and execution model.</div></div>
+<div class="fr"><div class="fp">calimero-sdk-js</div><div class="fd">TypeScript WASM application development — <span class="code">@State</span>/<span class="code">@Logic</span> decorators, CRDT collections, and the JS SDK CLI.</div></div>
+<div class="fr"><div class="fp">calimero-client-js</div><div class="fd">Frontend and Node.js clients connecting to a Calimero node via HTTP/WS — mero-js and calimero-client.</div></div>
+<div class="fr"><div class="fp">calimero-client-py</div><div class="fd">Python client for automation, backend services, and node management scripts.</div></div>
+<div class="fr"><div class="fp">calimero-desktop</div><div class="fd">Integrating apps with Calimero Desktop SSO — URL hash token reading and auth bypass.</div></div>
+<div class="fr"><div class="fp">calimero-node</div><div class="fd">Node operator quick-start — <span class="code">merod</span> setup, <span class="code">meroctl</span> workflow, and context lifecycle overview.</div></div>
+<div class="fr"><div class="fp">calimero-merod</div><div class="fd"><span class="code">merod</span> daemon deep-dive — init flags, config file, health endpoints, Docker setup.</div></div>
+<div class="fr"><div class="fp">calimero-meroctl</div><div class="fd">Complete <span class="code">meroctl</span> CLI reference — every subcommand, flag, scripting pattern, and multi-node workflow.</div></div>
+<div class="fr"><div class="fp">calimero-merobox</div><div class="fd">Local multi-node development environments and CI with merobox.</div></div>
+<div class="fr"><div class="fp">calimero-registry</div><div class="fd">Signing, packaging, and publishing applications to the Calimero app registry.</div></div>
+<div class="fr"><div class="fp">calimero-abi-codegen</div><div class="fd">Generating typed TypeScript clients from WASM ABI manifest JSON files.</div></div>
+
+</div>
+
+<p style="margin-top:16px;"><a href="skills.html">View detailed skill reference &rarr;</a></p>
+
+</div>
+</div>
+<script src="nav.js"></script>
+</body>
+</html>

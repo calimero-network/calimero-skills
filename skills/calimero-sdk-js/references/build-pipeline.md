@@ -4,7 +4,7 @@
 
 ## Pipeline stages
 
-```
+```text
 TypeScript  →  Rollup  →  QuickJS  →  WASI-SDK  →  Binaryen  →  .wasm
   Source       Bundle    C bytecode     WASM        Optimized
 ```
@@ -84,11 +84,11 @@ merobox bootstrap run examples/counter/workflows/counter-js.yml --log-level=trac
 
 ## Platform support
 
-| Platform | Supported |
-| --- | --- |
-| macOS (x64, arm64) | Yes |
-| Linux (x64, arm64) | Yes |
-| Windows (native) | No — use WSL |
+| Platform           | Supported    |
+| ------------------ | ------------ |
+| macOS (x64, arm64) | Yes          |
+| Linux (x64, arm64) | Yes          |
+| Windows (native)   | No — use WSL |
 
 ## Definition of done (before PR)
 

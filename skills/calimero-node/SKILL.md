@@ -4,7 +4,8 @@ You are helping a developer manage a **Calimero node** using `merod` and `meroct
 
 ## Key concepts
 
-- `merod` — the node runtime. Runs as a daemon. Hosts WASM apps, manages storage, exposes JSON-RPC + WebSocket
+- `merod` — the node runtime. Runs as a daemon. Hosts WASM apps, manages storage, exposes JSON-RPC +
+  WebSocket
 - `meroctl` — the CLI for administrating a running node (contexts, apps, identities)
 - **Context** — an isolated application instance with its own members, state, and storage
 - **Application** — the WASM code; one app can power many contexts
@@ -13,66 +14,76 @@ You are helping a developer manage a **Calimero node** using `merod` and `meroct
 ## Node setup (first time)
 
 ```bash
-# Initialize node configuration
-merod --home ~/.calimero init
+# Initialize node (creates key material and config)
+merod --node node1 init --server-port 2428 --swarm-port 2528
 
 # Start the node
-merod --home ~/.calimero run
+merod --node node1 run
 # Node listens on http://localhost:2428 by default
+```
+
+`--home <PATH>` is optional; defaults to the system config directory. Use it to specify a custom
+data directory: `merod --home ./data --node node1 init`.
+
+## Connecting meroctl to a node
+
+```bash
+# Register a local node by name (one-time)
+meroctl node add node1 /path/to/calimero/home
+
+# Or register a remote node
+meroctl node add mynode http://node.example.com
+
+# Set as default (so you don't need --node on every command)
+meroctl node use node1
+
+# List configured nodes
+meroctl node ls
+```
+
+After setup, use `--node node1` or rely on the active node:
+
+```bash
+meroctl --node node1 context ls   # explicit
+meroctl context ls                # uses active node
+```
+
+Alternatively, pass a direct URL without registering:
+
+```bash
+meroctl --api http://localhost:2428 context ls
 ```
 
 ## Complete workflow: app → context → call
 
 ```bash
+# (Assumes: meroctl node add node1 ... && meroctl node use node1 already done)
+
 # 1. Install an app
-meroctl --node-url http://localhost:2428 app install \
-  --path myapp.mpk
-# → prints app-id
+meroctl app install --path myapp.wasm
+# → prints application-id
 
 # 2. Create a context (instantiate the app — init() is called)
-meroctl --node-url http://localhost:2428 context create \
-  --app-id <app-id>
+meroctl context create --application-id <application-id>
 # → prints context-id
 
 # 3. Call a mutation (changes state)
-meroctl --node-url http://localhost:2428 call <context-id> set \
-  --args '{"key":"hello","value":"world"}'
+meroctl call <context-id> set --args '{"key":"hello","value":"world"}'
 
 # 4. Call a view (read-only)
-meroctl --node-url http://localhost:2428 call <context-id> get \
-  --args '{"key":"hello"}' --view
-
-# 5. Check node is running
-meroctl --node-url http://localhost:2428 node health
+meroctl call <context-id> get --args '{"key":"hello"}' --view
 ```
 
-## Multi-node context (invite + join)
+## Related skills
 
-```bash
-# On node A — invite a member
-meroctl --node-url http://localhost:2428 context invite \
-  <context-id> --identity <identity-on-node-A>
-# → prints invitation payload (JSON)
-
-# On node B — accept the invitation
-meroctl --node-url http://localhost:2429 context join \
-  --invitation '<paste-invitation-payload>'
-# → node B syncs state from node A
-```
-
-## Global flags
-
-```bash
-meroctl --node-url http://localhost:2428 <command>   # connect to specific node
-meroctl --home ~/.calimero <command>                  # use alternate config path
-```
-
-`--home` defaults to `~/.calimero`. The home directory contains `config.toml`,
-the node's key material, and local storage. Each node must have its own home directory.
-
-`--node-url` defaults to `http://localhost:2428` if not specified (the default port
-`merod` listens on after `merod --home ~/.calimero run`).
+- **`calimero-merod`** — deep-dive on `merod` daemon: all init flags, config file schema, health
+  endpoints, Docker setup
+- **`calimero-meroctl`** — complete `meroctl` CLI reference: every subcommand, every flag, scripting
+  patterns, multi-node namespace/group workflow
+- **`calimero-core`** — context/app/identity model, JSON-RPC protocol, WebSocket events, CRDT
+  storage types
 
 ## References
 
-See `references/` for full meroctl command reference and context lifecycle.
+See `references/` for context lifecycle detail and multi-node namespace/group setup. For the full
+`meroctl` command reference, use the `calimero-meroctl` skill.
