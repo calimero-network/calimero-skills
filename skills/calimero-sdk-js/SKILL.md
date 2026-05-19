@@ -78,18 +78,18 @@ Nested collections (`Map<K, Set<V>>`) propagate changes automatically — no man
 npx calimero-sdk build src/index.ts -o build/service.wasm
 
 # Install on node
-meroctl --node-name <NODE> app install \
+meroctl --node <NODE> app install \
   --path build/service.wasm \
   --context-id <CONTEXT_ID>
 
 # Call a method
-meroctl --node-name <NODE> call \
+meroctl --node <NODE> call \
   --context-id <CONTEXT_ID> \
   --method set \
   --args '{"key":"hello","value":"world"}'
 
 # Call a view
-meroctl --node-name <NODE> call \
+meroctl --node <NODE> call \
   --context-id <CONTEXT_ID> \
   --method get \
   --args '{"key":"hello"}'
