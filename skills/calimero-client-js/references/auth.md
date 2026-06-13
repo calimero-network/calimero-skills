@@ -19,7 +19,7 @@ import {
   getContextId,
   setExecutorPublicKey,
   getExecutorPublicKey,
-  setContextAndIdentityFromJWT,  // extracts + stores contextId + executorPublicKey from JWT
+  setContextAndIdentityFromJWT, // extracts + stores contextId + executorPublicKey from JWT
   // App ID
   setApplicationId,
   getApplicationId,
@@ -27,9 +27,9 @@ import {
   setAuthEndpointURL,
   getAuthEndpointURL,
   // Decoded JWT payload
-  getJWTObject,     // returns { context_id, context_identity, exp, permissions, ... }
+  getJWTObject, // returns { context_id, context_identity, exp, permissions, ... }
   // Full auth config (throws if required fields are missing)
-  getAuthConfig,    // returns { appEndpointKey, contextId, executorPublicKey, jwtToken }
+  getAuthConfig, // returns { appEndpointKey, contextId, executorPublicKey, jwtToken }
   // Logout (clears all tokens + reloads)
   clientLogout,
 } from '@calimero-network/calimero-client';
@@ -44,10 +44,10 @@ When the app is opened by Desktop, tokens arrive in the URL hash. Store them:
 ```typescript
 function initFromDesktopSSO(): boolean {
   const hash = new URLSearchParams(window.location.hash.slice(1));
-  const accessToken  = hash.get('access_token');
+  const accessToken = hash.get('access_token');
   const refreshToken = hash.get('refresh_token');
-  const nodeUrl      = hash.get('node_url');
-  const appId        = hash.get('application_id');
+  const nodeUrl = hash.get('node_url');
+  const appId = hash.get('application_id');
 
   if (!accessToken || !nodeUrl) return false;
 
@@ -72,7 +72,12 @@ function initFromDesktopSSO(): boolean {
 ## Manual login (no Desktop)
 
 ```typescript
-import { setAppEndpointKey, setAccessToken, setRefreshToken, setContextAndIdentityFromJWT } from '@calimero-network/calimero-client';
+import {
+  setAppEndpointKey,
+  setAccessToken,
+  setRefreshToken,
+  setContextAndIdentityFromJWT,
+} from '@calimero-network/calimero-client';
 
 async function login(nodeUrl: string, accessToken: string, refreshToken: string) {
   setAppEndpointKey(nodeUrl);
@@ -126,8 +131,11 @@ clientLogout();
 
 ```typescript
 import {
-  setAppEndpointKey, setAccessToken, setRefreshToken,
-  setApplicationId, setContextAndIdentityFromJWT,
+  setAppEndpointKey,
+  setAccessToken,
+  setRefreshToken,
+  setApplicationId,
+  setContextAndIdentityFromJWT,
   getAuthConfig,
 } from '@calimero-network/calimero-client';
 
@@ -135,7 +143,7 @@ async function bootstrap() {
   // Try SSO from Desktop hash
   const hash = new URLSearchParams(window.location.hash.slice(1));
   const accessToken = hash.get('access_token');
-  const nodeUrl     = hash.get('node_url');
+  const nodeUrl = hash.get('node_url');
 
   if (accessToken && nodeUrl) {
     setAppEndpointKey(nodeUrl);

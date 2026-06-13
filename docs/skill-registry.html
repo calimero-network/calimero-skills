@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calimero | Skills — Registry Skill</title>
+<link rel="stylesheet" href="styles.css">
+<meta name="theme-color" content="#0d1117">
+</head>
+<body>
+<div class="main">
+<div class="content">
+<div class="breadcrumb"><a href="index.html">Home</a><span class="sep">/</span><span>Registry</span></div>
+
+<h1>Registry Skill</h1>
+<p class="page-subtitle">Context for signing, bundling, and publishing Calimero apps to the App Registry</p>
+
+<div class="card ga">
+<h2>What This Skill Covers</h2>
+<p style="margin-bottom:12px;">The <span class="code">calimero-registry</span> skill gives your AI assistant knowledge of the two-tool publishing workflow so it can write correct signing scripts, manifest files, and bundle commands.</p>
+<div class="g2">
+  <div class="cb"><h4>Two Tools</h4>
+    <div class="fr" style="margin-top:8px;"><div class="fp">calimero-registry</div><div class="fd">npm CLI — bundle creation and registry push (<span class="code">npm install -g @calimero-network/registry-cli</span>)</div></div>
+    <div class="fr"><div class="fp">mero-sign</div><div class="fd">Rust CLI — Ed25519 key management and manifest signing (<span class="code">cargo install mero-sign</span>)</div></div>
+  </div>
+  <div class="cb"><h4>Install</h4>
+    <div class="typedef" style="margin-top:6px;"><span class="field">npx @calimero-network/agent-skills calimero-registry</span><br><br><span class="comment"># Recommended with Rust SDK:</span><br><span class="field">npx @calimero-network/agent-skills calimero-rust-sdk calimero-registry</span></div>
+  </div>
+</div>
+</div>
+
+<div class="card gb">
+<h2>Publish Workflow</h2>
+<div class="typedef">
+<span class="comment"># 1. Install registry CLI</span><br>
+<span class="field">npm install -g @calimero-network/registry-cli</span><br><br>
+<span class="comment"># 2. Configure registry (one-time)</span><br>
+<span class="field">calimero-registry config set registry-url https://apps.calimero.network</span><br>
+<span class="field">calimero-registry config set api-key your-api-key</span><br><br>
+<span class="comment"># 3. Build WASM</span><br>
+<span class="field">./build.sh</span><br><br>
+<span class="comment"># 4. Create bundle (WASM + metadata → .mpk)</span><br>
+<span class="field">calimero-registry bundle create \</span><br>
+&nbsp;&nbsp;<span class="comment">--output myapp-1.0.0.mpk \</span><br>
+&nbsp;&nbsp;<span class="comment">--name "My App" --version 1.0.0 \</span><br>
+&nbsp;&nbsp;<span class="comment">--author "Your Name" \</span><br>
+&nbsp;&nbsp;path/to/app.wasm com.yourorg.myapp<br><br>
+<span class="comment"># 5. Push to registry</span><br>
+<span class="field">calimero-registry bundle push myapp-1.0.0.mpk --remote</span>
+</div>
+</div>
+
+<div class="card gc">
+<h2>Key Rules</h2>
+<div class="fr"><div class="fp">Sign before bundle</div><div class="fd">Use <span class="code">mero-sign</span> to sign the manifest <strong>before</strong> running <span class="code">bundle create</span> — not after. The signature is embedded in the bundle.</div></div>
+<div class="fr"><div class="fp">Never commit key.json</div><div class="fd">The Ed25519 signing key in <span class="code">key.json</span> must never be committed to version control. Add it to <span class="code">.gitignore</span>.</div></div>
+<div class="fr"><div class="fp">manifest.json required fields</div><div class="fd">Must include <span class="code">name</span>, <span class="code">version</span>, <span class="code">description</span>, <span class="code">author</span>, and <span class="code">id</span> (reverse-DNS, e.g. <span class="code">com.yourorg.myapp</span>).</div></div>
+</div>
+
+<div class="card gd">
+<h2>mero-sign Usage</h2>
+<div class="typedef">
+<span class="comment"># Generate a signing key</span><br>
+<span class="field">mero-sign keygen --output key.json</span><br><br>
+<span class="comment"># Sign the manifest (RFC 8785 canonicalization + Ed25519)</span><br>
+<span class="field">mero-sign sign --key key.json --manifest manifest.json</span><br><br>
+<span class="comment"># Verify a signature</span><br>
+<span class="field">mero-sign verify --manifest manifest.json</span>
+</div>
+</div>
+
+</div>
+</div>
+<script src="nav.js"></script>
+</body>
+</html>

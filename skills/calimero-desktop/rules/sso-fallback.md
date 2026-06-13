@@ -1,6 +1,7 @@
 # Rule: Always fall back to manual login if hash params are absent
 
 Your app must work in two scenarios:
+
 1. Opened from Calimero Desktop — SSO hash params present
 2. Opened directly in a browser — no hash params
 
@@ -29,5 +30,5 @@ if (token) {
 
 ## Why
 
-Desktop is not the only way users access apps. Developers test in browsers directly.
-Organizations may embed apps in other contexts. The app must be self-sufficient.
+Desktop is not the only way users access apps. Developers test in browsers directly. Organizations
+may embed apps in other contexts. The app must be self-sufficient.

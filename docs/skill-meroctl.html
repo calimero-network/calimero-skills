@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calimero | Skills — meroctl Skill</title>
+<link rel="stylesheet" href="styles.css">
+<meta name="theme-color" content="#0d1117">
+</head>
+<body>
+<div class="main">
+<div class="content">
+<div class="breadcrumb"><a href="index.html">Home</a><span class="sep">/</span><span>meroctl</span></div>
+
+<h1>meroctl Skill</h1>
+<p class="page-subtitle">Complete reference for the <span class="code">meroctl</span> CLI — every command, flag, and scripting pattern</p>
+
+<div class="card ga">
+<h2>What This Skill Covers</h2>
+<p style="margin-bottom:12px;">The <span class="code">calimero-meroctl</span> skill gives your AI assistant the full <span class="code">meroctl</span> command reference so it can write correct node administration scripts, CI pipelines, and multi-node setup commands.</p>
+<div class="g2">
+  <div class="cb"><h4>Subcommand Groups</h4>
+    <ul style="margin:8px 0 0 16px;color:#c9d1d9;font-size:13px;">
+      <li style="margin-bottom:6px;"><span class="code">node</span> — register and manage node connections</li>
+      <li style="margin-bottom:6px;"><span class="code">app</span> — install, list, remove applications</li>
+      <li style="margin-bottom:6px;"><span class="code">context</span> — create, list, delete, sync contexts</li>
+      <li style="margin-bottom:6px;"><span class="code">call</span> — invoke app methods (mutations + views)</li>
+      <li style="margin-bottom:6px;"><span class="code">identity</span> — create and manage node identities</li>
+      <li><span class="code">namespace</span> / <span class="code">group</span> — multi-node participation</li>
+    </ul>
+  </div>
+  <div class="cb"><h4>Install</h4>
+    <div class="typedef" style="margin-top:6px;"><span class="field">npx @calimero-network/agent-skills calimero-meroctl</span><br><br><span class="comment"># Recommended combination:</span><br><span class="field">npx @calimero-network/agent-skills calimero-merod calimero-meroctl</span></div>
+  </div>
+</div>
+</div>
+
+<div class="card gb">
+<h2>Setup: Register a Node</h2>
+<div class="typedef">
+<span class="comment"># Register once</span><br>
+<span class="field">meroctl node add node1 /path/to/calimero/home</span>&nbsp;&nbsp;<span class="comment"># local</span><br>
+<span class="field">meroctl node add prod http://my-node.example.com</span>&nbsp;<span class="comment"># remote</span><br><br>
+<span class="comment"># Set as default (no --node needed after this)</span><br>
+<span class="field">meroctl node use node1</span><br><br>
+<span class="comment"># Or skip registration entirely:</span><br>
+<span class="field">meroctl --api http://localhost:2428 context ls</span>
+</div>
+</div>
+
+<div class="card gc">
+<h2>Core Workflow</h2>
+<div class="typedef">
+<span class="comment"># 1. Install app</span><br>
+<span class="field">meroctl app install --path myapp.wasm</span><br>
+<span class="comment"># → application-id</span><br><br>
+<span class="comment"># 2. Create context</span><br>
+<span class="field">meroctl context create --application-id &lt;application-id&gt;</span><br>
+<span class="comment"># → context-id</span><br><br>
+<span class="comment"># 3. Mutation (changes state)</span><br>
+<span class="field">meroctl call &lt;context-id&gt; set --args '&#123;"key":"hello","value":"world"&#125;'</span><br><br>
+<span class="comment"># 4. View (read-only)</span><br>
+<span class="field">meroctl call &lt;context-id&gt; get --args '&#123;"key":"hello"&#125;' --view</span>
+</div>
+</div>
+
+<div class="card gd">
+<h2>Multi-Node Setup</h2>
+<div class="typedef">
+<span class="comment"># Node A: create namespace + context, generate invite</span><br>
+<span class="field">meroctl --node node1 namespace create</span>&nbsp;&nbsp;<span class="comment"># → namespace-id</span><br>
+<span class="field">meroctl --node node1 context create --application-id &lt;app-id&gt;</span>&nbsp;&nbsp;<span class="comment"># → context-id</span><br>
+<span class="field">meroctl --node node1 namespace invite &lt;namespace-id&gt;</span>&nbsp;&nbsp;<span class="comment"># → invite JSON</span><br><br>
+<span class="comment"># Node B: accept invite, join context</span><br>
+<span class="field">meroctl --node node2 namespace join &lt;namespace-id&gt; '&lt;invite-json&gt;'</span><br>
+<span class="field">meroctl --node node2 group join-context &lt;context-id&gt;</span>
+</div>
+</div>
+
+<div class="card ga">
+<h2>Key Rules</h2>
+<div class="fr"><div class="fp">Register node once</div><div class="fd">Run <span class="code">meroctl node add</span> + <span class="code">meroctl node use</span> once. Omit <span class="code">--node</span> from all subsequent commands.</div></div>
+<div class="fr"><div class="fp">--view for read-only methods</div><div class="fd">Always pass <span class="code">--view</span> when calling a method that takes <span class="code">&amp;self</span> (Rust) or <span class="code">@View()</span> (JS). Without it, the node writes state unnecessarily.</div></div>
+<div class="fr"><div class="fp">Dev mode hot reload</div><div class="fd"><span class="code">meroctl context create --watch path/to/app.wasm</span> auto-reinstalls the app on file change. Use during Rust/JS development.</div></div>
+<div class="fr"><div class="fp">app ≠ context</div><div class="fd"><span class="code">meroctl app install</span> registers the WASM. You must separately run <span class="code">meroctl context create</span> before any calls.</div></div>
+</div>
+
+</div>
+</div>
+<script src="nav.js"></script>
+</body>
+</html>

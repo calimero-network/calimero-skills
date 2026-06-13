@@ -1,7 +1,7 @@
 # Rule: Sign the manifest BEFORE bundling
 
-mero-sign operates on a standalone `manifest.json` file — not on a `.mpk` archive.
-Signing after `bundle create` will not work because the manifest is already packed.
+mero-sign operates on a standalone `manifest.json` file — not on a `.mpk` archive. Signing after
+`bundle create` will not work because the manifest is already packed.
 
 ## WRONG order:
 
@@ -20,6 +20,6 @@ calimero-registry bundle push app.mpk --key key.json    # ✓ then push
 
 ## Why
 
-The registry verifies the signature by re-running the RFC 8785 canonicalization on the
-manifest fields inside the bundle. If the manifest was modified after signing — including
-by the bundle tool itself — the signature check fails with `400 invalid_signature`.
+The registry verifies the signature by re-running the RFC 8785 canonicalization on the manifest
+fields inside the bundle. If the manifest was modified after signing — including by the bundle tool
+itself — the signature check fails with `400 invalid_signature`.

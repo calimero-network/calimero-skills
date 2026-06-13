@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calimero | Skills — Merobox Skill</title>
+<link rel="stylesheet" href="styles.css">
+<meta name="theme-color" content="#0d1117">
+</head>
+<body>
+<div class="main">
+<div class="content">
+<div class="breadcrumb"><a href="index.html">Home</a><span class="sep">/</span><span>Merobox</span></div>
+
+<h1>Merobox Skill</h1>
+<p class="page-subtitle">Context for local multi-node Calimero environments and CI pipelines with merobox</p>
+
+<div class="card ga">
+<h2>What This Skill Covers</h2>
+<p style="margin-bottom:12px;">The <span class="code">calimero-merobox</span> skill gives your AI assistant knowledge of the merobox Python CLI so it can write correct local dev environments, integration test workflows, and GitHub Actions pipelines.</p>
+<div class="g2">
+  <div class="cb"><h4>Covered Topics</h4>
+    <ul style="margin:8px 0 0 16px;color:#c9d1d9;font-size:13px;">
+      <li style="margin-bottom:6px;">merobox install (brew, apt, pipx)</li>
+      <li style="margin-bottom:6px;">Node start/stop/list</li>
+      <li style="margin-bottom:6px;">Bootstrap workflow YAML format</li>
+      <li style="margin-bottom:6px;">Multi-node app deployment and context setup</li>
+      <li>GitHub Actions integration template</li>
+    </ul>
+  </div>
+  <div class="cb"><h4>Install</h4>
+    <div class="typedef" style="margin-top:6px;"><span class="field">npx @calimero-network/agent-skills calimero-merobox</span><br><br><span class="comment"># Recommended combination:</span><br><span class="field">npx @calimero-network/agent-skills calimero-node calimero-merobox</span></div>
+  </div>
+</div>
+</div>
+
+<div class="card gb">
+<h2>Install Merobox</h2>
+<div class="typedef">
+<span class="comment"># macOS</span><br>
+<span class="field">brew install merobox</span><br><br>
+<span class="comment"># Ubuntu/Debian</span><br>
+<span class="field">curl -fsSL https://calimero-network.github.io/merobox/gpg.key \</span><br>
+&nbsp;&nbsp;<span class="comment">| sudo tee /usr/share/keyrings/merobox.gpg > /dev/null</span><br>
+<span class="field">sudo apt update &amp;&amp; sudo apt install merobox</span><br><br>
+<span class="comment"># Any platform</span><br>
+<span class="field">pipx install merobox</span><br><br>
+<span class="field">merobox --version</span>&nbsp;&nbsp;<span class="comment"># verify — requires Docker 20.10+</span>
+</div>
+</div>
+
+<div class="card gc">
+<h2>Node Management</h2>
+<div class="typedef">
+<span class="comment"># Start a node</span><br>
+<span class="field">merobox run --name my-node</span><br><br>
+<span class="comment"># List running nodes</span><br>
+<span class="field">merobox list</span><br><br>
+<span class="comment"># Stop a node</span><br>
+<span class="field">merobox stop --name my-node</span><br><br>
+<span class="comment"># Run a bootstrap workflow</span><br>
+<span class="field">merobox bootstrap run --file workflow.yaml</span>
+</div>
+</div>
+
+<div class="card gd">
+<h2>Key Rules</h2>
+<div class="fr"><div class="fp">Docker required</div><div class="fd">Docker 20.10+ must be running before any merobox command. merobox manages Calimero nodes as Docker containers.</div></div>
+<div class="fr"><div class="fp">Bootstrap YAML</div><div class="fd">Workflow files define a sequence of steps: node startup, app install, context creation, identity setup, and method calls. Each step type has a required schema.</div></div>
+<div class="fr"><div class="fp">CI usage</div><div class="fd">Use <span class="code">merobox bootstrap run</span> in GitHub Actions to spin up a full multi-node environment for integration tests. See the skill for the Actions template.</div></div>
+</div>
+
+</div>
+</div>
+<script src="nav.js"></script>
+</body>
+</html>

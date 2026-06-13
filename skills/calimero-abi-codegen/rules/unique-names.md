@@ -20,9 +20,7 @@ The ABI validator rejects manifests where names clash — across methods, events
   "types": {
     "set": { "kind": "record", "fields": [] }
   },
-  "methods": [
-    { "name": "set", "params": [] }
-  ]
+  "methods": [{ "name": "set", "params": [] }]
 }
 ```
 
@@ -43,9 +41,7 @@ Map keys **must** be `{ "kind": "string" }`.
 ```json
 {
   "types": {},
-  "methods": [
-    { "name": "get", "returns": { "$ref": "NonExistentType" } }
-  ]
+  "methods": [{ "name": "get", "returns": { "$ref": "NonExistentType" } }]
 }
 ```
 

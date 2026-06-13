@@ -1,7 +1,7 @@
 # Rule: Never commit key.json
 
-The signing key file contains your Ed25519 private key. If committed to version control,
-anyone with repo access can sign bundles as you and publish malicious apps under your identity.
+The signing key file contains your Ed25519 private key. If committed to version control, anyone with
+repo access can sign bundles as you and publish malicious apps under your identity.
 
 ## Required steps
 
@@ -34,6 +34,7 @@ Store `CALIMERO_SIGNING_KEY` as a repository secret (GitHub Secrets, etc.), neve
 ## If you accidentally committed a key
 
 Rotate immediately:
+
 ```bash
 mero-sign generate-key --output new-key.json
 # Update your public key in the registry

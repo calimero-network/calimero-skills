@@ -11,9 +11,9 @@ Distributed counting. The value is the sum across all contributing nodes.
 import { Counter } from '@calimero-network/calimero-sdk-js/collections';
 
 const counter = new Counter();
-counter.increment();            // +1
-counter.incrementBy(5n);        // +5 (bigint)
-const total = counter.value();  // bigint
+counter.increment(); // +1
+counter.incrementBy(5n); // +5 (bigint)
+const total = counter.value(); // bigint
 ```
 
 > Counter values are always `bigint`. Do not compare with `=== 0` — use `=== 0n`.
@@ -27,10 +27,10 @@ import { UnorderedMap } from '@calimero-network/calimero-sdk-js/collections';
 
 const map = new UnorderedMap<string, string>();
 map.set('key', 'value');
-const val = map.get('key');       // 'value' | undefined
-const exists = map.has('key');    // boolean
+const val = map.get('key'); // 'value' | undefined
+const exists = map.has('key'); // boolean
 map.remove('key');
-const all = map.entries();        // [['key', 'value'], ...]
+const all = map.entries(); // [['key', 'value'], ...]
 ```
 
 ## UnorderedSet\<T\>
@@ -41,8 +41,8 @@ Set of unique values with Last-Write-Wins per element.
 import { UnorderedSet } from '@calimero-network/calimero-sdk-js/collections';
 
 const set = new UnorderedSet<string>();
-set.add('item');          // true on first insert, false if already present
-set.has('item');          // true
+set.add('item'); // true on first insert, false if already present
+set.has('item'); // true
 set.delete('item');
 const items = set.toArray();
 ```
@@ -57,9 +57,9 @@ import { Vector } from '@calimero-network/calimero-sdk-js/collections';
 const vec = new Vector<string>();
 vec.push('first');
 vec.push('second');
-const item = vec.get(0);   // 'first'
-const last = vec.pop();    // 'second'
-const len = vec.len();     // 1 (bigint)
+const item = vec.get(0); // 'first'
+const last = vec.pop(); // 'second'
+const len = vec.len(); // 1 (bigint)
 ```
 
 ## LwwRegister\<T\>

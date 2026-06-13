@@ -4,7 +4,7 @@
 
 ## Pipeline stages
 
-```
+```text
 TypeScript  →  Rollup  →  QuickJS  →  WASI-SDK  →  Binaryen  →  .wasm
   Source       Bundle    C bytecode     WASM        Optimized
 ```
@@ -53,22 +53,22 @@ pnpm build
 
 ```bash
 # Install the app
-meroctl --node-name <NODE> app install \
+meroctl --node <NODE> app install \
   --path build/service.wasm \
   --context-id <CONTEXT_ID>
 
 # Create a new context (runs @Init)
-meroctl --node-name <NODE> context create \
+meroctl --node <NODE> context create \
   --app-id <APP_ID>
 
 # Call a mutation
-meroctl --node-name <NODE> call \
+meroctl --node <NODE> call \
   --context-id <CONTEXT_ID> \
   --method set \
   --args '{"key":"hello","value":"world"}'
 
 # Call a view
-meroctl --node-name <NODE> call \
+meroctl --node <NODE> call \
   --context-id <CONTEXT_ID> \
   --method get \
   --args '{"key":"hello"}'
@@ -84,11 +84,11 @@ merobox bootstrap run examples/counter/workflows/counter-js.yml --log-level=trac
 
 ## Platform support
 
-| Platform | Supported |
-| --- | --- |
-| macOS (x64, arm64) | Yes |
-| Linux (x64, arm64) | Yes |
-| Windows (native) | No — use WSL |
+| Platform           | Supported    |
+| ------------------ | ------------ |
+| macOS (x64, arm64) | Yes          |
+| Linux (x64, arm64) | Yes          |
+| Windows (native)   | No — use WSL |
 
 ## Definition of done (before PR)
 

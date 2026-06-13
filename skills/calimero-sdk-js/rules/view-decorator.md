@@ -1,8 +1,8 @@
 # Rule: @View() is required on read-only methods
 
-Every method that does not modify state must be decorated with `@View()`. Without it,
-the runtime will persist state after every call — even when nothing changed — causing
-unnecessary storage writes and cross-node syncs.
+Every method that does not modify state must be decorated with `@View()`. Without it, the runtime
+will persist state after every call — even when nothing changed — causing unnecessary storage writes
+and cross-node syncs.
 
 ## WRONG — read-only method without @View():
 
@@ -41,6 +41,8 @@ export class AppLogic extends AppState {
 ## How to tell if a method needs @View()
 
 A method is read-only if it:
-- Does not call any mutation methods on CRDT fields (`set`, `insert`, `add`, `push`, `increment`, etc.)
+
+- Does not call any mutation methods on CRDT fields (`set`, `insert`, `add`, `push`, `increment`,
+  etc.)
 - Does not call `emit()` or `emitWithHandler()`
 - Only reads values and returns results

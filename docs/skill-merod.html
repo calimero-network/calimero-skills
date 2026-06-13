@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calimero | Skills — merod Skill</title>
+<link rel="stylesheet" href="styles.css">
+<meta name="theme-color" content="#0d1117">
+</head>
+<body>
+<div class="main">
+<div class="content">
+<div class="breadcrumb"><a href="index.html">Home</a><span class="sep">/</span><span>merod</span></div>
+
+<h1>merod Skill</h1>
+<p class="page-subtitle">Context for running and configuring the <span class="code">merod</span> Calimero node daemon</p>
+
+<div class="card ga">
+<h2>What This Skill Covers</h2>
+<p style="margin-bottom:12px;">The <span class="code">calimero-merod</span> skill gives your AI assistant deep knowledge of the <span class="code">merod</span> daemon so it can write correct node setup scripts, Dockerfiles, and CI health checks.</p>
+<div class="g2">
+  <div class="cb"><h4>Covered Topics</h4>
+    <ul style="margin:8px 0 0 16px;color:#c9d1d9;font-size:13px;">
+      <li style="margin-bottom:6px;"><span class="code">merod init</span> flags and defaults</li>
+      <li style="margin-bottom:6px;"><span class="code">merod run</span> startup options</li>
+      <li style="margin-bottom:6px;">Config file schema and data layout</li>
+      <li style="margin-bottom:6px;">Health endpoint (<span class="code">GET /health</span> → <span class="code">"alive"</span>)</li>
+      <li style="margin-bottom:6px;">Docker and Compose health checks</li>
+      <li>Multi-node port assignments</li>
+    </ul>
+  </div>
+  <div class="cb"><h4>Install</h4>
+    <div class="typedef" style="margin-top:6px;"><span class="field">npx @calimero-network/agent-skills calimero-merod</span><br><br><span class="comment"># Recommended combination:</span><br><span class="field">npx @calimero-network/agent-skills calimero-merod calimero-meroctl</span></div>
+  </div>
+</div>
+</div>
+
+<div class="card gb">
+<h2>Two-Step Startup</h2>
+<div class="typedef">
+<span class="comment"># Step 1: Init (ONCE on a fresh home)</span><br>
+<span class="field">merod --node node1 init --server-port 2428 --swarm-port 2528</span><br><br>
+<span class="comment"># Step 2: Run (every time after)</span><br>
+<span class="field">merod --node node1 run</span><br><br>
+<span class="comment"># Custom home directory</span><br>
+<span class="field">merod --home ./data --node node1 init --server-port 2428 --swarm-port 2528</span><br>
+<span class="field">merod --home ./data --node node1 run</span><br><br>
+<span class="comment"># Multiple nodes on one machine (different ports)</span><br>
+<span class="field">merod --home ./data --node node1 init --server-port 2428 --swarm-port 2528</span><br>
+<span class="field">merod --home ./data --node node2 init --server-port 2429 --swarm-port 2529</span>
+</div>
+</div>
+
+<div class="card gc">
+<h2>Port Roles</h2>
+<div class="fr"><div class="fp">--server-port (2428)</div><div class="fd">HTTP/WS API — connects to <span class="code">meroctl</span>, browser frontends, Python client, JS clients. Must be reachable by all API consumers.</div></div>
+<div class="fr"><div class="fp">--swarm-port (2528)</div><div class="fd">P2P swarm — connects to other <span class="code">merod</span> nodes for state sync and namespace invite protocol. Must be reachable between nodes in multi-node setups.</div></div>
+</div>
+
+<div class="card gd">
+<h2>Health Check</h2>
+<div class="typedef">
+<span class="comment">GET http://localhost:2428/health</span><br>
+<span class="comment">→ 200 OK: { "status": "alive" }</span><br><br>
+<span class="comment"># Wait for node ready (shell)</span><br>
+<span class="field">until</span> curl -sf http://localhost:2428/health &gt; /dev/null; <span class="field">do</span><br>
+&nbsp;&nbsp;<span class="ty">echo</span> <span class="comment">"waiting..."</span>; sleep 1<br>
+<span class="field">done</span><br><br>
+<span class="comment"># Docker health check</span><br>
+<span class="kw">HEALTHCHECK</span> --interval=5s --timeout=3s --retries=10 \<br>
+&nbsp;&nbsp;<span class="ty">CMD</span> curl -sf http://localhost:2428/health || exit 1
+</div>
+<p style="margin-top:12px;color:#8b949e;font-size:13px;"><strong>Note:</strong> The status value is <span class="code">"alive"</span>, not <span class="code">"healthy"</span>. Code checking for <span class="code">"healthy"</span> will incorrectly report a live node as unhealthy.</p>
+</div>
+
+<div class="card ga">
+<h2>Key Rules</h2>
+<div class="fr"><div class="fp">Always init before run</div><div class="fd">Running <span class="code">merod run</span> on an uninitialised home fails immediately — no config, no keypair, no storage.</div></div>
+<div class="fr"><div class="fp">Never re-init production</div><div class="fd">Re-running <span class="code">merod init</span> generates a new keypair and overwrites config, destroying the node identity and breaking all existing context memberships.</div></div>
+<div class="fr"><div class="fp">Ports set at init time</div><div class="fd">Port numbers are written into <span class="code">config.toml</span> during <span class="code">init</span>. You cannot override them with <span class="code">merod run</span> flags. Edit <span class="code">config.toml</span> if you need to change them.</div></div>
+</div>
+
+</div>
+</div>
+<script src="nav.js"></script>
+</body>
+</html>

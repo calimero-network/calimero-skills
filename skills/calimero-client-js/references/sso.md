@@ -1,15 +1,15 @@
 # SSO — Calimero Desktop Integration
 
-When a user opens your app from Calimero Desktop, auth tokens are passed via the URL hash.
-Reading them lets users skip the manual login flow entirely.
+When a user opens your app from Calimero Desktop, auth tokens are passed via the URL hash. Reading
+them lets users skip the manual login flow entirely.
 
 ## Hash parameters
 
-| Parameter | Description |
-| --- | --- |
-| `access_token` | JWT for authenticated node calls |
-| `refresh_token` | Token to obtain a new access token |
-| `node_url` | URL of the local node to connect to |
+| Parameter        | Description                                |
+| ---------------- | ------------------------------------------ |
+| `access_token`   | JWT for authenticated node calls           |
+| `refresh_token`  | Token to obtain a new access token         |
+| `node_url`       | URL of the local node to connect to        |
 | `application_id` | The installed application's ID on the node |
 
 ## Reading from hash
@@ -68,5 +68,5 @@ async function initApp() {
 
 ## Important
 
-Always fall back to manual login if the hash params are absent — the app must work
-when opened directly in a browser, not only from Desktop.
+Always fall back to manual login if the hash params are absent — the app must work when opened
+directly in a browser, not only from Desktop.

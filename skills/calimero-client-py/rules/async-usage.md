@@ -1,52 +1,48 @@
-# Rule: All client methods are async — must be awaited
+# Rule: All client methods are synchronous — do NOT use await
 
-All `client.*` methods return coroutines. They must be called with `await` inside an
-`async` function, and the event loop must be running.
+Despite being built on an async Rust/Tokio runtime internally, all `client.*` methods are
+**synchronous** from Python's perspective. Do NOT use `async`/`await`.
 
 ## WRONG:
 
 ```python
-# ✗ Missing await — returns a coroutine object, not the result
-contexts = client.list_contexts()
-print(contexts)  # prints <coroutine object ...>
-
-# ✗ Calling outside async context
-def main():
-    client.list_contexts()  # won't run
+# ✗ Adding await — methods are not coroutines
+async def main():
+    contexts = await client.list_contexts()  # TypeError: object is not awaitable
 ```
 
 ## CORRECT:
 
 ```python
-# ✓ Always await
-async def main():
-    contexts = await client.list_contexts()
+# ✓ Call methods directly — no await needed
+def main():
+    conn = create_connection(api_url="http://localhost:2428", node_name="dev")
+    client = create_client(conn)
+    contexts = client.list_contexts()   # synchronous, returns result directly
     print(contexts)
 
-asyncio.run(main())
+main()
 ```
 
 ## In scripts
 
 ```python
-import asyncio
 from calimero_client_py import create_connection, create_client
+import json
 
-async def main():
-    conn = create_connection(api_url="http://localhost:2428", node_name="dev")
-    client = create_client(conn)
-    result = await client.execute_function(
-        context_id="ctx-id",
-        method="get",
-        args='{"key":"hello"}',
-        executor_public_key="pubkey"
-    )
-    print(result)
+conn = create_connection(api_url="http://localhost:2428", node_name="dev")
+client = create_client(conn)
 
-asyncio.run(main())
+result = client.execute_function(
+    context_id="ctx-id",
+    method="get",
+    args=json.dumps({"key": "hello"}),
+    executor_public_key="pubkey"
+)
+print(result)
 ```
 
-## Note: `create_connection` and `create_client` are synchronous
+## Note
 
-Only the API methods on the `client` object are async. The setup functions are regular
-synchronous calls.
+The Tokio async runtime is embedded in the Rust bindings and blocks internally. From Python's view,
+every call is a normal blocking function call.

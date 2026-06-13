@@ -1,6 +1,7 @@
 # Events
 
-Events are emitted from app logic and pushed in real-time to all context members subscribed via WebSocket.
+Events are emitted from app logic and pushed in real-time to all context members subscribed via
+WebSocket.
 
 ## Define an event type
 

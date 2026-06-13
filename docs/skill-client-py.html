@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calimero | Skills — Client Python Skill</title>
+<link rel="stylesheet" href="styles.css">
+<meta name="theme-color" content="#0d1117">
+</head>
+<body>
+<div class="main">
+<div class="content">
+<div class="breadcrumb"><a href="index.html">Home</a><span class="sep">/</span><span>Client Python</span></div>
+
+<h1>Client Python Skill</h1>
+<p class="page-subtitle">Context for the <span class="code">calimero-client-py</span> Python package — node automation, backend services, and CI scripts</p>
+
+<div class="card ga">
+<h2>What This Skill Covers</h2>
+<p style="margin-bottom:12px;">The <span class="code">calimero-client-py</span> skill gives your AI assistant knowledge of the Python client's synchronous API so it can write correct scripts for node management, context automation, and CI pipelines.</p>
+<div class="g2">
+  <div class="cb"><h4>Covered Topics</h4>
+    <ul style="margin:8px 0 0 16px;color:#c9d1d9;font-size:13px;">
+      <li style="margin-bottom:6px;">Connection and auth (<span class="code">create_connection</span>, <span class="code">create_client</span>)</li>
+      <li style="margin-bottom:6px;">Full API: contexts, apps, identities, blobs</li>
+      <li style="margin-bottom:6px;">Namespaces and groups management</li>
+      <li style="margin-bottom:6px;">Token caching (<span class="code">~/.merobox/auth_cache/</span>)</li>
+      <li>CI/CD first-time token seeding</li>
+    </ul>
+  </div>
+  <div class="cb"><h4>Install</h4>
+    <div class="typedef" style="margin-top:6px;"><span class="field">npx @calimero-network/agent-skills calimero-client-py</span><br><br><span class="comment"># Install the Python package:</span><br><span class="field">pip install calimero-client-py</span></div>
+  </div>
+</div>
+</div>
+
+<div class="card gb">
+<h2>Minimal Working Example</h2>
+<div class="typedef">
+<span class="kw">from</span> <span class="ty">calimero_client_py</span> <span class="kw">import</span> <span class="ty">create_connection</span>, <span class="ty">create_client</span><br><br>
+<span class="kw">def</span> <span class="ty">main</span>():<br>
+&nbsp;&nbsp;<span class="field">conn</span> = <span class="ty">create_connection</span>(<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="field">node_url</span>=<span class="comment">"http://localhost:2428"</span>,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="field">node_name</span>=<span class="comment">"node1"</span>,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="field">admin_user</span>=<span class="comment">"admin"</span>,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="field">admin_password</span>=<span class="comment">"secret"</span>,<br>
+&nbsp;&nbsp;)<br>
+&nbsp;&nbsp;<span class="field">client</span> = <span class="ty">create_client</span>(<span class="field">conn</span>)<br><br>
+&nbsp;&nbsp;<span class="comment"># List contexts</span><br>
+&nbsp;&nbsp;<span class="field">contexts</span> = <span class="field">client</span>.<span class="ty">list_contexts</span>()<br>
+&nbsp;&nbsp;<span class="kw">for</span> <span class="field">ctx</span> <span class="kw">in</span> <span class="field">contexts</span>:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="ty">print</span>(<span class="field">ctx</span>.<span class="field">id</span>, <span class="field">ctx</span>.<span class="field">application_id</span>)
+</div>
+</div>
+
+<div class="card gc">
+<h2>Key Rules</h2>
+<div class="fr"><div class="fp">All methods are synchronous</div><div class="fd">The Tokio runtime is managed internally by the Rust (PyO3) bindings. Do NOT use <span class="code">await</span> or <span class="code">asyncio</span> with any client methods.</div></div>
+<div class="fr"><div class="fp">node_name must be stable</div><div class="fd">The <span class="code">node_name</span> parameter is used as a key for token caching in <span class="code">~/.merobox/auth_cache/</span>. Changing it loses cached tokens.</div></div>
+<div class="fr"><div class="fp">CI token seeding</div><div class="fd">In CI environments with no cached tokens, call <span class="code">client.seed_token(access_token, refresh_token)</span> before making API calls. Store the token values in CI secrets.</div></div>
+</div>
+
+<div class="card gd">
+<h2>Common API Methods</h2>
+<div class="fr"><div class="fp">list_contexts()</div><div class="fd">Returns all contexts on the node.</div></div>
+<div class="fr"><div class="fp">create_context(application_id)</div><div class="fd">Creates a new context from an installed application.</div></div>
+<div class="fr"><div class="fp">install_application(path)</div><div class="fd">Installs a WASM application from a local file path.</div></div>
+<div class="fr"><div class="fp">call(context_id, method, args)</div><div class="fd">Executes a method on a context via JSON-RPC.</div></div>
+<div class="fr"><div class="fp">list_namespaces() / list_groups()</div><div class="fd">Lists namespaces and groups for multi-node membership management.</div></div>
+</div>
+
+</div>
+</div>
+<script src="nav.js"></script>
+</body>
+</html>
