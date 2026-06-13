@@ -188,7 +188,14 @@ ws.addCallback((event) => {
 
 ## References
 
-See `references/` for auth flow, RPC calls, WebSocket events, SSO, and
-`invitations-and-joins.md` (create/share an invitation → join a namespace + its
-contexts — the backbone of any multi-user app). See `rules/` for camelCase API
-and token refresh requirements.
+See `references/` for auth flow, RPC calls, WebSocket events, and SSO. Multi-user
++ admin topics (mero-js v2.5 / Calimero 0.11, all camelCase):
+
+- `invitations-and-joins.md` — create/share an invitation → join a namespace + its contexts
+- `group-upgrades-and-migrations.md` — `upgradeGroup`, migration status, cascade, retry (0.11)
+- `capabilities-and-access-control.md` — member capability bitmask + `CAPABILITIES`/`hasCap`
+- `metadata.md` — group/member/context metadata (display names) + size limits
+- `aliases.md` — human-readable names for context/application/identity IDs
+- `blobs-and-context-identity.md` — content-addressed blobs + choosing an executor identity
+
+See `rules/` for camelCase API and token refresh requirements.
