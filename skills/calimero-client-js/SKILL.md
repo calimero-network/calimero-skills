@@ -93,5 +93,7 @@ ws.addCallback((event) => {
 
 ## References
 
-See `references/` for auth flow, RPC calls, WebSocket events, and SSO.
+See `references/` for auth flow, RPC calls, WebSocket events, SSO, and
+`invitations-and-joins.md` (create/share an invitation → join a namespace +
+its contexts — the backbone of any multi-user app).
 See `rules/` for camelCase API and token refresh requirements.
