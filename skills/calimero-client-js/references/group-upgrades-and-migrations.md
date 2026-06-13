@@ -1,12 +1,10 @@
 # Group upgrades & migrations (0.11+)
 
-Upgrade a group/namespace to a new application version and track the per-member
-migration as peers apply it. New in Calimero 0.11 / mero-js v2.3–v2.5. All via
-`AdminApiClient`, **camelCase**.
+Upgrade a group/namespace to a new application version and track the per-member migration as peers
+apply it. New in Calimero 0.11 / mero-js v2.3–v2.5. All via `AdminApiClient`, **camelCase**.
 
-> Upgrades are **asynchronous**: `upgradeGroup` returns once the upgrade op is
-> published; each peer migrates its own state independently. You poll status to
-> know when everyone has converged.
+> Upgrades are **asynchronous**: `upgradeGroup` returns once the upgrade op is published; each peer
+> migrates its own state independently. You poll status to know when everyone has converged.
 
 ## Start an upgrade
 
@@ -14,8 +12,8 @@ migration as peers apply it. New in Calimero 0.11 / mero-js v2.3–v2.5. All via
 const res = await admin.upgradeGroup(groupId, {
   targetApplicationId: 'app-v2-id',
   migrateMethod: 'migrate_v2', // optional: the migrate fn declared in the new app
-  cascade: true,               // v2.5+: also upgrade descendant subgroups on the same app
-  requester: myPublicKey,      // optional
+  cascade: true, // v2.5+: also upgrade descendant subgroups on the same app
+  requester: myPublicKey, // optional
 });
 // → { groupId, status, total?, completed?, failed? }
 ```
@@ -26,7 +24,9 @@ const res = await admin.upgradeGroup(groupId, {
 const status = await admin.getGroupUpgradeStatus(groupId);
 // → GroupUpgradeStatus | null   (null = no active upgrade)
 if (status) {
-  console.log(`${status.completed ?? 0}/${status.total ?? 0} migrated, ${status.failed ?? 0} failed`);
+  console.log(
+    `${status.completed ?? 0}/${status.total ?? 0} migrated, ${status.failed ?? 0} failed`
+  );
   // status = { fromVersion, toVersion, initiatedAt, initiatedBy, status,
   //            total?, completed?, failed?, completedAt? }
 }
@@ -58,8 +58,7 @@ await admin.retryGroupUpgrade(groupId, { requester: myPublicKey });
 
 ## Events
 
-`mero-js` exports an SSE event for version changes — surface "this app updated,
-reload" UX:
+`mero-js` exports an SSE event for version changes — surface "this app updated, reload" UX:
 
 ```ts
 import { SseClient, AppVersionChangedEvent } from '@calimero-network/mero-js';
@@ -67,12 +66,12 @@ import { SseClient, AppVersionChangedEvent } from '@calimero-network/mero-js';
 
 ## Gotchas
 
-- **Async + eventual:** never assume a member migrated just because
-  `upgradeGroup` returned — poll `getGroupUpgradeStatus` / `getMigrationStatus`.
+- **Async + eventual:** never assume a member migrated just because `upgradeGroup` returned — poll
+  `getGroupUpgradeStatus` / `getMigrationStatus`.
 - `getGroupUpgradeStatus` returns **null** when nothing is in flight (not an error).
-- `migrateMethod` must match a migrate entrypoint declared by the *target* app;
-  omit it for apps whose state is forward-compatible.
-- `cascade` (v2.5+, default false) fans the upgrade to subgroups running the
-  same app atomically — leave it off if subgroups run different apps.
-- `membersPendingSignature` > 0 means some members still owe authored ops;
-  the migration isn't truly settled until it hits 0.
+- `migrateMethod` must match a migrate entrypoint declared by the _target_ app; omit it for apps
+  whose state is forward-compatible.
+- `cascade` (v2.5+, default false) fans the upgrade to subgroups running the same app atomically —
+  leave it off if subgroups run different apps.
+- `membersPendingSignature` > 0 means some members still owe authored ops; the migration isn't truly
+  settled until it hits 0.

@@ -188,8 +188,8 @@ ws.addCallback((event) => {
 
 ## References
 
-See `references/` for auth flow, RPC calls, WebSocket events, and SSO. Multi-user
-+ admin topics (mero-js v2.5 / Calimero 0.11, all camelCase):
+See `references/` for auth flow, RPC calls, WebSocket events, and SSO. Multi-user and admin topics
+(mero-js v2.5 / Calimero 0.11, all camelCase):
 
 - `invitations-and-joins.md` — create/share an invitation → join a namespace + its contexts
 - `group-upgrades-and-migrations.md` — `upgradeGroup`, migration status, cascade, retry (0.11)
