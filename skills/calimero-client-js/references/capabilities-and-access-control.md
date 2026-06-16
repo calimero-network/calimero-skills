@@ -47,10 +47,12 @@ await admin.setDefaultCapabilities(groupId, {
 
 ```ts
 await admin.setSubgroupVisibility(groupId, {
-  subgroupVisibility: 'public', // 'public' | 'private' | 'inherit'
+  subgroupVisibility: 'open', // 'open' (public) | 'restricted' (private)
   requester: myPublicKey,
 });
 ```
+
+Full public/private room patterns: see **subgroups-and-visibility.md**.
 
 ## Gotchas
 
