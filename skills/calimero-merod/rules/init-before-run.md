@@ -5,8 +5,9 @@
 ## Correct order
 
 ```bash
-# 1. Init (ONCE — creates config, keypair, storage dirs)
-merod --node node1 init --server-port 2428 --swarm-port 2528
+# 1. Init (ONCE — creates config, keypair, storage dirs).
+#    Defaults: server/API 2528, swarm 2428.
+merod --node node1 init --server-port 2528 --swarm-port 2428
 
 # 2. Run (every time after)
 merod --node node1 run
@@ -31,8 +32,8 @@ keypair**, effectively destroying the node's identity and making all existing co
 Each node needs its own `--node` name and different ports:
 
 ```bash
-merod --home ./data --node node1 init --server-port 2428 --swarm-port 2528
-merod --home ./data --node node2 init --server-port 2429 --swarm-port 2529
+merod --home ./data --node node1 init --server-port 2528 --swarm-port 2428
+merod --home ./data --node node2 init --server-port 2529 --swarm-port 2429
 
 # Run both (separate terminals or background)
 merod --home ./data --node node1 run &

@@ -41,7 +41,7 @@ One application can power many independent contexts. State is never shared acros
 An **identity** is an Ed25519 keypair. Each context member has an identity on the node. The
 identity's public key is used:
 
-- As `executorPublicKey` in RPC calls (who is calling)
+- To identify the caller (resolved from the auth token, not sent as a request field)
 - For signing mutations in the CRDT sync protocol
 
 ### Namespace and Group
@@ -56,38 +56,52 @@ joins context via group.
 
 ## How calls work (JSON-RPC)
 
-All application method calls go through the node's JSON-RPC endpoint:
+All application method calls go through the node's JSON-RPC 2.0 endpoint at **`/jsonrpc`** (server
+port default **2528**), with `method: "execute"`:
 
 ```text
-POST http://localhost:2428/api/v0/context/{contextId}/execute
+POST http://localhost:2528/jsonrpc
 Authorization: Bearer <access_token>
 
 {
-  "method": "get_posts",
-  "argsJson": "{}",
-  "executorPublicKey": "<base58-pubkey>"
+  "jsonrpc": "2.0",
+  "id": "1",
+  "method": "execute",
+  "params": {
+    "context_id": "<context-id>",
+    "method": "get_posts",
+    "args_json": {},
+    "substitute": []
+  }
 }
 ```
 
+- `args_json` is a JSON **value** (object), not a double-encoded string. The caller identity comes
+  from the auth token — there is **no `executorPublicKey`** field. (Management endpoints live under
+  `/admin-api/...`; see `references/jsonrpc-protocol.md`.)
 - **Mutations** (methods taking `&mut self`) change shared CRDT state; changes are synced to all
   context members automatically.
-- **Views** (methods taking `&self`, annotated `@View` or returning read-only) do NOT persist state.
-- There is no separate "query" endpoint — mutations and views use the same call path. The `--view`
-  flag in `meroctl call` tells the client to skip state persistence.
+- **Views** (methods taking `&self`) do NOT persist state — a view is just a read-only method; there
+  is no `--view` flag in `meroctl call`.
 
 ## How events work (WebSocket)
 
 Applications emit events with `app::emit!()` (Rust) or `env.emit()` (JS). Clients subscribe via
 WebSocket to receive them in real time.
 
-Two event types the node sends to subscribers:
+Context events the node sends to subscribers (0.11):
 
-| Type             | When                          | Payload                        |
-| ---------------- | ----------------------------- | ------------------------------ |
-| `ExecutionEvent` | App called `app::emit!()`     | `{ events: [{ kind, data }] }` |
-| `StateMutation`  | A member mutated shared state | `{ newRoot: string }`          |
+| Type                | When                                    | Payload                                  |
+| ------------------- | --------------------------------------- | ---------------------------------------- |
+| `StateMutation`     | A member mutated shared state           | `{ newRoot, events?: ExecutionEvent[] }` |
+| `SyncStatus`        | Sync progress/state changed             | sync state info                          |
+| `AppVersionChanged` | The context's app was upgraded/migrated | new app version                          |
+| `XCall`             | Cross-context call feedback             | xcall result info                        |
 
-WebSocket endpoint: `ws://localhost:2428/ws`
+App `app::emit!()` events arrive **inside** `StateMutation.events`. See
+`references/websocket-events.md`.
+
+WebSocket endpoint: `ws://localhost:2528/ws`
 
 ## CRDT storage types
 
@@ -95,34 +109,29 @@ All shared application state uses conflict-free replicated data types from
 `calimero_storage::collections`. Plain `HashMap`, `Vec`, or `HashSet` must never be used for shared
 state.
 
-| Type                        | Use for                                 |
-| --------------------------- | --------------------------------------- |
-| `UnorderedMap<K, V>`        | Key-value store (most common)           |
-| `Vector<T>`                 | Append-only ordered log                 |
-| `UnorderedSet<T>`           | Unique value set                        |
-| `LwwRegister<T>`            | Single last-write-wins scalar           |
-| `Counter` / `Counter<true>` | Grow-only / PN counter                  |
-| `FrozenStorage<T>`          | Immutable content-addressed blobs       |
-| `UserStorage<T>`            | Per-member private storage (not synced) |
-| `ReplicatedGrowableArray`   | Collaborative text / ordered sequence   |
+| Type                             | Use for                                    |
+| -------------------------------- | ------------------------------------------ |
+| `UnorderedMap<K, V>`             | Key-value store (most common)              |
+| `Vector<T>`                      | Append-only ordered log                    |
+| `UnorderedSet<T>`                | Unique value set                           |
+| `LwwRegister<T>`                 | Single last-write-wins scalar              |
+| `Counter` / `Counter<true>`      | Grow-only / PN counter                     |
+| `FrozenStorage<T>`               | Immutable content-addressed blobs          |
+| `UserStorage<T>`                 | Per-member private storage (not synced)    |
+| `ReplicatedGrowableArray`        | Collaborative text / ordered sequence      |
+| `SortedMap` / `SortedSet`        | Ordered map/set — range/prefix/page (0.11) |
+| `AuthoredMap` / `AuthoredVector` | Per-entry/slot author ownership (0.11)     |
+| `SharedStorage<T>`               | Group-writable single value (0.11)         |
 
 ## Authentication
 
-The node uses short-lived JWT access tokens + long-lived refresh tokens:
+The node uses short-lived JWT access tokens + long-lived refresh tokens, issued by the node's auth
+layer (auth mode is configured on the node — `proxy` or `embedded`). Tokens are passed as
+`Authorization: Bearer <accessToken>` on all API calls except `/health`.
 
-```bash
-# Get tokens
-POST /api/v0/identity/login
-{ "username": "admin", "password": "..." }
-→ { "accessToken": "...", "refreshToken": "..." }
-
-# Refresh
-POST /api/v0/identity/refresh
-{ "refreshToken": "..." }
-→ { "accessToken": "..." }
-```
-
-Tokens are passed as `Authorization: Bearer <accessToken>` on all API calls.
+In practice, **let the client SDKs handle auth** — `calimero-client-js` / `mero-react` (web login +
+token refresh) and `calimero-client-py` manage the login and refresh flow for you rather than
+calling auth endpoints by hand.
 
 ## References
 

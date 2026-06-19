@@ -23,11 +23,13 @@ You are helping a developer build a **Calimero WASM application** in Rust using 
 crate-type = ["cdylib"]
 
 [dependencies]
-calimero-sdk     = "0.10"
-calimero-storage = "0.10"
+# Pre-release: the version must be specified explicitly (a bare "0.11" won't
+# resolve a pre-release). Track the latest published rc on crates.io.
+calimero-sdk     = "0.11.0-rc.5"
+calimero-storage = "0.11.0-rc.5"
 
 [build-dependencies]
-calimero-wasm-abi = "0.10"
+calimero-wasm-abi = "0.11.0-rc.5"
 serde_json        = "1"
 
 [profile.app-release]
@@ -173,7 +175,11 @@ use calimero_sdk::env;
 
 env::executor_id()                                // [u8; 32] — caller's public key bytes
 env::context_id()                                 // [u8; 32] — current context ID
-env::time_now()                                   // u64 — current time in milliseconds
+env::time_now()                                   // u64 — strictly-increasing NANOSECOND timestamp
+                                                  //   (divide by 1_000_000 for ms vs JS Date.now())
+env::xcall_origin()                               // Option<[u8; 32]> — calling context id during an
+                                                  //   xcall dispatch (None for a direct call) — use to
+                                                  //   authorize cross-context entry points
 
 env::random_bytes(buf: &mut [u8])                 // fill buf with random bytes
 
@@ -194,6 +200,20 @@ env::blob_announce_to_context(blob_id: &[u8; 32], context_id: &[u8; 32]) -> bool
 // Cross-context call
 env::xcall(context_id: &[u8; 32], method: &str, params: &[u8]);
 ```
+
+## What's new in 0.11
+
+- **More CRDT collections** — the ordered `SortedMap` and `SortedSet` (range/prefix/paged queries);
+  the authored `AuthoredMap` and `AuthoredVector` (per-entry/slot author ownership — use instead of
+  `UnorderedMap` + hand-rolled max-wins when only the author may edit their data); and
+  `SharedStorage` (a group-writable single value). See `references/state-collections.md`.
+- **Native unit tests with `TestHost`** — exercise app logic in-process without a WASM build (enable
+  `calimero-storage`'s `testing` feature as a dev-dependency). Far faster than a full deploy.
+  Canonical example: `core/apps/kv-store/src/lib.rs` (unit tests) and
+  `core/apps/kv-store/tests/converge.rs` (multi-replica convergence via
+  `calimero_storage::testing::converge_app`).
+- **Parallel event handlers** — handlers may run concurrently, so they must be commutative,
+  idempotent, and side-effect-free. See `references/event-handlers.md`.
 
 ## Additional features
 

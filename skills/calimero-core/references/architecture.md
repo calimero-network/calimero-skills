@@ -39,16 +39,16 @@ Installing an app does NOT create a context. These are always two separate steps
 
 An **identity** is an Ed25519 keypair managed by the node:
 
-- `identityId` — the base58-encoded public key, used as `executorPublicKey` in RPC calls
-- Identities are created per node (`meroctl identity create`)
+- `identityId` — the base58-encoded public key identifying the caller (resolved from the auth token)
+- Identities are created per context (`meroctl context identity generate`)
 - An identity participates in a context as a member
 
 ## Call path for an app method
 
 ```text
 Client
-  │  POST /api/v0/context/{contextId}/execute
-  │  { method, argsJson, executorPublicKey }
+  │  POST /jsonrpc   { jsonrpc, id, method:"execute",
+  │                    params: { context_id, method, args_json, substitute } }
   ▼
 merod HTTP handler
   │  validates JWT, resolves context
@@ -94,8 +94,8 @@ vice versa) without any further configuration.
 
 | Port                           | Purpose                                            |
 | ------------------------------ | -------------------------------------------------- |
-| `--server-port` (default 2428) | HTTP/WS API — clients and meroctl connect here     |
-| `--swarm-port` (default 2528)  | P2P swarm — inter-node state sync, invite protocol |
+| `--server-port` (default 2528) | HTTP/WS API — clients and meroctl connect here     |
+| `--swarm-port` (default 2428)  | P2P swarm — inter-node state sync, invite protocol |
 
 These ports must be accessible to meroctl and app clients (server port), and to other nodes for sync
 (swarm port).

@@ -7,19 +7,22 @@ Most `create` commands print an ID on stdout. Capture it with shell variable ass
 ```bash
 APP_ID=$(meroctl app install --path app.wasm | grep -oP '(?<=application-id: )[\w-]+')
 CTX_ID=$(meroctl context create --application-id "$APP_ID" | grep -oP '(?<=context-id: )[\w-]+')
-meroctl call "$CTX_ID" set --args '{"key":"hello","value":"world"}'
+meroctl call set --context "$CTX_ID" --args '{"key":"hello","value":"world"}'
 ```
 
-> Check the actual output format of your `merod` version — the label text may vary. Use `--as-json`
-> if available to get machine-readable output.
+> The label text in human output may vary across versions, so for robust scripting prefer
+> `--output-format json` piped to `jq` (e.g.
+> `meroctl --output-format json app install --path app.wasm | jq -r '.id'`) — confirm the exact
+> field name against your version's JSON output. The `grep` form above is the simple fallback.
+> Either way, **parse** the output; don't assign the whole command output to the ID variable.
 
-## JSON output (if supported)
+## JSON output
 
-Some `meroctl` commands support a `--as-json` flag for machine-readable output:
+Use the global `--output-format json` flag for machine-readable output:
 
 ```bash
-meroctl --as-json context ls
-meroctl --as-json app ls
+meroctl --output-format json context ls
+meroctl --output-format json app ls
 ```
 
 ## Minimal CI script (GitHub Actions)
@@ -27,22 +30,24 @@ meroctl --as-json app ls
 ```yaml
 - name: Deploy and test
   run: |
-    # Register node (assumes merod is running in a service container)
-    meroctl node add ci http://localhost:2428
+    # Register node (assumes merod is running in a service container).
+    # The node's HTTP/API port is 2528 by default (swarm uses 2428).
+    meroctl node add ci http://localhost:2528
     meroctl node use ci
 
-    # Install app
-    APP_ID=$(meroctl app install --path app.wasm)
+    # Install app — PARSE the id out of the output (label may vary; or use
+    # `--output-format json | jq -r '.id'` once you confirm the field name).
+    APP_ID=$(meroctl app install --path app.wasm | grep -oP '(?<=application-id: )[\w-]+')
     echo "APP_ID=$APP_ID" >> $GITHUB_ENV
 
     # Create context
-    CTX_ID=$(meroctl context create --application-id "$APP_ID")
+    CTX_ID=$(meroctl context create --application-id "$APP_ID" | grep -oP '(?<=context-id: )[\w-]+')
     echo "CTX_ID=$CTX_ID" >> $GITHUB_ENV
 
 - name: Run integration tests
   run: |
-    meroctl call "$CTX_ID" set --args '{"key":"test","value":"1"}'
-    RESULT=$(meroctl call "$CTX_ID" get --args '{"key":"test"}' --view)
+    meroctl call set --context "$CTX_ID" --args '{"key":"test","value":"1"}'
+    RESULT=$(meroctl call get --context "$CTX_ID" --args '{"key":"test"}')
     echo "$RESULT" | grep -q '"1"' || (echo "FAIL: unexpected value" && exit 1)
 ```
 
@@ -60,7 +65,7 @@ meroctl context create --watch path/to/app.wasm
 
 ```bash
 for key in foo bar baz; do
-  meroctl call "$CTX_ID" set --args "{\"key\":\"$key\",\"value\":\"$key-val\"}"
+  meroctl call set --context "$CTX_ID" --args "{\"key\":\"$key\",\"value\":\"$key-val\"}"
 done
 ```
 

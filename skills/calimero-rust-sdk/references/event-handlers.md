@@ -7,6 +7,12 @@ they receive the event during sync.
 This lets you trigger side effects (CRDT updates, counters, bookkeeping) that happen consistently on
 every node without requiring explicit RPC calls.
 
+> **Handler execution order is not guaranteed (0.11).** Different peers process the same handler
+> independently and in any order (distributed concurrency), and within a single node handlers are
+> not guaranteed to run sequentially across events. So make handlers **commutative and idempotent**,
+> **only mutate CRDT state** (no external side effects), and write that state so it converges
+> regardless of order. Don't rely on a handler running exactly once or in a particular sequence.
+
 ---
 
 ## Syntax

@@ -3,7 +3,7 @@
 ## Health check
 
 ```text
-GET http://localhost:2428/health
+GET http://localhost:2528/health
 ```
 
 Returns `200 OK` with a JSON body when the node is running and ready.
@@ -18,7 +18,7 @@ Returns `200 OK` with a JSON body when the node is running and ready.
 ## Wait for node ready (shell)
 
 ```bash
-until curl -sf http://localhost:2428/health > /dev/null; do
+until curl -sf http://localhost:2528/health > /dev/null; do
   echo "waiting for node..."
   sleep 1
 done
@@ -31,7 +31,7 @@ echo "node is ready"
 - name: Wait for node
   run: |
     for i in $(seq 1 30); do
-      if curl -sf http://localhost:2428/health; then
+      if curl -sf http://localhost:2528/health; then
         echo "Node ready"
         break
       fi
@@ -42,29 +42,30 @@ echo "node is ready"
 
 ---
 
-## API base URL
+## API layout
 
-```text
-http://localhost:2428/api/v0/
-```
+The node serves two distinct HTTP API surfaces (plus `/health`):
 
-All management endpoints are under `/api/v0/`. Clients must authenticate with
-`Authorization: Bearer <accessToken>` on all endpoints except `/api/v0/identity/login`.
+- **`/jsonrpc`** — JSON-RPC 2.0 endpoint for executing app methods (`method: "execute"`).
+- **`/admin-api/...`** — REST management endpoints (contexts, applications, blobs, groups, …).
+
+Clients authenticate with `Authorization: Bearer <accessToken>`; `/health` needs no auth. Prefer the
+`calimero-client-js` / `calimero-client-py` SDKs over hand-rolling these paths.
 
 ## Key API paths
 
-| Path                            | Method | Purpose                                |
-| ------------------------------- | ------ | -------------------------------------- |
-| `/health`                       | GET    | Node liveness check (no auth required) |
-| `/api/v0/identity/login`        | POST   | Get access + refresh tokens            |
-| `/api/v0/identity/refresh`      | POST   | Refresh access token                   |
-| `/api/v0/contexts`              | GET    | List contexts                          |
-| `/api/v0/contexts`              | POST   | Create context                         |
-| `/api/v0/contexts/{id}/execute` | POST   | Call app method                        |
-| `/api/v0/applications`          | GET    | List installed apps                    |
-| `/api/v0/applications`          | POST   | Install app (multipart)                |
+| Path                                      | Method | Purpose                                |
+| ----------------------------------------- | ------ | -------------------------------------- |
+| `/health`                                 | GET    | Node liveness check (no auth required) |
+| `/jsonrpc`                                | POST   | Execute an app method (JSON-RPC 2.0)   |
+| `/admin-api/contexts`                     | GET    | List contexts                          |
+| `/admin-api/contexts`                     | POST   | Create context                         |
+| `/admin-api/contexts/:context_id`         | DELETE | Delete a context                       |
+| `/admin-api/applications`                 | GET    | List installed apps                    |
+| `/admin-api/applications/:application_id` | GET    | Get an installed app                   |
+| `/admin-api/blobs`                        | GET    | List blobs                             |
 
-WebSocket: `ws://localhost:2428/ws`
+WebSocket: `ws://localhost:2528/ws` (subscriptions / streamed events)
 
 ---
 
@@ -72,7 +73,7 @@ WebSocket: `ws://localhost:2428/ws`
 
 ```dockerfile
 HEALTHCHECK --interval=5s --timeout=3s --retries=10 \
-  CMD curl -sf http://localhost:2428/health || exit 1
+  CMD curl -sf http://localhost:2528/health || exit 1
 ```
 
 ## Docker Compose health check
@@ -82,7 +83,7 @@ services:
   node:
     image: calimero/merod:latest
     healthcheck:
-      test: ['CMD', 'curl', '-sf', 'http://localhost:2428/health']
+      test: ['CMD', 'curl', '-sf', 'http://localhost:2528/health']
       interval: 5s
       timeout: 3s
       retries: 10
