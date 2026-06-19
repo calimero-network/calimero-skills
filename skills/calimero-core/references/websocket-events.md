@@ -5,7 +5,7 @@ The Calimero node pushes real-time events to subscribers over WebSocket.
 ## Connect and subscribe
 
 ```text
-ws://localhost:2428/ws
+ws://localhost:2528/ws
 ```
 
 After connecting, send:
@@ -20,10 +20,16 @@ You can subscribe to multiple context IDs in one message.
 
 ## Event types
 
-| Type             | When fired                                            | Payload                        |
-| ---------------- | ----------------------------------------------------- | ------------------------------ |
-| `ExecutionEvent` | App called `app::emit!()` (Rust) or `env.emit()` (JS) | `{ events: ExecutionEvent[] }` |
-| `StateMutation`  | Any context member mutated shared state               | `{ newRoot: string }`          |
+| Type                | When fired                                       | Payload                                  |
+| ------------------- | ------------------------------------------------ | ---------------------------------------- |
+| `StateMutation`     | Any context member mutated shared state          | `{ newRoot, events?: ExecutionEvent[] }` |
+| `SyncStatus`        | Sync progress/state for a context changed (0.11) | sync state info                          |
+| `AppVersionChanged` | The context's app was upgraded/migrated (0.11)   | new application version                  |
+| `XCall`             | Cross-context call feedback (0.11)               | xcall result info                        |
+
+> App `app::emit!()` events are delivered **inside** a `StateMutation`'s `events` array (each an
+> `ExecutionEvent`), not as a separate top-level message in 0.11. `SyncStatus`, `AppVersionChanged`,
+> and `XCall` are additional context events you may receive.
 
 ---
 
@@ -37,6 +43,7 @@ interface WsMessage {
     events: Array<{
       kind: string; // matches Rust enum variant name or JS event name
       data: number[] | object; // byte array (UTF-8 JSON) or plain object
+      handler?: string | null; // (0.11) handler/source that produced the event, if any
     }>;
   };
 }
@@ -92,6 +99,8 @@ interface WsMessage {
   type: 'StateMutation';
   data: {
     newRoot: string; // hex hash of the new CRDT state root after merge
+    events?: Array<{ kind: string; data: number[] | object; handler?: string | null }>;
+    // (0.11) app::emit! events that accompanied this mutation, if any
   };
 }
 ```

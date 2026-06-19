@@ -68,7 +68,20 @@ The input `abi.json` follows the `wasm-abi/1` schema.
 { "kind": "list", "items": { ... } }      // array
 { "kind": "map", "key": { ... }, "value": { ... } }  // map (key must be string)
 { "kind": "record", "fields": [...] }     // inline struct
+{ "kind": "tuple", "elements": [ ... ] }  // fixed-arity tuple
+{ "kind": "alias", "target": { ... } }    // named alias (in types{})
 ```
+
+**Not expressible** (will fail codegen): fixed-size arrays `[T; N]`, standalone sets, and enums
+inlined into a field/param type. Use `list` for sequences, model sets via a `crdt_type` marker
+(below) or a `map`, and reference enums by `$ref` to a named `variant` type.
+
+### CRDT type markers
+
+A `record`/`map`/`list` that backs a CRDT collection carries a `crdt_type` (and often an
+`inner_type`). Valid `crdt_type` values: `lww_register`, `unordered_map`, `unordered_set`, `vector`,
+`counter`, `replicated_growable_array`, `authored_map`, `authored_vector`, and **(0.11)**
+`sorted_map`, `sorted_set`, `shared_storage`.
 
 ## Type definitions (`types` object)
 
@@ -92,6 +105,35 @@ The input `abi.json` follows the `wasm-abi/1` schema.
   }
 }
 ```
+
+## 0.11 manifest & method fields
+
+Optional top-level and per-method fields added in 0.11 (all optional — older manifests stay valid):
+
+```json
+{
+  "schema_version": "wasm-abi/1",
+  "state_version": 2, // app state schema version (defaults to 1 if absent)
+  "migrations": [
+    // migration edges for chained dispatch (code-only releases)
+    { "from": 1, "to": 2 }
+  ],
+  "types": {},
+  "methods": [
+    {
+      "name": "set",
+      "params": [],
+      "intent": "mutating", // "read_only" (#[app::view]) | "mutating" | "unspecified"
+      "xcall_callable": false // true ⇒ callable via cross-context xcall (#[app::xcall])
+    }
+  ],
+  "events": []
+}
+```
+
+- `intent` controls the node's locking strategy (read-only methods take a shared lock); defaults to
+  `unspecified` (fail-safe = treated as mutating).
+- `xcall_callable` gates whether another context may `xcall` this method; defaults to `false`.
 
 ## Validation rules
 

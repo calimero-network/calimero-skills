@@ -175,7 +175,11 @@ use calimero_sdk::env;
 
 env::executor_id()                                // [u8; 32] — caller's public key bytes
 env::context_id()                                 // [u8; 32] — current context ID
-env::time_now()                                   // u64 — current time in milliseconds
+env::time_now()                                   // u64 — strictly-increasing NANOSECOND timestamp
+                                                  //   (divide by 1_000_000 for ms vs JS Date.now())
+env::xcall_origin()                               // Option<[u8; 32]> — calling context id during an
+                                                  //   xcall dispatch (None for a direct call) — use to
+                                                  //   authorize cross-context entry points
 
 env::random_bytes(buf: &mut [u8])                 // fill buf with random bytes
 

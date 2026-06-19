@@ -6,8 +6,8 @@
 
 | Flag            | Default | Connected by                                                            |
 | --------------- | ------- | ----------------------------------------------------------------------- |
-| `--server-port` | `2428`  | `meroctl`, app clients (browser, Python, JS), all HTTP/WS API consumers |
-| `--swarm-port`  | `2528`  | Other `merod` nodes — P2P state sync, namespace invite protocol         |
+| `--server-port` | `2528`  | `meroctl`, app clients (browser, Python, JS), all HTTP/WS API consumers |
+| `--swarm-port`  | `2428`  | Other `merod` nodes — P2P state sync, namespace invite protocol         |
 
 ## What fails when a port is wrong or blocked
 
@@ -21,9 +21,9 @@
 Each `merod` instance needs unique ports:
 
 ```bash
-merod --home ./data --node node1 init --server-port 2428 --swarm-port 2528
-merod --home ./data --node node2 init --server-port 2429 --swarm-port 2529
-merod --home ./data --node node3 init --server-port 2430 --swarm-port 2530
+merod --home ./data --node node1 init --server-port 2528 --swarm-port 2428
+merod --home ./data --node node2 init --server-port 2529 --swarm-port 2429
+merod --home ./data --node node3 init --server-port 2530 --swarm-port 2430
 ```
 
 ## Ports are set at init time

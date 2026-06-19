@@ -6,7 +6,7 @@ Full CLI for managing a running Calimero node.
 
 ```bash
 meroctl --node node1 <command>              # use registered node by name
-meroctl --api http://localhost:2428 <command>  # connect directly by URL
+meroctl --api http://localhost:2528 <command>  # connect directly by URL
 meroctl --home ~/.calimero <command>        # alternate config path
 ```
 
@@ -59,8 +59,8 @@ meroctl --node node1 app ls
 # Get details of a specific app
 meroctl --node node1 app get <application-id>
 
-# Remove an app
-meroctl --node node1 app remove <application-id>
+# Uninstall an app
+meroctl --node node1 app uninstall <application-id>
 ```
 
 ---
@@ -93,32 +93,32 @@ meroctl --node node1 context sync <context-id>
 ## Calling app methods
 
 ```bash
-# Mutation — changes shared state
-meroctl --node node1 call <context-id> set \
+# Mutation — method positional, context via --context
+meroctl --node node1 call set --context <context-id> \
   --args '{"key":"hello","value":"world"}'
 
-# View — read-only, does NOT change state
-meroctl --node node1 call <context-id> get \
-  --args '{"key":"hello"}' --view
+# View — read-only method (no --view flag exists)
+meroctl --node node1 call get --context <context-id> \
+  --args '{"key":"hello"}'
 
 # Method with no arguments
-meroctl --node node1 call <context-id> list_all \
-  --args '{}' --view
+meroctl --node node1 call list_all --context <context-id> \
+  --args '{}'
 ```
 
 ---
 
-## Identity commands
+## Context identity commands
+
+Identity management is **under `context`** — there is no top-level `meroctl identity` command.
 
 ```bash
-# Create a new identity
-meroctl --node node1 identity create
+# Generate a new identity (Ed25519 keypair) in a context
+meroctl --node node1 context identity generate --context <context-id>
 
-# List all identities
-meroctl --node node1 identity ls
-
-# Get details of a specific identity
-meroctl --node node1 identity get <identity>
+# Grant / revoke a capability to an identity
+meroctl --node node1 context identity grant <context-id> <identity> <capability>
+meroctl --node node1 context identity revoke <context-id> <identity> <capability>
 ```
 
 ---
@@ -152,7 +152,7 @@ meroctl --node node2 group join-context <context-id>
 
 ```bash
 # 1. Initialize and start a node
-merod --node node1 init --server-port 2428 --swarm-port 2528
+merod --node node1 init --server-port 2528 --swarm-port 2428
 merod --node node1 run &  # run in background
 
 # 2. Register the node in meroctl
@@ -167,7 +167,7 @@ meroctl app install --path target/wasm32-unknown-unknown/release/myapp.wasm
 meroctl context create --application-id <application-id>
 # → copy the context-id
 
-# 5. Interact with the app
-meroctl call <context-id> set --args '{"key":"foo","value":"bar"}'
-meroctl call <context-id> get --args '{"key":"foo"}' --view
+# 5. Interact with the app (method positional, --context flag, no --view)
+meroctl call set --context <context-id> --args '{"key":"foo","value":"bar"}'
+meroctl call get --context <context-id> --args '{"key":"foo"}'
 ```

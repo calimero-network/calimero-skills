@@ -14,12 +14,13 @@ You are helping a developer manage a **Calimero node** using `merod` and `meroct
 ## Node setup (first time)
 
 ```bash
-# Initialize node (creates key material and config)
-merod --node node1 init --server-port 2428 --swarm-port 2528
+# Initialize node (creates key material and config).
+# Defaults shown explicitly: server/API 2528, swarm (P2P) 2428.
+merod --node node1 init --server-port 2528 --swarm-port 2428
 
 # Start the node
 merod --node node1 run
-# Node listens on http://localhost:2428 by default
+# Node's HTTP/API listens on http://localhost:2528 by default
 ```
 
 `--home <PATH>` is optional; defaults to the system config directory. Use it to specify a custom
@@ -51,7 +52,7 @@ meroctl context ls                # uses active node
 Alternatively, pass a direct URL without registering:
 
 ```bash
-meroctl --api http://localhost:2428 context ls
+meroctl --api http://localhost:2528 context ls
 ```
 
 ## Complete workflow: app → context → call
@@ -67,11 +68,11 @@ meroctl app install --path myapp.wasm
 meroctl context create --application-id <application-id>
 # → prints context-id
 
-# 3. Call a mutation (changes state)
-meroctl call <context-id> set --args '{"key":"hello","value":"world"}'
+# 3. Call a mutation (method positional, context via --context)
+meroctl call set --context <context-id> --args '{"key":"hello","value":"world"}'
 
-# 4. Call a view (read-only)
-meroctl call <context-id> get --args '{"key":"hello"}' --view
+# 4. Call a view (read-only method — no --view flag exists)
+meroctl call get --context <context-id> --args '{"key":"hello"}'
 ```
 
 ## Related skills

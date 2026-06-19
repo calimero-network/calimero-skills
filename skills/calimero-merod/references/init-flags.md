@@ -15,8 +15,8 @@ merod --node <name> init [flags]
 | ---------------------- | -------- | ------------- | ------------------------------------------------------------------- |
 | `--node <name>`        | Yes      | —             | Node identity name. Namespaces config files under `<home>/<name>/`. |
 | `--home <path>`        | No       | OS config dir | Base directory. All node data lives under `<home>/<name>/`.         |
-| `--server-port <port>` | No       | `2428`        | HTTP/WS API port. Clients and meroctl connect here.                 |
-| `--swarm-port <port>`  | No       | `2528`        | P2P port. Other merod nodes connect here for state sync.            |
+| `--server-port <port>` | No       | `2528`        | HTTP/WS API port. Clients and meroctl connect here.                 |
+| `--swarm-port <port>`  | No       | `2428`        | P2P port. Other merod nodes connect here for state sync.            |
 
 ### Examples
 
@@ -27,12 +27,12 @@ merod --node node1 init
 # Custom ports
 merod --node node1 init --server-port 3000 --swarm-port 3001
 
-# Custom home directory
-merod --home ./data --node node1 init --server-port 2428 --swarm-port 2528
+# Custom home directory (explicit ports = the defaults: server 2528, swarm 2428)
+merod --home ./data --node node1 init --server-port 2528 --swarm-port 2428
 
 # Multiple nodes on the same machine (must use different ports)
-merod --home ./data --node node1 init --server-port 2428 --swarm-port 2528
-merod --home ./data --node node2 init --server-port 2429 --swarm-port 2529
+merod --home ./data --node node1 init --server-port 2528 --swarm-port 2428
+merod --home ./data --node node2 init --server-port 2529 --swarm-port 2429
 ```
 
 ---

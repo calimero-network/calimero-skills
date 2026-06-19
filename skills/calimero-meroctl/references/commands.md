@@ -37,8 +37,9 @@ meroctl node identity
 ## app — manage installed applications
 
 ```bash
-# Install from local WASM file
+# Install from local WASM file (--package/--version are optional metadata)
 meroctl app install --path path/to/app.wasm
+meroctl app install --path path/to/app.wasm --package com.example.myapp --version 1.0.0
 
 # Install from local .mpk bundle
 meroctl app install --path path/to/app.mpk
@@ -52,8 +53,8 @@ meroctl app ls
 # Get details of a specific app
 meroctl app get <application-id>
 
-# Remove an app (does not delete existing contexts)
-meroctl app remove <application-id>
+# Uninstall an app (does not delete existing contexts)
+meroctl app uninstall <application-id>
 ```
 
 ---
@@ -84,40 +85,40 @@ meroctl context sync <context-id>
 
 ## call — invoke app methods
 
+The **method name is positional**; the context is passed with `--context` (or `-c`). There is **no
+`--view` flag** — calling a read-only method just reads. Use `--as <identity>` to call as a specific
+identity, and `-i`/`--interactive` to open a persistent WebSocket shell for many calls.
+
 ```bash
 # Mutation — changes shared CRDT state
-meroctl call <context-id> <method-name> --args '{"key":"val"}'
+meroctl call <method-name> --context <context-id> --args '{"key":"val"}'
 
-# View — read-only, skips state persistence
-meroctl call <context-id> <method-name> --args '{"key":"val"}' --view
+# View / read-only method (same form; optionally as a specific identity)
+meroctl call <method-name> --context <context-id> --args '{"key":"val"}' --as <identity-pubkey>
 
 # Method with no arguments
-meroctl call <context-id> list_all --args '{}' --view
+meroctl call list_all --context <context-id> --args '{}'
 
-# Specify executor identity explicitly
-meroctl call <context-id> <method> --args '{}' --as <identity-id>
+# Interactive shell (one persistent WebSocket)
+meroctl call -i --context <context-id>
 ```
-
-The `--view` flag should be used for any method that is annotated `@View()` (JS) or takes `&self`
-without state mutation (Rust). Omitting `--view` on a read method is not harmful but wastes a
-storage write.
 
 ---
 
-## identity — manage identities
+## context identity — manage a context's identities
+
+Identity management lives **under `context`** (there is no top-level `meroctl identity`):
 
 ```bash
-# Create a new identity (Ed25519 keypair)
-meroctl identity create
+# Generate a new identity (Ed25519 keypair) in a context
+meroctl context identity generate --context <context-id>
 
-# List all identities
-meroctl identity ls
+# Grant / revoke a capability to an identity
+meroctl context identity grant <context-id> <identity> <capability>
+meroctl context identity revoke <context-id> <identity> <capability>
 
-# Get details of a specific identity
-meroctl identity get <identity-id>
-
-# Delete an identity
-meroctl identity delete <identity-id>
+# Alias a context identity
+meroctl context identity alias add <name> <identity> --context <context-id>
 ```
 
 ---
@@ -155,8 +156,8 @@ meroctl group join-context <context-id>
 ## Full local dev flow (single machine)
 
 ```bash
-# 1. Start the node (in another terminal)
-merod --node node1 init --server-port 2428 --swarm-port 2528
+# 1. Start the node (in another terminal). Defaults: server/API 2528, swarm 2428.
+merod --node node1 init --server-port 2528 --swarm-port 2428
 merod --node node1 run
 
 # 2. Register the node
@@ -171,7 +172,7 @@ meroctl app install --path target/wasm32-unknown-unknown/release/myapp.wasm
 meroctl context create --application-id <application-id>
 # → save context-id
 
-# 5. Develop interactively
-meroctl call <context-id> set --args '{"key":"foo","value":"bar"}'
-meroctl call <context-id> get --args '{"key":"foo"}' --view
+# 5. Develop interactively (method positional, --context flag, no --view)
+meroctl call set --context <context-id> --args '{"key":"foo","value":"bar"}'
+meroctl call get --context <context-id> --args '{"key":"foo"}'
 ```

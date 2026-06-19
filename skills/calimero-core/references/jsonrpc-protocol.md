@@ -1,181 +1,111 @@
-# JSON-RPC Protocol
+# Node HTTP API (JSON-RPC + admin-api)
 
-The Calimero node exposes its application and admin APIs over HTTP/REST at
-`http://localhost:2428/api/v0/` by default.
+The Calimero node exposes **two** HTTP surfaces (plus `/health`), on the server/API port (default
+**2528**):
 
-## Base URL
+- **`/jsonrpc`** — a JSON-RPC 2.0 endpoint used to **execute app methods**.
+- **`/admin-api/...`** — REST endpoints for **management** (contexts, applications, blobs, groups,
+  …).
 
 ```text
-http://<node-host>:<server-port>/api/v0
+http://<node-host>:<server-port>          # default http://localhost:2528
+  ├── /health                             # liveness (no auth)
+  ├── /jsonrpc                            # execute app methods (JSON-RPC 2.0)
+  └── /admin-api/...                      # REST management
 ```
 
-Default: `http://localhost:2428/api/v0`
-
-All endpoints require `Authorization: Bearer <accessToken>` except `/identity/login`.
+All endpoints except `/health` require `Authorization: Bearer <accessToken>`. The token is issued by
+the node's auth layer — **use the `calimero-client-js` / `calimero-client-py` SDKs** (or `meroctl`)
+rather than hand-rolling auth and request envelopes.
 
 ---
 
-## Authentication endpoints
+## Application method execution (`POST /jsonrpc`)
 
-### Login
-
-```text
-POST /api/v0/identity/login
-
-Body: { "username": "admin", "password": "..." }
-
-Response: {
-  "accessToken":  "eyJ...",
-  "refreshToken": "eyJ..."
-}
-```
-
-### Refresh
+Frontends/clients invoke WASM app logic with a JSON-RPC 2.0 request whose `method` is `"execute"`:
 
 ```text
-POST /api/v0/identity/refresh
-
-Body: { "refreshToken": "eyJ..." }
-
-Response: { "accessToken": "eyJ..." }
-```
-
----
-
-## Application method execution
-
-This is how frontends and clients invoke WASM app logic.
-
-### Execute a method (mutation or view)
-
-```text
-POST /api/v0/context/{contextId}/execute
-
-Headers:
-  Authorization: Bearer <accessToken>
+POST /jsonrpc
+Headers: Authorization: Bearer <accessToken>
 
 Body: {
-  "method": "method_name",
-  "argsJson": "{\"key\":\"hello\"}",
-  "executorPublicKey": "<base58-identity-pubkey>"
+  "jsonrpc": "2.0",
+  "id": "1",
+  "method": "execute",
+  "params": {
+    "context_id": "<context-id>",
+    "method": "method_name",
+    "args_json": { "key": "hello" },
+    "substitute": []
+  }
 }
 
 Response (success): {
-  "output": <json-value>        // method return value, null for void
+  "jsonrpc": "2.0",
+  "id": "1",
+  "result": <json-value>          // method return value (null for void)
 }
 
 Response (error): {
-  "error": {
-    "cause": {
-      "info": { "message": "..." }
-    }
-  }
+  "jsonrpc": "2.0",
+  "id": "1",
+  "error": { ... }
 }
 ```
 
-- `argsJson` is a **JSON string** (double-encoded) — not an inline object.
-- `executorPublicKey` is the base58 public key of the identity making the call.
-- Mutations and views use the same endpoint; views skip state persistence. The `mero-js` /
-  `mero-react` SDK handles this transparently.
+- `args_json` is the method arguments as a **JSON value** (object), not a double-encoded string.
+- There is **no `executorPublicKey`** field; the caller identity comes from the auth token. The
+  optional `substitute` list resolves `{alias}` placeholders in the payload to public keys.
+- Mutations and views use the same endpoint — a "view" is just a read-only method.
+- Note: the JSON-RPC `params` use the field names above (`context_id`, `args_json`). The mero-js /
+  mero-react SDK exposes camelCase wrappers and handles the envelope for you.
 
 ---
 
-## Context management endpoints
-
-### List contexts
+## Context management (`/admin-api`)
 
 ```text
-GET /api/v0/contexts
-
-Response: [
-  { "id": "<context-id>", "applicationId": "<app-id>", ... },
-  ...
-]
+GET    /admin-api/contexts                       # list contexts
+POST   /admin-api/contexts                       # create context  { applicationId, ... }
+GET    /admin-api/contexts/:context_id           # get context details
+DELETE /admin-api/contexts/:context_id           # delete context
+POST   /admin-api/contexts/:context_id/join      # join a context
+GET    /admin-api/contexts/:context_id/identities # context identities
+POST   /admin-api/contexts/sync                  # trigger sync
 ```
 
-### Get context details
+## Application management (`/admin-api`)
 
 ```text
-GET /api/v0/contexts/{contextId}
+GET  /admin-api/applications                     # list installed apps
+GET  /admin-api/applications/:application_id      # get app details
+GET  /admin-api/applications/:application_id/versions
 ```
 
-### Create context
+(Installation is typically done via `meroctl app install` or the registry; see the
+`calimero-meroctl` and `calimero-registry` skills.)
 
-```text
-POST /api/v0/contexts
+## Other admin-api surfaces
 
-Body: { "applicationId": "<app-id>" }
-
-Response: { "id": "<context-id>" }
-```
-
-### Delete context
-
-```text
-DELETE /api/v0/contexts/{contextId}
-```
-
----
-
-## Application management endpoints
-
-### List installed applications
-
-```text
-GET /api/v0/applications
-```
-
-### Install application from local file
-
-```text
-POST /api/v0/applications
-Content-Type: multipart/form-data
-
-file: <wasm-binary>
-
-Response: { "applicationId": "<id>" }
-```
-
-### Get application details
-
-```text
-GET /api/v0/applications/{applicationId}
-```
-
----
-
-## Identity endpoints
-
-### List identities
-
-```text
-GET /api/v0/identities
-```
-
-### Create identity
-
-```text
-POST /api/v0/identities
-
-Response: { "publicKey": "<base58>", "privateKey": "<base58>" }
-```
+`/admin-api/blobs`, `/admin-api/groups/...` (group membership, roles, invites, ownership proofs) —
+see the `calimero-core` namespaces/groups reference and the client SDKs.
 
 ---
 
 ## WebSocket endpoint
 
 ```text
-ws://localhost:2428/ws
+ws://localhost:2528/ws
 ```
 
-After connecting, send a subscribe message:
+After connecting, subscribe:
 
 ```json
 { "action": "subscribe", "contextIds": ["<context-id>"] }
 ```
 
-The node will push `ExecutionEvent` and `StateMutation` messages. See `websocket-events.md` for the
-full schema.
+The node pushes context events — see `websocket-events.md` for the current event set
+(`StateMutation`, `SyncStatus`, `AppVersionChanged`, `XCall`).
 
 ---
 
@@ -189,4 +119,4 @@ full schema.
 | `404`       | Not found — unknown context or application ID                 |
 | `500`       | Internal server error — WASM execution panic or storage error |
 
-On `401`, refresh the access token and retry.
+On `401`, refresh the access token and retry (the SDKs do this automatically).

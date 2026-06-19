@@ -14,17 +14,26 @@ members.
 
 ## Type reference
 
-| Type                      | Use for                               | Key rule                                          |
-| ------------------------- | ------------------------------------- | ------------------------------------------------- |
-| `UnorderedMap<K, V>`      | Key-value store                       | Wrap values in `LwwRegister<V>` for scalar values |
-| `Vector<T>`               | Append-only ordered log               | Cannot remove items                               |
-| `UnorderedSet<T>`         | Unique value collection               | Grow-only by default                              |
-| `LwwRegister<T>`          | Single mutable scalar                 | Last write wins — safe for simple values          |
-| `Counter`                 | Grow-only integer counter             | `.increment()`, `.value()`                        |
-| `Counter<true>`           | PN counter (supports decrement)       | `.increment()`, `.decrement()`, `.value()`        |
-| `FrozenStorage<T>`        | Immutable content-addressed entries   | Write once; identified by hash                    |
-| `UserStorage<T>`          | Per-member private storage            | NOT synced to other members                       |
-| `ReplicatedGrowableArray` | Collaborative text / ordered sequence | For collaborative editing                         |
+| Type                      | Use for                               | Key rule                                             |
+| ------------------------- | ------------------------------------- | ---------------------------------------------------- |
+| `UnorderedMap<K, V>`      | Key-value store                       | Wrap values in `LwwRegister<V>` for scalar values    |
+| `Vector<T>`               | Append-only ordered log               | Cannot remove items                                  |
+| `UnorderedSet<T>`         | Unique value collection               | Grow-only by default                                 |
+| `LwwRegister<T>`          | Single mutable scalar                 | Last write wins — safe for simple values             |
+| `Counter`                 | Grow-only integer counter             | `.increment()`, `.value()`                           |
+| `Counter<true>`           | PN counter (supports decrement)       | `.increment()`, `.decrement()`, `.value()`           |
+| `FrozenStorage<T>`        | Immutable content-addressed entries   | Write once; identified by hash                       |
+| `UserStorage<T>`          | Per-member private storage            | NOT synced to other members                          |
+| `ReplicatedGrowableArray` | Collaborative text / ordered sequence | For collaborative editing                            |
+| `SortedMap<K, V>`         | Key-ordered map                       | `range`/`prefix`/`page`/`first`/`last` (0.11)        |
+| `SortedSet<T>`            | Ordered unique set                    | Ordered `range`/`prefix`/`page` (0.11)               |
+| `AuthoredMap<K, V>`       | Per-entry author ownership            | Only an entry's author can modify it (0.11)          |
+| `AuthoredVector<T>`       | Per-slot author ownership             | Only a slot's author can modify it (0.11)            |
+| `SharedStorage<T>`        | Group-writable single value           | Explicit writer set; prefer over map+max-wins (0.11) |
+
+> **0.11 additions** — `SortedMap`/`SortedSet` add ordered range/prefix/paged queries (a node-local
+> ordered index over the same add-wins entry set); `AuthoredMap`/`AuthoredVector` enforce per-entry/
+> slot author ownership; `SharedStorage` is a group-writable single value gated by a writer set.
 
 ---
 
