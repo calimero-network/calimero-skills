@@ -7,6 +7,12 @@ they receive the event during sync.
 This lets you trigger side effects (CRDT updates, counters, bookkeeping) that happen consistently on
 every node without requiring explicit RPC calls.
 
+> **Handlers may run in parallel (0.11).** Different peers run a handler at
+> different times and order, and handlers can execute concurrently. Keep them
+> **commutative, idempotent, and free of external side effects** — only touch CRDT
+> state, and write it in a way that converges regardless of execution order. Don't
+> rely on a handler running exactly once or in a particular sequence.
+
 ---
 
 ## Syntax

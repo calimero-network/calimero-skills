@@ -19,6 +19,18 @@ imported from `calimero_storage::collections`.
 | `FrozenStorage<T>`        | Immutable content-addressed entries     |                                                    |
 | `UserStorage<T>`          | Per-member isolated storage             | Not synced to other members                        |
 | `ReplicatedGrowableArray` | CRDT text / ordered sequence            | Collaborative editing                              |
+| `SortedMap<K, V>`         | Key-value mapping with ordered keys     | Supports range / prefix / paged queries            |
+| `SortedSet<T>`            | Ordered unique value set                | Range / prefix / paged iteration                   |
+| `AuthoredMap<K, V>`       | Per-entry ownership                     | Only an entry's author can modify it (no spoofing) |
+| `AuthoredVector<T>`       | Per-slot ownership                      | Only a slot's author can modify it                 |
+| `SharedStorage<T>`        | Group-writable single value             | Explicit writer set; prefer over `UnorderedMap` + max-wins |
+
+> **0.11 additions:** `SortedMap`/`SortedSet` (ordered queries), `AuthoredMap`/
+> `AuthoredVector` (per-entry/slot author ownership — prefer these over
+> `UnorderedMap` + a hand-rolled max-wins `Mergeable` when "only the author may
+> edit their own data"), and `SharedStorage` (group-writable single value).
+> Canonical usage lives in `core/apps/`: `sorted-kv-store`, `sorted-set-store`,
+> `kv-store-with-shared-storage`, and `scaffolding-e2e` (exercises all of them).
 
 ## Import
 
@@ -26,6 +38,8 @@ imported from `calimero_storage::collections`.
 use calimero_storage::collections::{
     Counter, FrozenStorage, LwwRegister, ReplicatedGrowableArray,
     UnorderedMap, UnorderedSet, UserStorage, Vector,
+    // 0.11 additions:
+    SortedMap, SortedSet, AuthoredMap, AuthoredVector, SharedStorage,
 };
 ```
 
