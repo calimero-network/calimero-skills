@@ -10,8 +10,11 @@ CTX_ID=$(meroctl context create --application-id "$APP_ID" | grep -oP '(?<=conte
 meroctl call set --context "$CTX_ID" --args '{"key":"hello","value":"world"}'
 ```
 
-> Prefer the global `--output-format json` flag for machine-readable output rather than scraping
-> human labels (which may vary across versions).
+> The label text in human output may vary across versions, so for robust scripting prefer
+> `--output-format json` piped to `jq` (e.g.
+> `meroctl --output-format json app install --path app.wasm | jq -r '.id'`) — confirm the exact
+> field name against your version's JSON output. The `grep` form above is the simple fallback.
+> Either way, **parse** the output; don't assign the whole command output to the ID variable.
 
 ## JSON output
 
@@ -32,12 +35,13 @@ meroctl --output-format json app ls
     meroctl node add ci http://localhost:2528
     meroctl node use ci
 
-    # Install app
-    APP_ID=$(meroctl app install --path app.wasm)
+    # Install app — PARSE the id out of the output (label may vary; or use
+    # `--output-format json | jq -r '.id'` once you confirm the field name).
+    APP_ID=$(meroctl app install --path app.wasm | grep -oP '(?<=application-id: )[\w-]+')
     echo "APP_ID=$APP_ID" >> $GITHUB_ENV
 
     # Create context
-    CTX_ID=$(meroctl context create --application-id "$APP_ID")
+    CTX_ID=$(meroctl context create --application-id "$APP_ID" | grep -oP '(?<=context-id: )[\w-]+')
     echo "CTX_ID=$CTX_ID" >> $GITHUB_ENV
 
 - name: Run integration tests

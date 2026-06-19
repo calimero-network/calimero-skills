@@ -203,10 +203,10 @@ env::xcall(context_id: &[u8; 32], method: &str, params: &[u8]);
 
 ## What's new in 0.11
 
-- **More CRDT collections** — `SortedMap`/`SortedSet` (ordered, range/prefix/paged queries),
-  `AuthoredMap`/`AuthoredVector` (per-entry/slot author ownership — use instead of `UnorderedMap` +
-  hand-rolled max-wins when only the author may edit their data), and `SharedStorage`
-  (group-writable single value). See `references/state-collections.md`.
+- **More CRDT collections** — the ordered `SortedMap` and `SortedSet` (range/prefix/paged queries);
+  the authored `AuthoredMap` and `AuthoredVector` (per-entry/slot author ownership — use instead of
+  `UnorderedMap` + hand-rolled max-wins when only the author may edit their data); and
+  `SharedStorage` (a group-writable single value). See `references/state-collections.md`.
 - **Native unit tests with `TestHost`** — exercise app logic in-process without a WASM build (enable
   `calimero-storage`'s `testing` feature as a dev-dependency). Far faster than a full deploy.
   Canonical example: `core/apps/kv-store/src/lib.rs` (unit tests) and

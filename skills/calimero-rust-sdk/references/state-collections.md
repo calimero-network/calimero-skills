@@ -25,10 +25,11 @@ imported from `calimero_storage::collections`.
 | `AuthoredVector<T>`       | Per-slot ownership                      | Only a slot's author can modify it                         |
 | `SharedStorage<T>`        | Group-writable single value             | Explicit writer set; prefer over `UnorderedMap` + max-wins |
 
-> **0.11 additions:** `SortedMap`/`SortedSet` (ordered queries), `AuthoredMap`/ `AuthoredVector`
-> (per-entry/slot author ownership — prefer these over `UnorderedMap` + a hand-rolled max-wins
-> `Mergeable` when "only the author may edit their own data"), and `SharedStorage` (group-writable
-> single value). Canonical usage lives in `core/apps/`: `sorted-kv-store`, `sorted-set-store`,
+> **0.11 additions:** the ordered collections `SortedMap` and `SortedSet` (range/prefix/paged
+> queries); the authored collections `AuthoredMap` and `AuthoredVector` (per-entry/slot author
+> ownership — prefer these over `UnorderedMap` + a hand-rolled max-wins `Mergeable` when "only the
+> author may edit their own data"); and `SharedStorage` (a group-writable single value). Canonical
+> usage lives in `core/apps/`: `sorted-kv-store`, `sorted-set-store`,
 > `kv-store-with-shared-storage`, and `scaffolding-e2e` (exercises all of them).
 
 ## Import
