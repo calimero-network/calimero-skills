@@ -37,7 +37,7 @@
     "test": "node scripts/test.js"
   },
   "devDependencies": {
-    "markdownlint-cli2": "^0.13.0",
+    "markdownlint-cli2": "^0.21.0",
     "prettier": "^3.3.3"
   }
 }
