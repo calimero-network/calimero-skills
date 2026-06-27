@@ -124,10 +124,3 @@ import { MeroProvider, MemoryTokenStore } from '@calimero-network/mero-react';
 
 `mero-js` also exports `MemoryTokenStore` and `LocalStorageTokenStore` and the `TokenStore`
 interface for non-React use.
-
----
-
-> **DEPRECATED:** the `@calimero-network/calimero-client` storage helpers (`setAppEndpointKey`,
-> `setAccessToken`, `setRefreshToken`, `setContextAndIdentityFromJWT`, `getJWTObject`,
-> `getAuthConfig`, `clientLogout`, …) are **forbidden** in generated apps. Do not store tokens by
-> hand — let `MeroProvider` own the callback and use `useMero()` for state and `logout()`.

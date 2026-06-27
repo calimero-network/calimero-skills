@@ -14,21 +14,15 @@ You are helping a developer connect a **browser or Node.js frontend** to a Calim
 | `@calimero-network/mero-react` | **The path for React apps.** Re-exports everything from `mero-js` plus `MeroProvider`, `useMero`, `useSubscription`, and the admin hooks. |
 | `@calimero-network/mero-js`    | Core SDK. Exposes `MeroJs` (`.rpc`, `.admin`, `.auth`, `.events`). Used standalone in non-React contexts.                                 |
 
-> **DEPRECATED — do not use:** `@calimero-network/calimero-client` (the old `rpcClient` /
-> `WsSubscriptionsClient` / `getContextId` / `setAccessToken` helpers). It is **forbidden** in
-> generated apps and is not how Calimero 0.11 works. Use `mero-react` / `mero-js` for everything:
-> auth, RPC, and events. A short DEPRECATED reference appears at the end of this file only so you
-> can recognise and migrate old code — never write new code against it.
+## Critical: mero-js admin API uses camelCase
 
-## Critical: mero-js v2 uses camelCase
-
-All request field names changed from `snake_case` to `camelCase` in v2.
+Admin-api request/response field names are `camelCase`:
 
 ```typescript
-// WRONG (v1):
+// WRONG (snake_case):
 { context_id: '...', context_identity: '...' }
 
-// CORRECT (v2 / mero-react):
+// CORRECT (camelCase):
 { contextId: '...', contextIdentity: '...' }
 ```
 
@@ -62,14 +56,12 @@ function App() {
 }
 ```
 
-> **`AppMode.SingleContext` is deprecated** (since mero-react 2.1.0; removed in 3.0.0). The auth
-> flow no longer selects a context/namespace/group for you — under MultiContext the auth callback
-> may arrive without a `context_id`/`context_identity`, so your app must pick or create the context
-> itself. Use **`AppMode.MultiContext`**: list with `useContexts` / `useNamespacesForApplication`,
-> and create with `mero.admin.createNamespace` → `createGroupInNamespace` →
-> `createContext({ applicationId, groupId })`. Calling `mero.admin.*` directly (rather than the
-> `useCreate*` hooks) surfaces server errors to the user instead of swallowing them. See
-> `references/sso.md`.
+> **Use `AppMode.MultiContext`.** `AppMode.SingleContext` is not supported — do not use it. The auth
+> flow does not select a context/namespace/group: the callback may arrive without a
+> `context_id`/`context_identity`, so your app picks or creates the context. List with `useContexts`
+> / `useNamespacesForApplication`; create with `mero.admin.createNamespace` →
+> `createGroupInNamespace` → `createContext({ applicationId, groupId })` (call `mero.admin.*`
+> directly, not the `useCreate*` hooks). See `references/sso.md`.
 
 `MeroProviderProps`: `mode` (required), `packageName`, `packageVersion`, `registryUrl`, `timeoutMs`
 (default 30000), `allowedNodeUrls`, `tokenStore`.
@@ -185,23 +177,6 @@ await mero.events.subscribe([contextId]);
 3. Call app methods via the generated typed client or `mero.rpc.execute()`.
 4. Subscribe to events via `useSubscription` (React) or `mero.events` (mero-js).
 
----
-
-## DEPRECATED: `@calimero-network/calimero-client`
-
-> The legacy client below is **forbidden** in generated apps and does not match Calimero 0.11. It is
-> shown only so you can recognise and migrate old code. Translate every one of these into the
-> mero-react / mero-js equivalents above.
-
-| Legacy (`calimero-client`)                                            | Replacement (`mero-react` / `mero-js`)                                           |
-| --------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| `rpcClient.execute(...)` → `response.result.output`                   | `mero.rpc.execute(...)` returns the output directly (throws `RpcError` on error) |
-| `WsSubscriptionsClient` / `.addCallback`                              | `useSubscription([ctx], cb)` (React) or `mero.events`                            |
-| `getContextId()` / `getExecutorPublicKey()`                           | `useMero().contextId` / `mero.admin.getContextIdentitiesOwned(ctx)`              |
-| `getAppEndpointKey()` / `setAppEndpointKey()`                         | `useMero().nodeUrl` / `getNodeUrl()` / `setNodeUrl()`                            |
-| `setAccessToken` / `setRefreshToken` / `setContextAndIdentityFromJWT` | `MeroProvider` (auto via `parseAuthCallback`)                                    |
-| `clientLogout()`                                                      | `useMero().logout()`                                                             |
-
 ## Related skills
 
 - **`calimero-core`** — JSON-RPC protocol spec, WebSocket event schemas, context/app/identity model
@@ -211,7 +186,7 @@ await mero.events.subscribe([contextId]);
 ## References
 
 See `references/` for auth flow, RPC calls, event subscriptions, and SSO (all on mero-react /
-mero-js). Multi-user and admin topics (mero-js v2.5 / Calimero 0.11, all camelCase):
+mero-js). Multi-user and admin topics (Calimero 0.11, all camelCase):
 
 - `invitations-and-joins.md` — create/share an invitation → join a namespace + its contexts
 - `group-upgrades-and-migrations.md` — `upgradeGroup`, migration status, cascade, retry (0.11)

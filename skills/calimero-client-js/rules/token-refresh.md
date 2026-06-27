@@ -82,10 +82,3 @@ mero-js, listen for the `error` event and re-`connect()` after re-authenticating
 | `401 token_revoked` / `invalid_token` | You — catch the throw, `logout()` to re-login         |
 | Refresh token also expired            | You — catch the throw, `logout()` to re-login         |
 | Auth failure on the event stream      | `MeroProvider` / `useSubscription` (logout/reconnect) |
-
----
-
-> **DEPRECATED:** the `@calimero-network/calimero-client` model (`rpcClient.execute` returning
-> `response.error` with `headers['x-auth-error']`, manual `WsSubscriptionsClient` reconnect,
-> `clientLogout`) is **forbidden** in generated apps. mero-js throws on error and
-> `useMero().logout()` replaces `clientLogout()`.

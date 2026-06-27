@@ -144,10 +144,3 @@ async function getItem(mero: MeroJs, contextId: string, key: string): Promise<st
   }
 }
 ```
-
----
-
-> **DEPRECATED:** the old `@calimero-network/calimero-client` `rpcClient` singleton (where
-> `execute()` resolved to `{ result: { output }, error }` instead of throwing) is **forbidden** in
-> generated apps. Replace `rpcClient.execute(...)` + `response.result.output` / `response.error`
-> with `mero.rpc.execute(...)` + `try/catch`.

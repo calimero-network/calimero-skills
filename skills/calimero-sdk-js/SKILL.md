@@ -118,8 +118,8 @@ import { emit } from '@calimero-network/calimero-sdk-js';
 emit({ type: 'ItemAdded', key: 'foo', value: 'bar' });
 ```
 
-Events are pushed to all context members via WebSocket. Clients subscribe using
-`WsSubscriptionsClient` from `@calimero-network/calimero-client`.
+Events are pushed to all context members via WebSocket. Clients subscribe with `useSubscription`
+(mero-react) or `mero.events` (mero-js) — see the `calimero-client-js` skill.
 
 ## Private storage (node-local)
 

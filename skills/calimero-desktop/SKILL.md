@@ -20,10 +20,8 @@ So the integration is mostly _not writing code_: render `MeroProvider`, gate you
 hash yourself** — racing ahead of the provider leaves the token in the wrong place, so every API
 call goes out unauthenticated (401) and the user is bounced back to the landing page.
 
-> ⚠️ Anti-pattern (do not do this): manually reading `window.location.hash`, calling
-> `setAccessToken` / `setRefreshToken` / `setContextAndIdentityFromJWT` / `setAppEndpointKey`, or
-> `history.replaceState` to strip a token hash. Those `@calimero-network/calimero-client` helpers
-> are gone; mero-react owns this flow. See `rules/sso-fallback.md`.
+> ⚠️ Do not manually read `window.location.hash`, store tokens by hand, or `history.replaceState` a
+> token-bearing hash — `MeroProvider` owns this flow. See `rules/sso-fallback.md`.
 
 ## What Desktop does
 
@@ -80,12 +78,11 @@ it, `isAuthenticated` flips true after the probe, and the user lands straight in
 login. When opened in a plain browser with no hash, `isAuthenticated` stays false and your guard
 sends the user to the connect/login screen.
 
-> Use `AppMode.MultiContext` (`AppMode.SingleContext` is deprecated since mero-react 2.1.0, removed
-> in 3.0.0). The session authenticates the user against the node/app but no longer picks a context —
-> your app lists contexts (`useContexts`) and, if none exist, creates the namespace → group →
-> context chain via `mero.admin.createNamespace` / `createGroupInNamespace` /
-> `createContext({ applicationId, groupId })`. See the `calimero-client-js` skill's
-> `references/sso.md`.
+> Use `AppMode.MultiContext` (do not use `AppMode.SingleContext`). The session authenticates the
+> user against the node/app but does not pick a context — your app lists contexts (`useContexts`)
+> and, if none exist, creates the namespace → group → context chain via `mero.admin.createNamespace`
+> / `createGroupInNamespace` / `createContext({ applicationId, groupId })`. See the
+> `calimero-client-js` skill's `references/sso.md`.
 
 ## Critical rule
 

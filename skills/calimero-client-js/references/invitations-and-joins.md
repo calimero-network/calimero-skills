@@ -2,7 +2,7 @@
 
 How one user invites another into a shared namespace/group and how the invitee joins. This is the
 backbone of any multi-user Calimero app (chat rooms, shared canvases, teams). All calls go through
-the mero-js **admin API** (`AdminApiClient`) and use **camelCase** (mero-js v2 convention).
+the mero-js **admin API** (`AdminApiClient`) and use **camelCase** (the mero-js admin convention).
 
 > Terminology: a _namespace_/_group_ is the governance container; _contexts_ are the per-instance
 > state inside it. You invite into a namespace, then join the contexts within it.
@@ -95,8 +95,8 @@ const { joinNamespace } = useJoinNamespace();
 
 ## Gotchas
 
-- **camelCase only** with mero-js v2 (`inviterIdentity`, `groupId`, not `inviter_identity`). The
-  node may emit snake_case — normalize on read.
+- **camelCase only** in the mero-js admin API (`inviterIdentity`, `groupId`, not
+  `inviter_identity`). The node may emit snake_case — normalize on read.
 - `groupId` is often a `number[]`; hex-encode before using it in a path.
 - Joining is idempotent-ish but **sync after joining** or the UI shows stale (empty) state.
 - Always handle the invitee already being a member (re-join → treat as success).

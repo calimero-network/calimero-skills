@@ -10,18 +10,15 @@ via `parseAuthCallback` on first render, and when there is no hash it simply res
 `isAuthenticated: false`. Your job is to **gate routes with `useMero` and wait for `isLoading`** —
 not to parse the hash yourself.
 
-## WRONG — racing the provider / using removed helpers:
+## WRONG — racing the provider:
 
 ```typescript
 // ✗ Reads and strips the token hash before MeroProvider can — token ends up in the
 //   wrong place, every call 401s, user is bounced to the landing page.
-// ✗ setAccessToken / setRefreshToken / setContextAndIdentityFromJWT / setAppEndpointKey
-//   are NOT part of mero-react; they were @calimero-network/calimero-client helpers and are gone.
 const hash = new URLSearchParams(window.location.hash.slice(1));
 const token = hash.get('access_token');
 if (token) {
-  setAccessToken(token); // ✗ no such mero-react export
-  setContextAndIdentityFromJWT(token); // ✗ no such mero-react export
+  // ✗ hand-storing the token or stripping the hash here races MeroProvider
   history.replaceState(null, '', location.pathname); // ✗ strips the hash MeroProvider needs
 }
 ```
@@ -72,5 +69,4 @@ if (p.get('access_token')) {
 Desktop is not the only way users access apps — developers test in browsers and the same hash format
 is reused by the web login redirect. The app must be self-sufficient: render `MeroProvider`, let it
 own the token hash, gate routes with `useMero`, and pre-seed only the token-less case. Anything that
-reads or strips a token-bearing hash, or uses the removed `calimero-client` token helpers, breaks
-auth.
+reads or strips a token-bearing hash itself breaks auth.

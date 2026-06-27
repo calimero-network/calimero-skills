@@ -1,9 +1,9 @@
 # Rule: mero-js admin-api uses camelCase — not snake_case
 
-`@calimero-network/mero-js` v2 (`>=2.0.0-beta.1`) uses **camelCase** field names for all
-**admin-api** request/response objects (`mero.admin.*`) — the v1 snake_case keys are gone.
+`@calimero-network/mero-js` uses **camelCase** field names for all **admin-api** request/response
+objects (`mero.admin.*`).
 
-## WRONG (v1 / old code):
+## WRONG (snake_case):
 
 ```typescript
 await mero.admin.createContext({
@@ -12,7 +12,7 @@ await mero.admin.createContext({
 });
 ```
 
-## CORRECT (v2):
+## CORRECT (camelCase):
 
 ```typescript
 await mero.admin.createContext({
@@ -53,7 +53,5 @@ field name" message.
 
 Check `package.json`:
 
-- `"@calimero-network/mero-react"` (re-exports mero-js) or `"@calimero-network/mero-js": "^2.x"` →
-  correct. Use camelCase for `admin`, snake_case for the `auth` request bodies above.
-- `"@calimero-network/calimero-client"` → **DEPRECATED / forbidden** in generated apps. Migrate to
-  mero-react / mero-js.
+- `"@calimero-network/mero-react"` (`^4`, re-exports mero-js) or `"@calimero-network/mero-js"`
+  (`^6`) → correct. Use camelCase for `admin`, snake_case for the `auth` request bodies above.

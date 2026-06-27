@@ -102,11 +102,3 @@ const unsubscribe = mero.events.onAppVersionChanged((e) => {
 - `mero.events` (SSE) reconnects automatically and re-subscribes to its tracked context IDs after a
   reconnect.
 - `mero.ws` (`WsClient`) is **experimental** — use `mero.events` (SSE) in production.
-
----
-
-> **DEPRECATED:** `@calimero-network/calimero-client`'s `WsSubscriptionsClient`
-> (`new WsSubscriptionsClient(url, '/ws')`, `.addCallback`, `event.type === 'ExecutionEvent'`,
-> `event.data.events`) is **forbidden** in generated apps. Replace it with `useSubscription` (React)
-> or `mero.events` (mero-js); both deliver the flattened `{ contextId, type, data }` shape shown
-> above.

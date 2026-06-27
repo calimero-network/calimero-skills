@@ -1,7 +1,7 @@
 # Group upgrades & migrations (0.11+)
 
 Upgrade a group/namespace to a new application version and track the per-member migration as peers
-apply it. New in Calimero 0.11 / mero-js v2.3–v2.5. All via `AdminApiClient`, **camelCase**.
+apply it. Calimero 0.11. All via `AdminApiClient`, **camelCase**.
 
 > Upgrades are **asynchronous**: `upgradeGroup` returns once the upgrade op is published; each peer
 > migrates its own state independently. You poll status to know when everyone has converged.

@@ -19,11 +19,9 @@ Events can only be emitted inside mutation methods (not `@View()` methods).
 
 ## Receiving events on the client
 
-Receive events with **mero-js** / **mero-react** — the deprecated
-`@calimero-network/calimero-client` `WsSubscriptionsClient` is forbidden in generated apps. mero-js
-delivers events over SSE (`mero.events`) and **flattens** the node envelope, so the callback gets
-`SseEventData: { contextId, type?, data }` — your emitted object arrives directly as `data` (no
-`event.data.events[].kind` unwrapping).
+Receive events with **mero-js** / **mero-react**. mero-js delivers events over SSE (`mero.events`)
+and **flattens** the node envelope, so the callback gets `SseEventData: { contextId, type?, data }`
+— your emitted object arrives directly as `data`.
 
 ```typescript
 // React — useSubscription manages the SSE connection lifecycle for you

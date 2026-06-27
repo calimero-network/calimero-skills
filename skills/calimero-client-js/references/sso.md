@@ -15,9 +15,8 @@ users skip the manual login flow.
 | `context_id`       | Context the token is scoped to (may be **absent** under MultiContext) |
 | `context_identity` | Executor public key (may be **absent** under MultiContext)            |
 
-> `parseAuthCallback` still parses `context_id` / `context_identity` when present, but the auth flow
-> no longer selects a context for you (`AppMode.SingleContext` is deprecated). Under
-> `AppMode.MultiContext` they often arrive empty — your app picks or creates the context (see
+> `parseAuthCallback` reads `context_id` / `context_identity` when present, but under
+> `AppMode.MultiContext` they are often absent — your app picks or creates the context (see
 > "Selecting or creating a context" below).
 
 ## The rule: let `MeroProvider` own a token-bearing hash
@@ -65,10 +64,9 @@ function preSeedColdOpen(): void {
 
 ## Selecting or creating a context
 
-`AppMode.SingleContext` is deprecated (since mero-react 2.1.0, removed in 3.0.0). Under
-`AppMode.MultiContext` the auth callback authenticates the user against a node/app but does **not**
-pick a context — your app does. List the user's contexts and, when there are none, create the
-namespace → group → context chain yourself:
+Use `AppMode.MultiContext` (do not use `AppMode.SingleContext`). The auth callback authenticates the
+user against a node/app but does **not** pick a context — your app does. List the user's contexts
+and, when there are none, create the namespace → group → context chain yourself:
 
 ```typescript
 import { useMero } from '@calimero-network/mero-react';
@@ -102,9 +100,3 @@ const { contextId, memberPublicKey } = await mero.admin.createContext({
   `ConnectButton`), not only from Desktop.
 - Detect the Desktop shell with `'__TAURI_INTERNALS__' in window` if you need to branch behaviour
   (e.g. skip a manual connect screen).
-
----
-
-> **DEPRECATED:** the old `@calimero-network/calimero-client` SSO pattern (`setAppEndpointKey` /
-> `setAccessToken` / `setContextAndIdentityFromJWT` from a hand-parsed hash) is **forbidden** in
-> generated apps. `MeroProvider` owns the auth callback now.
