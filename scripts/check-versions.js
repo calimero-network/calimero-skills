@@ -34,9 +34,10 @@ const SKILLS_DIR = path.join(ROOT, 'skills');
 const CORE_CRATES = '(?:calimero-sdk|calimero-storage|calimero-storage-macros|calimero-wasm-abi)';
 const CORE_PIN_RES = [
   // { git = "…/calimero-network/core", tag = "0.11.0-rc.8" }
-  /calimero-network\/core"\s*,\s*tag\s*=\s*"([^"]+)"/g,
-  // calimero-sdk = "0.11.0-rc.8"   (crates.io form)
-  new RegExp(`${CORE_CRATES}\\s*=\\s*"([^"]+)"`, 'g'),
+  /calimero-network\/core"\s*,\s*tag\s*=\s*"(\d[^"]*)"/g,
+  // calimero-sdk = "0.11.0-rc.8"   (crates.io form). Require a version-shaped value
+  // (leading digit) so `{ workspace = true }` / path deps don't get captured as pins.
+  new RegExp(`${CORE_CRATES}\\s*=\\s*"(\\d[^"]*)"`, 'g'),
 ];
 
 function walk(dir) {
@@ -120,27 +121,53 @@ function fetchTagsPage(page) {
     };
     if (process.env.GITHUB_TOKEN) opts.headers.Authorization = `Bearer ${process.env.GITHUB_TOKEN}`;
     const MAX_BYTES = 10 * 1024 * 1024; // 10 MB cap — one tags page is ~tens of KB
-    https
+
+    // single-settle guard: the first resolve/reject wins; later stream events
+    // (e.g. an `end` that fires after `destroy()`) become no-ops.
+    let settled = false;
+    let req;
+    const done = (fn, arg) => {
+      if (settled) return;
+      settled = true;
+      if (req) req.destroy();
+      fn(arg);
+    };
+
+    req = https
       .get(opts, (res) => {
-        let body = '';
+        const chunks = [];
+        let bytes = 0;
         res.on('data', (c) => {
-          body += c;
-          if (body.length > MAX_BYTES) {
-            res.destroy();
-            reject(new Error('GitHub API response exceeded size cap'));
-          }
+          if (settled) return;
+          // count raw bytes and stop BEFORE growing past the cap
+          bytes += c.length;
+          if (bytes > MAX_BYTES)
+            return done(reject, new Error('GitHub API response exceeded size cap'));
+          chunks.push(c);
         });
         res.on('end', () => {
+          if (settled) return;
+          const body = Buffer.concat(chunks).toString('utf8');
           if (res.statusCode !== 200)
-            return reject(new Error(`GitHub API ${res.statusCode}: ${body.slice(0, 200)}`));
+            return done(reject, new Error(`GitHub API ${res.statusCode}: ${body.slice(0, 200)}`));
+          let parsed;
           try {
-            resolve(JSON.parse(body));
+            parsed = JSON.parse(body);
           } catch (e) {
-            reject(e);
+            return done(reject, e);
           }
+          // A 200 can still carry an error object (e.g. rate limit) — surface it
+          // instead of silently treating a non-array as "no tags".
+          if (!Array.isArray(parsed)) {
+            return done(
+              reject,
+              new Error(`GitHub API returned non-array: ${parsed?.message ?? body.slice(0, 200)}`)
+            );
+          }
+          done(resolve, parsed);
         });
       })
-      .on('error', reject);
+      .on('error', (err) => done(reject, err));
   });
 }
 

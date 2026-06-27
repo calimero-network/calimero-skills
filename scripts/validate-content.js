@@ -58,8 +58,8 @@ const RULES = [
     id: 'context-create-group-id',
     langs: BASH,
     // `context create` but NOT `context create-group` (the `(?!-)` guards the
-    // substring case). A namespace/group create command is a different thing.
-    check: (l) => /\bmeroctl\b.*\bcontext create(?!-)\b/.test(l) && !/--group-id\b/.test(l),
+    // substring case — `create` must be a whole word, not the prefix of `create-group`).
+    check: (l) => /\bmeroctl\b.*\bcontext\s+create\b(?!-)/.test(l) && !/--group-id\b/.test(l),
     message:
       '`meroctl context create` requires --group-id (a context is bound to a group; pass the namespace-id from `namespace create`).',
   },
@@ -124,7 +124,9 @@ function evaluateBlock({ rel, lang, family, startLine, ignore, buf }) {
   let acc = '';
   for (const raw of buf) {
     const stripped = stripComment(raw, family);
-    if (family === 'bash' && /\\\s*$/.test(raw)) {
+    // Test the STRIPPED line for the trailing backslash (consistent with what we
+    // accumulate) — a `cmd \  # note` line is a comment, not a real continuation.
+    if (family === 'bash' && /\\\s*$/.test(stripped)) {
       acc += stripped.replace(/\\\s*$/, ' ');
       continue;
     }
@@ -158,7 +160,9 @@ for (const file of allFiles) {
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
-    const fence = line.match(/^```(\w+)?/);
+    // CommonMark allows fences indented up to 3 spaces — match opening and
+    // closing the SAME way so an indented closing fence isn't missed.
+    const fence = line.match(/^\s{0,3}```(\w+)?/);
 
     if (!inBlock && fence) {
       inBlock = true;
@@ -184,7 +188,7 @@ for (const file of allFiles) {
       continue;
     }
 
-    if (inBlock && line.trim() === '```') {
+    if (inBlock && /^\s{0,3}```\s*$/.test(line)) {
       evaluateBlock({ rel, lang, family, startLine, ignore, buf });
       inBlock = false;
       family = null;

@@ -37,6 +37,8 @@ jobs:
   check-latest-core:
     name: Skills pin vs latest core release
     runs-on: ubuntu-latest
+    # Bounded so a slow/hung GitHub API call can't hold a runner to the 6h default.
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
 
@@ -45,6 +47,7 @@ jobs:
         with:
           node-version: '20'
 
+      # No `npm ci` / cache: check:versions:latest uses only Node built-ins (fs/https/path).
       - name: Compare skills pin to latest core tag
         run: npm run check:versions:latest
         env:
