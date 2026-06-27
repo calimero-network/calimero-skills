@@ -17,9 +17,9 @@ const res = await admin.upgradeGroup(groupId, {
 // → { groupId, status, total?, completed?, failed? }
 ```
 
-`UpgradeGroupRequest` is exactly `{ targetApplicationId, cascade?, requester? }`
-— there is no `migrateMethod`/`migrate_method` field. The migrate entrypoint is
-declared by the _target_ app, not selected here.
+`UpgradeGroupRequest` is exactly `{ targetApplicationId, cascade?, requester? }` — there is no
+`migrateMethod`/`migrate_method` field. The migrate entrypoint is declared by the _target_ app, not
+selected here.
 
 ## Poll group upgrade status
 
@@ -74,7 +74,7 @@ import { SseClient, AppVersionChangedEvent } from '@calimero-network/mero-js';
 - `getGroupUpgradeStatus` returns **null** when nothing is in flight (not an error).
 - The migrate entrypoint lives in the _target_ app — the upgrade request does not name it. Apps with
   forward-compatible state need no migrate fn at all.
-- `cascade` (default false) fans the upgrade to subgroups running the same app atomically —
-  leave it off if subgroups run different apps.
+- `cascade` (default false) fans the upgrade to subgroups running the same app atomically — leave it
+  off if subgroups run different apps.
 - `membersPendingSignature` > 0 means some members still owe authored ops; the migration isn't truly
   settled until it hits 0.

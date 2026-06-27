@@ -1,39 +1,35 @@
 # Authentication
 
-Auth is handled by `MeroProvider` (mero-react) — it drives the login redirect,
-consumes the auth callback, persists tokens, and restores existing sessions.
-You almost never store tokens by hand.
+Auth is handled by `MeroProvider` (mero-react) — it drives the login redirect, consumes the auth
+callback, persists tokens, and restores existing sessions. You almost never store tokens by hand.
 
 ## How it works
 
-1. **Login redirect.** `connectToNode(url)` (from `useMero()`) sends the user to
-   the node's auth page (`<nodeUrl>/auth/login?...`) with a `callback-url` back
-   to your app.
-2. **Callback.** The node redirects back with tokens + identifiers in the URL
-   hash. On first render `MeroProvider` runs `parseAuthCallback(window.location.href)`,
-   validates the `node_url` against the node login was initiated with (and
-   `allowedNodeUrls`), stores the tokens, then strips the hash.
-3. **Session restore.** On later loads `MeroProvider` restores tokens from its
-   token store (`LocalStorageTokenStore` by default) and verifies them by calling
-   `mero.admin.getContexts()`.
+1. **Login redirect.** `connectToNode(url)` (from `useMero()`) sends the user to the node's auth
+   page (`<nodeUrl>/auth/login?...`) with a `callback-url` back to your app.
+2. **Callback.** The node redirects back with tokens + identifiers in the URL hash. On first render
+   `MeroProvider` runs `parseAuthCallback(window.location.href)`, validates the `node_url` against
+   the node login was initiated with (and `allowedNodeUrls`), stores the tokens, then strips the
+   hash.
+3. **Session restore.** On later loads `MeroProvider` restores tokens from its token store
+   (`LocalStorageTokenStore` by default) and verifies them by calling `mero.admin.getContexts()`.
 
 ## Auth-callback hash parameters
 
 `parseAuthCallback` reads these from the URL hash:
 
-| Parameter          | Maps to                           |
-| ------------------ | --------------------------------- |
-| `access_token`     | access token (required)           |
-| `refresh_token`    | refresh token                     |
-| `node_url`         | node URL to connect to            |
-| `application_id`   | installed application id          |
-| `context_id`       | context the token is scoped to    |
-| `context_identity` | executor public key (identity)    |
+| Parameter          | Maps to                        |
+| ------------------ | ------------------------------ |
+| `access_token`     | access token (required)        |
+| `refresh_token`    | refresh token                  |
+| `node_url`         | node URL to connect to         |
+| `application_id`   | installed application id       |
+| `context_id`       | context the token is scoped to |
+| `context_identity` | executor public key (identity) |
 
-> The same hash format is used by **both** web login and Calimero Desktop SSO.
-> Do **not** parse or strip a token-bearing hash yourself — that races
-> `MeroProvider` and leaves tokens in the wrong place (every call then 401s).
-> See `sso.md`.
+> The same hash format is used by **both** web login and Calimero Desktop SSO. Do **not** parse or
+> strip a token-bearing hash yourself — that races `MeroProvider` and leaves tokens in the wrong
+> place (every call then 401s). See `sso.md`.
 
 ---
 
@@ -45,7 +41,7 @@ import { useMero } from '@calimero-network/mero-react';
 const {
   isAuthenticated,
   isOnline,
-  mero,            // MeroJs instance, or null
+  mero, // MeroJs instance, or null
   nodeUrl,
   applicationId,
   contextId,
@@ -87,30 +83,36 @@ logout();
 
 ## Persistence helpers (mero-react storage)
 
-mero-react exports localStorage helpers for the node URL / app id / context that
-the provider also uses. You rarely need these directly (the SSO bootstrap uses
-`setNodeUrl` / `setApplicationId` to pre-fill a token-less cold open):
+mero-react exports localStorage helpers for the node URL / app id / context that the provider also
+uses. You rarely need these directly (the SSO bootstrap uses `setNodeUrl` / `setApplicationId` to
+pre-fill a token-less cold open):
 
 ```typescript
 import {
-  getNodeUrl, setNodeUrl, clearNodeUrl,
-  getApplicationId, setApplicationId, clearApplicationId,
-  getContextId, setContextId, clearContextId,
-  getContextIdentity, setContextIdentity, clearContextIdentity,
+  getNodeUrl,
+  setNodeUrl,
+  clearNodeUrl,
+  getApplicationId,
+  setApplicationId,
+  clearApplicationId,
+  getContextId,
+  setContextId,
+  clearContextId,
+  getContextIdentity,
+  setContextIdentity,
+  clearContextIdentity,
   clearAllStorage,
 } from '@calimero-network/mero-react';
 ```
 
-The access/refresh tokens themselves live in the mero-js token store
-(`LocalStorageTokenStore`, the `mero-tokens` localStorage blob) — managed by the
-provider, not these helpers.
+The access/refresh tokens themselves live in the mero-js token store (`LocalStorageTokenStore`, the
+`mero-tokens` localStorage blob) — managed by the provider, not these helpers.
 
 ---
 
 ## Custom token store (advanced)
 
-To persist tokens somewhere other than localStorage, pass a `tokenStore` to
-`MeroProvider`:
+To persist tokens somewhere other than localStorage, pass a `tokenStore` to `MeroProvider`:
 
 ```typescript
 import { MeroProvider, MemoryTokenStore } from '@calimero-network/mero-react';
@@ -120,14 +122,12 @@ import { MeroProvider, MemoryTokenStore } from '@calimero-network/mero-react';
 </MeroProvider>
 ```
 
-`mero-js` also exports `MemoryTokenStore` and `LocalStorageTokenStore` and the
-`TokenStore` interface for non-React use.
+`mero-js` also exports `MemoryTokenStore` and `LocalStorageTokenStore` and the `TokenStore`
+interface for non-React use.
 
 ---
 
-> **DEPRECATED:** the `@calimero-network/calimero-client` storage helpers
-> (`setAppEndpointKey`, `setAccessToken`, `setRefreshToken`,
-> `setContextAndIdentityFromJWT`, `getJWTObject`, `getAuthConfig`,
-> `clientLogout`, …) are **forbidden** in generated apps. Do not store tokens by
-> hand — let `MeroProvider` own the callback and use `useMero()` for state and
-> `logout()`.
+> **DEPRECATED:** the `@calimero-network/calimero-client` storage helpers (`setAppEndpointKey`,
+> `setAccessToken`, `setRefreshToken`, `setContextAndIdentityFromJWT`, `getJWTObject`,
+> `getAuthConfig`, `clientLogout`, …) are **forbidden** in generated apps. Do not store tokens by
+> hand — let `MeroProvider` own the callback and use `useMero()` for state and `logout()`.

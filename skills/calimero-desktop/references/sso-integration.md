@@ -7,10 +7,11 @@ differently:
 
 1. **Token-bearing hash** (`#access_token=...`) — this is an auth callback. It is produced both by
    Desktop SSO and by the normal web login redirect. **`MeroProvider` owns it.** On its first render
-   the provider calls `parseAuthCallback(window.location.href)`, validates the `node_url`, stores the
-   tokens via its token store, sets `application_id` / `context_id` / `context_identity` / `node_url`,
-   and strips the hash. **You must not touch this hash** — reading/stripping it yourself races ahead
-   of the provider and leaves the token where mero-js does not read it, so every call 401s.
+   the provider calls `parseAuthCallback(window.location.href)`, validates the `node_url`, stores
+   the tokens via its token store, sets `application_id` / `context_id` / `context_identity` /
+   `node_url`, and strips the hash. **You must not touch this hash** — reading/stripping it yourself
+   races ahead of the provider and leaves the token where mero-js does not read it, so every call
+   401s.
 
 2. **Token-less hash** (`node_url` / `application_id` only, no `access_token`) — a cold Desktop open
    before a session exists. `parseAuthCallback` ignores this (it returns `null` without
@@ -28,7 +29,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useMero();
-  if (isLoading) return null;            // wait for the async auth probe
+  if (isLoading) return null; // wait for the async auth probe
   if (!isAuthenticated) return <Navigate to="/" replace />;
   return <>{children}</>;
 }
@@ -46,8 +47,22 @@ export default function App() {
       <BrowserRouter>
         <Routes>
           {/* Front door — authenticated users (incl. desktop SSO) skip straight in. */}
-          <Route path="/" element={<RedirectIfAuthed><LandingPage /></RedirectIfAuthed>} />
-          <Route path="/app" element={<RequireAuth><MainApp /></RequireAuth>} />
+          <Route
+            path="/"
+            element={
+              <RedirectIfAuthed>
+                <LandingPage />
+              </RedirectIfAuthed>
+            }
+          />
+          <Route
+            path="/app"
+            element={
+              <RequireAuth>
+                <MainApp />
+              </RequireAuth>
+            }
+          />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
@@ -63,7 +78,8 @@ authenticates → `isAuthenticated` becomes true → `RedirectIfAuthed` sends th
 
 Only for a hash that has NO `access_token`. Bail untouched on a token-bearing hash so `MeroProvider`
 can own it. Use `setNodeUrl` / `setApplicationId` from `@calimero-network/mero-react` (these are the
-real setters; they write the `mero:node_url` / `mero:application_id` keys the provider reads on init).
+real setters; they write the `mero:node_url` / `mero:application_id` keys the provider reads on
+init).
 
 ```ts
 // auth/ssoBootstrap.ts — call once from main.tsx BEFORE ReactDOM.render
@@ -91,7 +107,7 @@ export function bootstrapSso(): void {
 // main.tsx
 import { bootstrapSso } from './auth/ssoBootstrap';
 
-bootstrapSso();                          // MUST run before React mounts
+bootstrapSso(); // MUST run before React mounts
 ReactDOM.createRoot(rootEl).render(<App />);
 ```
 
@@ -102,8 +118,8 @@ ReactDOM.createRoot(rootEl).render(<App />);
 
 ## How Desktop discovers your app's frontend URL
 
-Desktop reads the `links.frontend` field from your app's `manifest.json` inside the installed bundle.
-Set this field so Desktop can open your app:
+Desktop reads the `links.frontend` field from your app's `manifest.json` inside the installed
+bundle. Set this field so Desktop can open your app:
 
 ```json
 {
@@ -121,8 +137,10 @@ Desktop opens this URL and appends the SSO hash params.
 `MeroProvider` runs `parseAuthCallback` once on first render and is the single owner of the token
 hash. If your code reads/strips the hash first:
 
-- the token never reaches the provider's token store, so mero-js sends unauthenticated requests (401);
+- the token never reaches the provider's token store, so mero-js sends unauthenticated requests
+  (401);
 - the hash is gone before `parseAuthCallback` runs, so the provider can't recover the session;
 - the user appears "logged in" for a frame, then gets bounced to the landing page.
 
-Render the provider, gate with `useMero`, pre-seed only the token-less case. That's the whole pattern.
+Render the provider, gate with `useMero`, pre-seed only the token-less case. That's the whole
+pattern.

@@ -43,10 +43,10 @@ const clientContent = generateClient(manifest, clientName);
 fs.writeFileSync(`src/generated/${clientName}.ts`, clientContent);
 ```
 
-> `generateTypes(manifest)` is also exported (from
-> `@calimero-network/abi-codegen/generate/types`) and produces the type definitions on their own,
-> but the CLI does **not** use it — it emits a single self-contained `<ClientName>.ts` via
-> `generateClient`. Use `generateTypes` only if you are building a custom split-file pipeline.
+> `generateTypes(manifest)` is also exported (from `@calimero-network/abi-codegen/generate/types`)
+> and produces the type definitions on their own, but the CLI does **not** use it — it emits a
+> single self-contained `<ClientName>.ts` via `generateClient`. Use `generateTypes` only if you are
+> building a custom split-file pipeline.
 
 ## Export paths
 
@@ -62,5 +62,8 @@ import { loadAbiManifestFromFile, parseAbiManifest } from '@calimero-network/abi
 
 import { generateTypes } from '@calimero-network/abi-codegen/generate/types';
 import { generateClient } from '@calimero-network/abi-codegen/generate/client';
-import { deriveClientNameFromPath, sanitizeClassName } from '@calimero-network/abi-codegen/generate/emit';
+import {
+  deriveClientNameFromPath,
+  sanitizeClassName,
+} from '@calimero-network/abi-codegen/generate/emit';
 ```

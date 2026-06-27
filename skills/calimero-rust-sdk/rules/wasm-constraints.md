@@ -2,16 +2,16 @@
 
 Calimero apps run in a sandboxed WASM environment. The following are **not available**:
 
-| Forbidden                                     | Use instead                                       |
-| --------------------------------------------- | ------------------------------------------------- |
-| `std::thread::spawn`                          | Not supported — WASM is single-threaded           |
-| `tokio`, `async-std`, `async fn` in app logic | Not supported — all app methods are synchronous   |
-| `std::fs`, file I/O                           | `#[app::private]` storage, or the `env::blob_*` API |
-| `std::net`, HTTP calls outbound               | Not supported in WASM runtime                     |
+| Forbidden                                     | Use instead                                          |
+| --------------------------------------------- | ---------------------------------------------------- |
+| `std::thread::spawn`                          | Not supported — WASM is single-threaded              |
+| `tokio`, `async-std`, `async fn` in app logic | Not supported — all app methods are synchronous      |
+| `std::fs`, file I/O                           | `#[app::private]` storage, or the `env::blob_*` API  |
+| `std::net`, HTTP calls outbound               | Not supported in WASM runtime                        |
 | `println!`, `eprintln!`                       | `app::log!(...)` (or `calimero_sdk::env::log(&str)`) |
-| System time (`std::time::SystemTime`)         | `calimero_sdk::env::time_now()`                   |
-| Environment variables                         | Not accessible from WASM                          |
-| Random number generation via `rand`           | `calimero_sdk::env::random_bytes(&mut buf)`       |
+| System time (`std::time::SystemTime`)         | `calimero_sdk::env::time_now()`                      |
+| Environment variables                         | Not accessible from WASM                             |
+| Random number generation via `rand`           | `calimero_sdk::env::random_bytes(&mut buf)`          |
 
 All of the `env::*` replacements above are real functions exported from `calimero_sdk::env`. The
 same set is also re-exported from `calimero_storage::env` for use inside storage/collection code
@@ -26,8 +26,8 @@ app::log!("my message");
 app::log!("value: {}", my_value);   // format args, like println!
 ```
 
-`app::log!` is the idiomatic macro; it forwards to `calimero_sdk::env::log(&str)`, which you may also
-call directly with a `&str`.
+`app::log!` is the idiomatic macro; it forwards to `calimero_sdk::env::log(&str)`, which you may
+also call directly with a `&str`.
 
 ## Timestamps
 

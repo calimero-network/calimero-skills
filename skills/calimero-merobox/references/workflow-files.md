@@ -1,27 +1,27 @@
 # Merobox Workflow Files
 
 A workflow file is a YAML document that declares a node topology and an ordered list of steps to run
-against it. You run it with `merobox bootstrap run <file.yml>`. Commit workflow files to your repo for
-repeatable local dev and CI.
+against it. You run it with `merobox bootstrap run <file.yml>`. Commit workflow files to your repo
+for repeatable local dev and CI.
 
 ## Schema
 
 ```yaml
 name: My smoke test
 description: What this workflow verifies
-log_level: info            # debug | info | warn | error
+log_level: info # debug | info | warn | error
 
 # `nodes` is a MAP (not a list). merobox spins up `count` nodes named `<prefix>-1..N`.
 nodes:
   count: 2
   prefix: my-node
-  image: ghcr.io/calimero-network/merod:edge   # used in Docker mode
-  base_port: 12428         # P2P / swarm   (node i = base_port + i)
-  base_rpc_port: 12528     # JSON-RPC / admin API (node i = base_rpc_port + i)
+  image: ghcr.io/calimero-network/merod:edge # used in Docker mode
+  base_port: 12428 # P2P / swarm   (node i = base_port + i)
+  base_rpc_port: 12528 # JSON-RPC / admin API (node i = base_rpc_port + i)
 
-nuke_on_start: true        # wipe node data before the run
-nuke_on_end: true          # wipe after the run
-wait_timeout: 90           # seconds to wait for nodes/sync
+nuke_on_start: true # wipe node data before the run
+nuke_on_end: true # wipe after the run
+wait_timeout: 90 # seconds to wait for nodes/sync
 
 # `steps` is an ordered LIST. Each step has a `type:` (the step kind), a human `name:`,
 # the target `node:`, type-specific fields, and an optional `outputs:` map that captures
@@ -101,7 +101,7 @@ steps:
     node: app-node-1
     context_id: '{{ctx}}'
     method: create_item
-    args: { text: "hello" }
+    args: { text: 'hello' }
 
   - type: json_assert
     name: Node 2 sees the item
@@ -119,17 +119,17 @@ These are the step types you'll use most (used by real app workflows). The full 
 `merobox/merobox/commands/bootstrap/steps/` — there are many more (groups, proposals, identity,
 blobs, mesh/network faults, parallel/repeat/pause, script, restart, …).
 
-| `type:` | Purpose | Key fields |
-| --- | --- | --- |
-| `install_application` | Install a bundle on a node | `node`, `path`, `dev: true`; `outputs: {app_id: applicationId}` |
-| `create_namespace` | Create a namespace for an app | `node`, `application_id`; `outputs: {namespace_id: namespaceId}` |
-| `create_context` | Create a context bound to a group | `node`, `application_id`, **`group_id`** (required), optional `service_name`; `outputs: {ctx: contextId}` |
-| `create_namespace_invitation` | Issue a namespace invitation | `node`, `namespace_id`; `outputs: {invitation: invitation}` |
-| `join_namespace` | A node joins a namespace via an invitation | `node`, `namespace_id`, `invitation` |
-| `join_context` | A node joins a single context via an invitation | `node`, `invitation` |
-| `call` | Execute a context method (mutate or view) | `node`, `context_id`, `method`, `args` |
-| `json_assert` | Assert a call result matches an expected JSON shape | `node`, `context_id`, `method`, `args`, assertion fields |
-| `wait_for_sync` | Pause until nodes have synced | `node`, optional timeout |
+| `type:`                       | Purpose                                             | Key fields                                                                                                |
+| ----------------------------- | --------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `install_application`         | Install a bundle on a node                          | `node`, `path`, `dev: true`; `outputs: {app_id: applicationId}`                                           |
+| `create_namespace`            | Create a namespace for an app                       | `node`, `application_id`; `outputs: {namespace_id: namespaceId}`                                          |
+| `create_context`              | Create a context bound to a group                   | `node`, `application_id`, **`group_id`** (required), optional `service_name`; `outputs: {ctx: contextId}` |
+| `create_namespace_invitation` | Issue a namespace invitation                        | `node`, `namespace_id`; `outputs: {invitation: invitation}`                                               |
+| `join_namespace`              | A node joins a namespace via an invitation          | `node`, `namespace_id`, `invitation`                                                                      |
+| `join_context`                | A node joins a single context via an invitation     | `node`, `invitation`                                                                                      |
+| `call`                        | Execute a context method (mutate or view)           | `node`, `context_id`, `method`, `args`                                                                    |
+| `json_assert`                 | Assert a call result matches an expected JSON shape | `node`, `context_id`, `method`, `args`, assertion fields                                                  |
+| `wait_for_sync`               | Pause until nodes have synced                       | `node`, optional timeout                                                                                  |
 
 > There is **no** `install_app`, `invite_member`, or `setup:` block, and steps are keyed by `type:`,
 > not `step:`. Variable capture is per-step `outputs:` → `{{var}}`, not `{{stepname.field}}`.
@@ -153,8 +153,10 @@ merobox bootstrap run --no-docker --binary-path /usr/local/bin/merod test/smoke.
 ## Ports
 
 Each node `i` exposes:
+
 - **P2P / swarm:** `base_port + i` (default base 2428)
 - **JSON-RPC / admin API:** `base_rpc_port + i` (default base 2528)
 
-Talk to a node's RPC/admin API on its `base_rpc_port + i` (e.g. `http://localhost:12528`), **not** the
-P2P port. Use `meroctl --node <name>` (see the `calimero-meroctl` skill) to interact with a node.
+Talk to a node's RPC/admin API on its `base_rpc_port + i` (e.g. `http://localhost:12528`), **not**
+the P2P port. Use `meroctl --node <name>` (see the `calimero-meroctl` skill) to interact with a
+node.

@@ -76,8 +76,8 @@ const current = reg.get(); // 'current value' | null
 
 ## UserStorage
 
-Per-user, owner-signed data. The key is always the **current executor's** PublicKey — you write
-your own slot and read anyone's. Writes are signed by Calimero Core's storage layer and signature /
+Per-user, owner-signed data. The key is always the **current executor's** PublicKey — you write your
+own slot and read anyone's. Writes are signed by Calimero Core's storage layer and signature /
 replay-protection are enforced when actions sync to other nodes.
 
 ```typescript

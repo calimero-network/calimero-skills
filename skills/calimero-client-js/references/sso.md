@@ -1,19 +1,19 @@
 # SSO — Calimero Desktop Integration
 
-When a user opens your app from Calimero Desktop, auth tokens arrive in the URL
-hash — the **same** auth-callback format as web login. `MeroProvider` (mero-react)
-consumes that hash automatically, so users skip the manual login flow.
+When a user opens your app from Calimero Desktop, auth tokens arrive in the URL hash — the **same**
+auth-callback format as web login. `MeroProvider` (mero-react) consumes that hash automatically, so
+users skip the manual login flow.
 
 ## Hash parameters
 
-| Parameter          | Description                                |
-| ------------------ | ------------------------------------------ |
-| `access_token`     | JWT for authenticated node calls           |
-| `refresh_token`    | Token to obtain a new access token         |
-| `node_url`         | URL of the local node to connect to        |
-| `application_id`   | The installed application's ID on the node |
+| Parameter          | Description                                                           |
+| ------------------ | --------------------------------------------------------------------- |
+| `access_token`     | JWT for authenticated node calls                                      |
+| `refresh_token`    | Token to obtain a new access token                                    |
+| `node_url`         | URL of the local node to connect to                                   |
+| `application_id`   | The installed application's ID on the node                            |
 | `context_id`       | Context the token is scoped to (may be **absent** under MultiContext) |
-| `context_identity` | Executor public key (may be **absent** under MultiContext) |
+| `context_identity` | Executor public key (may be **absent** under MultiContext)            |
 
 > `parseAuthCallback` still parses `context_id` / `context_identity` when present, but the auth flow
 > no longer selects a context for you (`AppMode.SingleContext` is deprecated). Under
@@ -22,15 +22,13 @@ consumes that hash automatically, so users skip the manual login flow.
 
 ## The rule: let `MeroProvider` own a token-bearing hash
 
-A hash that contains `access_token` is an auth callback owned by mero-react.
-`MeroProvider` runs `parseAuthCallback(location.href)` on first render, stores
-the tokens where mero-js reads them (the `mero-tokens` blob), sets the
-node/app/context, and strips the hash. **Do not read or strip a token-bearing
-hash yourself** — doing so races ahead of React and leaves the token in the
-wrong place, so every API call goes out unauthenticated (401).
+A hash that contains `access_token` is an auth callback owned by mero-react. `MeroProvider` runs
+`parseAuthCallback(location.href)` on first render, stores the tokens where mero-js reads them (the
+`mero-tokens` blob), sets the node/app/context, and strips the hash. **Do not read or strip a
+token-bearing hash yourself** — doing so races ahead of React and leaves the token in the wrong
+place, so every API call goes out unauthenticated (401).
 
-So a Desktop SSO app needs **no** custom token handling — just mount
-`MeroProvider`:
+So a Desktop SSO app needs **no** custom token handling — just mount `MeroProvider`:
 
 ```tsx
 import { AppMode, MeroProvider } from '@calimero-network/mero-react';
@@ -42,10 +40,9 @@ import { AppMode, MeroProvider } from '@calimero-network/mero-react';
 
 ## Optional: pre-seed a token-less cold open
 
-A cold Desktop open can arrive with `node_url` / `application_id` but **no**
-token (mero-react ignores a token-less callback). To pre-fill the connect
-screen, seed those before React mounts — but bail on any hash that carries a
-token:
+A cold Desktop open can arrive with `node_url` / `application_id` but **no** token (mero-react
+ignores a token-less callback). To pre-fill the connect screen, seed those before React mounts — but
+bail on any hash that carries a token:
 
 ```typescript
 import { setNodeUrl, setApplicationId } from '@calimero-network/mero-react';
@@ -101,14 +98,13 @@ const { contextId, memberPublicKey } = await mero.admin.createContext({
 ## Important
 
 - Never strip or store a token-bearing hash manually — `MeroProvider` does it.
-- The app must also work when opened directly in a browser (web login via
-  `connectToNode` / `ConnectButton`), not only from Desktop.
-- Detect the Desktop shell with `'__TAURI_INTERNALS__' in window` if you need
-  to branch behaviour (e.g. skip a manual connect screen).
+- The app must also work when opened directly in a browser (web login via `connectToNode` /
+  `ConnectButton`), not only from Desktop.
+- Detect the Desktop shell with `'__TAURI_INTERNALS__' in window` if you need to branch behaviour
+  (e.g. skip a manual connect screen).
 
 ---
 
-> **DEPRECATED:** the old `@calimero-network/calimero-client` SSO pattern
-> (`setAppEndpointKey` / `setAccessToken` / `setContextAndIdentityFromJWT` from
-> a hand-parsed hash) is **forbidden** in generated apps. `MeroProvider` owns
-> the auth callback now.
+> **DEPRECATED:** the old `@calimero-network/calimero-client` SSO pattern (`setAppEndpointKey` /
+> `setAccessToken` / `setContextAndIdentityFromJWT` from a hand-parsed hash) is **forbidden** in
+> generated apps. `MeroProvider` owns the auth callback now.

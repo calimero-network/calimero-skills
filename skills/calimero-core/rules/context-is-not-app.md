@@ -9,8 +9,8 @@
 - `meroctl namespace create --application-id <id>` → creates a namespace (the root group) for the
   app. Returns a `namespace-id` (which is also a group id). Still no context.
 - `meroctl context create --application-id <id> --group-id <namespace-id>` → creates a context.
-  Calls `init()`. State now exists. The context has a `context-id`. `--group-id` is **required** —
-  a context is always bound to a group (see `calimero-core/references/namespaces-groups.md`).
+  Calls `init()`. State now exists. The context has a `context-id`. `--group-id` is **required** — a
+  context is always bound to a group (see `calimero-core/references/namespaces-groups.md`).
 
 These are always **separate commands**. You cannot skip ahead and jump straight to calling methods.
 

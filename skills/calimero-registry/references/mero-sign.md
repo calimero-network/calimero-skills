@@ -60,8 +60,8 @@ mero-sign sign manifest.json --key key.json
           }
 ```
 
-mero-sign also fills in `minRuntimeVersion` (default `0.1.0`) if the manifest doesn't
-already have it. There is no timestamp field in the signature block.
+mero-sign also fills in `minRuntimeVersion` (default `0.1.0`) if the manifest doesn't already have
+it. There is no timestamp field in the signature block.
 
 ## Team workflow
 

@@ -128,8 +128,8 @@ meroctl context identity alias add <name> <identity> --context <context-id>
 
 ## namespace — application instances & multi-node trust
 
-A namespace is the **root group** for an application instance (its own Ed25519 identity, bound to one
-app). Its id doubles as a group id, so you pass it as `--group-id` when creating contexts.
+A namespace is the **root group** for an application instance (its own Ed25519 identity, bound to
+one app). Its id doubles as a group id, so you pass it as `--group-id` when creating contexts.
 
 ```bash
 # Create a namespace bound to an app (--application-id is required) — this node is the trust root

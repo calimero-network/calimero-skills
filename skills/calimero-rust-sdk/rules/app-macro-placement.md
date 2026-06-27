@@ -29,11 +29,11 @@ impl AppState {
 }
 ```
 
-**Why:** `#[app::state]` is a proc macro that operates on the state **struct** (or enum):
-it injects the borsh derives, implements `calimero_sdk::state::AppState` (wiring up the
-declared `emits = ...` event type), and generates the CRDT merge + registration hooks.
-`#[app::logic]` is a separate proc macro that transforms the **impl block** so its public
-methods become callable entry points. They are never placed on the same item.
+**Why:** `#[app::state]` is a proc macro that operates on the state **struct** (or enum): it injects
+the borsh derives, implements `calimero_sdk::state::AppState` (wiring up the declared `emits = ...`
+event type), and generates the CRDT merge + registration hooks. `#[app::logic]` is a separate proc
+macro that transforms the **impl block** so its public methods become callable entry points. They
+are never placed on the same item.
 
 **Also:** `#[app::init]` marks the constructor — called once when the context is created. It must
 return the state type, not `Self`. The state struct does **not** derive `Default` and does **not**

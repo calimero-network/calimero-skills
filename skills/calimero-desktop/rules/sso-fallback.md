@@ -20,8 +20,8 @@ not to parse the hash yourself.
 const hash = new URLSearchParams(window.location.hash.slice(1));
 const token = hash.get('access_token');
 if (token) {
-  setAccessToken(token);                         // ✗ no such mero-react export
-  setContextAndIdentityFromJWT(token);           // ✗ no such mero-react export
+  setAccessToken(token); // ✗ no such mero-react export
+  setContextAndIdentityFromJWT(token); // ✗ no such mero-react export
   history.replaceState(null, '', location.pathname); // ✗ strips the hash MeroProvider needs
 }
 ```

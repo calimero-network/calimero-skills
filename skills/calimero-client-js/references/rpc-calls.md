@@ -5,8 +5,8 @@ Calling application methods on a Calimero node via `mero.rpc` (mero-js / mero-re
 ## The `mero.rpc` client
 
 Get a `MeroJs` instance from `useMero()` (React) or construct one directly
-(`new MeroJs({ baseUrl })`). Its `.rpc` getter is a lazily-initialized
-`RpcClient` — do not construct `RpcClient` manually.
+(`new MeroJs({ baseUrl })`). Its `.rpc` getter is a lazily-initialized `RpcClient` — do not
+construct `RpcClient` manually.
 
 ```typescript
 import { useMero } from '@calimero-network/mero-react';
@@ -19,9 +19,9 @@ const { mero } = useMero();
 
 ## Execute a method (mutation or view — same call)
 
-`execute()` returns the method's **output directly** and **throws** an
-`RpcError` on failure. There is no `{ result: { output } }` envelope to unwrap
-and no `response.error` to check — use `try/catch`.
+`execute()` returns the method's **output directly** and **throws** an `RpcError` on failure. There
+is no `{ result: { output } }` envelope to unwrap and no `response.error` to check — use
+`try/catch`.
 
 ```typescript
 const output = await mero.rpc.execute<OutputType>({
@@ -46,8 +46,8 @@ interface ExecuteParams {
 }
 ```
 
-> Generated abi-codegen clients still pass `executorPublicKey` for back-compat,
-> but the server ignores it. New code can omit it.
+> Generated abi-codegen clients still pass `executorPublicKey` for back-compat, but the server
+> ignores it. New code can omit it.
 
 ---
 
@@ -82,16 +82,16 @@ On failure `execute()` throws `RpcError`:
 import { RpcError } from '@calimero-network/mero-js';
 
 class RpcError extends Error {
-  code: number;       // JSON-RPC / server error code
-  type?: string;      // server-specific error type, when present
-  data?: unknown;     // server-specific error payload
+  code: number; // JSON-RPC / server error code
+  type?: string; // server-specific error type, when present
+  data?: unknown; // server-specific error payload
 }
 ```
 
 The underlying JSON-RPC call is `POST /jsonrpc` with
-`{ jsonrpc: '2.0', method: 'execute', params: { contextId, method, argsJson } }`.
-The HTTP client transparently refreshes the access token on a `401` and retries
-the request (see `rules/token-refresh.md`).
+`{ jsonrpc: '2.0', method: 'execute', params: { contextId, method, argsJson } }`. The HTTP client
+transparently refreshes the access token on a `401` and retries the request (see
+`rules/token-refresh.md`).
 
 ---
 
@@ -147,8 +147,7 @@ async function getItem(mero: MeroJs, contextId: string, key: string): Promise<st
 
 ---
 
-> **DEPRECATED:** the old `@calimero-network/calimero-client` `rpcClient`
-> singleton (where `execute()` resolved to `{ result: { output }, error }`
-> instead of throwing) is **forbidden** in generated apps. Replace
-> `rpcClient.execute(...)` + `response.result.output` / `response.error` with
-> `mero.rpc.execute(...)` + `try/catch`.
+> **DEPRECATED:** the old `@calimero-network/calimero-client` `rpcClient` singleton (where
+> `execute()` resolved to `{ result: { output }, error }` instead of throwing) is **forbidden** in
+> generated apps. Replace `rpcClient.execute(...)` + `response.result.output` / `response.error`
+> with `mero.rpc.execute(...)` + `try/catch`.

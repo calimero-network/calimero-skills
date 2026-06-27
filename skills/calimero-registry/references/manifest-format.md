@@ -10,8 +10,7 @@ bundle directory. You can also supply a manifest via `-m, --manifest <path>` to 
 
 ## Manifest V2 format (single-service)
 
-`calimero-registry bundle create` (one WASM file → one bundle) generates a single-`wasm`
-manifest:
+`calimero-registry bundle create` (one WASM file → one bundle) generates a single-`wasm` manifest:
 
 ```json
 {
@@ -43,14 +42,14 @@ manifest:
 }
 ```
 
-`migrations` is always present (an empty array when there are none); the registry preserves
-it as-is because dropping it would change the signed payload.
+`migrations` is always present (an empty array when there are none); the registry preserves it as-is
+because dropping it would change the signed payload.
 
 ## Manifest V2 format (multi-service)
 
-Studio-built apps bundle one or more services (each its own WASM + ABI) under a `services[]`
-array instead of a single top-level `wasm`. This is what `foundation-app`'s `build-bundle.sh`
-emits, and what the registry's multipart `push-file` endpoint expects:
+Studio-built apps bundle one or more services (each its own WASM + ABI) under a `services[]` array
+instead of a single top-level `wasm`. This is what `foundation-app`'s `build-bundle.sh` emits, and
+what the registry's multipart `push-file` endpoint expects:
 
 ```json
 {
@@ -67,7 +66,7 @@ emits, and what the registry's multipart `push-file` endpoint expects:
     {
       "name": "chat",
       "wasm": { "path": "chat.wasm", "size": 283441, "hash": null },
-      "abi":  { "path": "chat-abi.json", "size": 3294, "hash": null }
+      "abi": { "path": "chat-abi.json", "size": 3294, "hash": null }
     }
   ],
   "migrations": [],
@@ -78,13 +77,13 @@ emits, and what the registry's multipart `push-file` endpoint expects:
 }
 ```
 
-Each `services[]` entry has `name` (also the bundled WASM filename) plus `wasm` and `abi`
-artifact objects (`{ path, size, hash }`).
+Each `services[]` entry has `name` (also the bundled WASM filename) plus `wasm` and `abi` artifact
+objects (`{ path, size, hash }`).
 
 ## After signing with mero-sign
 
-`mero-sign sign` adds a top-level `signerId` (the signer's `did:key`) and injects a
-`signature` block with the keys `algorithm`, `publicKey`, `signature`:
+`mero-sign sign` adds a top-level `signerId` (the signer's `did:key`) and injects a `signature`
+block with the keys `algorithm`, `publicKey`, `signature`:
 
 ```json
 {
@@ -100,10 +99,9 @@ artifact objects (`{ path, size, hash }`).
 }
 ```
 
-There is no timestamp field. `mero-sign` also fills in `minRuntimeVersion` (default `0.1.0`)
-if it is absent. The registry accepts either these core key names (`algorithm`/`publicKey`/
-`signature`) or the legacy short names (`alg`/`pubkey`/`sig`), but `mero-sign` always writes
-the long form.
+There is no timestamp field. `mero-sign` also fills in `minRuntimeVersion` (default `0.1.0`) if it
+is absent. The registry accepts either these core key names (`algorithm`/`publicKey`/ `signature`)
+or the legacy short names (`alg`/`pubkey`/`sig`), but `mero-sign` always writes the long form.
 
 ## Package ownership
 

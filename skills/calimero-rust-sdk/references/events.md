@@ -20,8 +20,8 @@ pub enum Event<'a> {
 }
 ```
 
-`#[app::event]` must be applied to a **public enum** (a struct is rejected at compile time). Borrowed
-fields (`&'a str`) are common and let you emit without cloning.
+`#[app::event]` must be applied to a **public enum** (a struct is rejected at compile time).
+Borrowed fields (`&'a str`) are common and let you emit without cloning.
 
 ## Declare the event type on state
 

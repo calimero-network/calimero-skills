@@ -6,11 +6,11 @@ created on its own — it is always bound to a group, which lives inside a names
 
 ## Concepts
 
-| Concept       | Role                                                                                                                                                  |
-| ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Namespace** | A *root group* (a group with no parent). It is the application-instance boundary and identity scope — it gets its own Ed25519 keypair and is bound to one application. |
-| **Group**     | A governance boundary *within* a namespace: members, roles/capabilities, and one or more contexts. Membership, access control, and upgrades all happen here. A namespace **is** its root group. |
-| **Context**   | A running instance of a WASM app with its own isolated CRDT state. Each context belongs to **exactly one group**; joining a context requires membership in that group. |
+| Concept       | Role                                                                                                                                                                                            |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Namespace** | A _root group_ (a group with no parent). It is the application-instance boundary and identity scope — it gets its own Ed25519 keypair and is bound to one application.                          |
+| **Group**     | A governance boundary _within_ a namespace: members, roles/capabilities, and one or more contexts. Membership, access control, and upgrades all happen here. A namespace **is** its root group. |
+| **Context**   | A running instance of a WASM app with its own isolated CRDT state. Each context belongs to **exactly one group**; joining a context requires membership in that group.                          |
 
 Key consequences:
 

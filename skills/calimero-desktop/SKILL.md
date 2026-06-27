@@ -11,19 +11,19 @@ screen.
 ## The one thing to get right
 
 **`MeroProvider` (from `@calimero-network/mero-react`) already owns the SSO token hash.** On its
-first render it runs `parseAuthCallback(window.location.href)`, stores the tokens where mero-js reads
-them, sets node/app/context, and strips the hash from the address bar. The **same** hash format is
-used by the normal web login redirect.
+first render it runs `parseAuthCallback(window.location.href)`, stores the tokens where mero-js
+reads them, sets node/app/context, and strips the hash from the address bar. The **same** hash
+format is used by the normal web login redirect.
 
-So the integration is mostly *not writing code*: render `MeroProvider`, gate your routes with
+So the integration is mostly _not writing code_: render `MeroProvider`, gate your routes with
 `useMero`, and let the provider consume the hash. **Do NOT read, parse, or strip a token-bearing
-hash yourself** — racing ahead of the provider leaves the token in the wrong place, so every API call
-goes out unauthenticated (401) and the user is bounced back to the landing page.
+hash yourself** — racing ahead of the provider leaves the token in the wrong place, so every API
+call goes out unauthenticated (401) and the user is bounced back to the landing page.
 
 > ⚠️ Anti-pattern (do not do this): manually reading `window.location.hash`, calling
 > `setAccessToken` / `setRefreshToken` / `setContextAndIdentityFromJWT` / `setAppEndpointKey`, or
-> `history.replaceState` to strip a token hash. Those `@calimero-network/calimero-client` helpers are
-> gone; mero-react owns this flow. See `rules/sso-fallback.md`.
+> `history.replaceState` to strip a token hash. Those `@calimero-network/calimero-client` helpers
+> are gone; mero-react owns this flow. See `rules/sso-fallback.md`.
 
 ## What Desktop does
 
@@ -36,13 +36,13 @@ is an OAuth-style auth callback; `MeroProvider` consumes it.
 These are the params `parseAuthCallback` reads (a hash WITHOUT `access_token` is not treated as an
 auth callback):
 
-| Parameter          | Description                                       |
-| ------------------ | ------------------------------------------------- |
-| `access_token`     | JWT for authenticated node calls (required)       |
-| `refresh_token`    | Token to obtain a new access token                |
-| `node_url`         | URL of the local node (`http://localhost:PORT`)   |
-| `application_id`   | The installed app's ID on this node               |
-| `context_id`       | The context the session is bound to               |
+| Parameter          | Description                                        |
+| ------------------ | -------------------------------------------------- |
+| `access_token`     | JWT for authenticated node calls (required)        |
+| `refresh_token`    | Token to obtain a new access token                 |
+| `node_url`         | URL of the local node (`http://localhost:PORT`)    |
+| `application_id`   | The installed app's ID on this node                |
+| `context_id`       | The context the session is bound to                |
 | `context_identity` | The executor public key / identity for the context |
 
 ## Example URL
@@ -61,7 +61,7 @@ import { AppMode, MeroProvider, useMero } from '@calimero-network/mero-react';
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useMero();
-  if (isLoading) return null;            // wait for the auth probe — avoids a flash-bounce
+  if (isLoading) return null; // wait for the auth probe — avoids a flash-bounce
   if (!isAuthenticated) return <Navigate to="/" replace />;
   return <>{children}</>;
 }
@@ -75,8 +75,8 @@ export function App() {
 }
 ```
 
-When opened from Desktop, the hash carries the session, `MeroProvider.parseAuthCallback` consumes it,
-`isAuthenticated` flips true after the probe, and the user lands straight in the app — no manual
+When opened from Desktop, the hash carries the session, `MeroProvider.parseAuthCallback` consumes
+it, `isAuthenticated` flips true after the probe, and the user lands straight in the app — no manual
 login. When opened in a plain browser with no hash, `isAuthenticated` stays false and your guard
 sends the user to the connect/login screen.
 
@@ -89,8 +89,8 @@ sends the user to the connect/login screen.
 
 ## Critical rule
 
-`isLoading` must settle before any redirect. The provider resolves auth asynchronously (it probes the
-node with `getContexts()`), so a guard that redirects while `isLoading` is true will bounce a
+`isLoading` must settle before any redirect. The provider resolves auth asynchronously (it probes
+the node with `getContexts()`), so a guard that redirects while `isLoading` is true will bounce a
 freshly-authenticated user. Always `if (isLoading) return null;` first. See `rules/sso-fallback.md`.
 
 ## Related skills

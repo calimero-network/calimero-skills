@@ -26,12 +26,12 @@ merobox bootstrap run --no-docker --binary-path /usr/local/bin/merod test/smoke.
 
 ## Common errors and fixes
 
-| Error | Fix |
-| --- | --- |
-| `Cannot connect to the Docker daemon` | Start Docker Desktop / `sudo systemctl start docker` — or switch to `--no-docker` |
-| `merod: not found` (native mode) | Install `merod` and put it on `PATH`, or pass `--binary-path /path/to/merod` |
-| `port is already allocated` | A host-native node or a previous run holds the port. Raise `nodes.base_port` / `base_rpc_port` in the workflow (the smoke workflows use 12428/12528 to dodge the 2428/2528 defaults), or `merobox nuke` to clear leftover state. |
-| `image not found` (Docker mode) | First run pulls the image — ensure internet access, then re-run. |
+| Error                                 | Fix                                                                                                                                                                                                                              |
+| ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Cannot connect to the Docker daemon` | Start Docker Desktop / `sudo systemctl start docker` — or switch to `--no-docker`                                                                                                                                                |
+| `merod: not found` (native mode)      | Install `merod` and put it on `PATH`, or pass `--binary-path /path/to/merod`                                                                                                                                                     |
+| `port is already allocated`           | A host-native node or a previous run holds the port. Raise `nodes.base_port` / `base_rpc_port` in the workflow (the smoke workflows use 12428/12528 to dodge the 2428/2528 defaults), or `merobox nuke` to clear leftover state. |
+| `image not found` (Docker mode)       | First run pulls the image — ensure internet access, then re-run.                                                                                                                                                                 |
 
 ## Notes
 
