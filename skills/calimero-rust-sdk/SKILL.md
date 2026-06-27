@@ -23,13 +23,14 @@ You are helping a developer build a **Calimero WASM application** in Rust using 
 crate-type = ["cdylib"]
 
 [dependencies]
-# Pre-release: the version must be specified explicitly (a bare "0.11" won't
-# resolve a pre-release). Track the latest published rc on crates.io.
-calimero-sdk     = "0.11.0-rc.6"
-calimero-storage = "0.11.0-rc.6"
+# Pin to the matching node release by GIT TAG. Calimero RC releases are cut as
+# git tags (and may land on crates.io a little later), so the tag form always
+# resolves and keeps the app in lockstep with the merod it runs on.
+calimero-sdk     = { git = "https://github.com/calimero-network/core", tag = "0.11.0-rc.6" }
+calimero-storage = { git = "https://github.com/calimero-network/core", tag = "0.11.0-rc.6" }
 
 [build-dependencies]
-calimero-wasm-abi = "0.11.0-rc.6"
+calimero-wasm-abi = { git = "https://github.com/calimero-network/core", tag = "0.11.0-rc.6" }
 serde_json        = "1"
 
 [profile.app-release]
