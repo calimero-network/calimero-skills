@@ -13,9 +13,9 @@ Add `calimero-storage-macros` to your dependencies:
 
 ```toml
 [dependencies]
-calimero-sdk             = { git = "https://github.com/calimero-network/core", tag = "0.11.0-rc.6" }
-calimero-storage         = { git = "https://github.com/calimero-network/core", tag = "0.11.0-rc.6" }
-calimero-storage-macros  = { git = "https://github.com/calimero-network/core", tag = "0.11.0-rc.6" }
+calimero-sdk             = { git = "https://github.com/calimero-network/core", tag = "0.11.0-rc.8" }
+calimero-storage         = { git = "https://github.com/calimero-network/core", tag = "0.11.0-rc.8" }
+calimero-storage-macros  = { git = "https://github.com/calimero-network/core", tag = "0.11.0-rc.8" }
 ```
 
 ```rust

@@ -1,11 +1,23 @@
 name: Version watch
 
-# Fails when calimero-network/core cuts a newer release than the skills pin.
-# This is a SIGNAL job, deliberately kept off the per-PR gate so upstream
-# moving never blocks a content PR — it runs on a schedule (and on demand) and
-# goes red so maintainers know to bump the pins and re-audit against the new rc.
+# Checks that the skills pin the LATEST calimero-network/core release.
+#
+# Runs on every PR/push (so the status is visible while reviewing a change) and
+# on a weekly schedule (so a new core release is noticed even with no activity).
+# It goes red when core has cut a newer rc than the skills pin — the cue to bump
+# EXPECTED_CORE_VERSION in scripts/check-versions.js and re-audit against it.
+#
+# This is a SIGNAL check, intentionally a SEPARATE workflow from the main CI
+# gate. Keep it OUT of branch-protection "required checks": upstream cutting a
+# release should surface loudly, but must not block an unrelated content PR from
+# merging. (The per-PR CI gate already enforces internal pin CONSISTENCY via
+# `npm test` → check-versions.js offline.)
 
 on:
+  pull_request:
+    branches: [master, main]
+  push:
+    branches: [master, main]
   schedule:
     - cron: '0 6 * * 1' # every Monday 06:00 UTC
   workflow_dispatch: {}

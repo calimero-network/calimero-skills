@@ -5,7 +5,7 @@
  * Version-pin checker for the Calimero skills.
  *
  * The skills pin the Rust SDK / core crates to a specific Calimero release
- * (e.g. `0.11.0-rc.6`). Two ways those pins go stale:
+ * (e.g. `0.11.0-rc.8`). Two ways those pins go stale:
  *
  *  1. Internal drift — one skill is bumped, another is forgotten, so the docs
  *     contradict each other. (Always checked, offline, deterministic.)
@@ -16,7 +16,7 @@
  * ─────────────────────────────────────────────────────────────────────────
  *  BUMP THIS when core cuts a new release, then update the pins it reports.
  */
-const EXPECTED_CORE_VERSION = '0.11.0-rc.6';
+const EXPECTED_CORE_VERSION = '0.11.0-rc.8';
 // ─────────────────────────────────────────────────────────────────────────
 
 const fs = require('fs');
