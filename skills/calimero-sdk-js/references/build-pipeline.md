@@ -57,9 +57,15 @@ meroctl --node <NODE> app install \
   --path build/service.wasm
 # → save the application-id
 
-# Create a new context (runs @Init)
-meroctl --node <NODE> context create \
+# Create a namespace (root group) for the app
+meroctl --node <NODE> namespace create \
   --application-id <APP_ID>
+# → save the namespace-id (also a group id)
+
+# Create a new context (runs @Init) — --group-id is required (a context is bound to a group)
+meroctl --node <NODE> context create \
+  --application-id <APP_ID> \
+  --group-id <NAMESPACE_ID>
 # → save the context-id
 
 # Call a mutation (method name is positional; context via --context)

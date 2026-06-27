@@ -80,6 +80,13 @@ When opened from Desktop, the hash carries the session, `MeroProvider.parseAuthC
 login. When opened in a plain browser with no hash, `isAuthenticated` stays false and your guard
 sends the user to the connect/login screen.
 
+> Use `AppMode.MultiContext` (`AppMode.SingleContext` is deprecated since mero-react 2.1.0, removed
+> in 3.0.0). The session authenticates the user against the node/app but no longer picks a context —
+> your app lists contexts (`useContexts`) and, if none exist, creates the namespace → group →
+> context chain via `mero.admin.createNamespace` / `createGroupInNamespace` /
+> `createContext({ applicationId, groupId })`. See the `calimero-client-js` skill's
+> `references/sso.md`.
+
 ## Critical rule
 
 `isLoading` must settle before any redirect. The provider resolves auth asynchronously (it probes the

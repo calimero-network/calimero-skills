@@ -68,12 +68,13 @@ meroctl --node node1 app uninstall <application-id>
 ## Context commands
 
 ```bash
-# Create a context (instantiates the app — calls init())
-meroctl --node node1 context create --application-id <application-id>
+# Create a context (instantiates the app — calls init()). --group-id is REQUIRED: a context is
+# bound to a group. Use the namespace-id from `namespace create` (a namespace is the root group).
+meroctl --node node1 context create --application-id <application-id> --group-id <namespace-id>
 # Returns: context-id
 
-# Dev mode — watch a WASM file for changes and hot-reload
-meroctl --node node1 context create --watch path/to/app.wasm
+# Dev mode — watch a WASM file for changes and hot-reload (--group-id still required)
+meroctl --node node1 context create --watch path/to/app.wasm --group-id <namespace-id>
 
 # List all contexts on this node
 meroctl --node node1 context ls
@@ -129,10 +130,10 @@ Multi-node participation uses namespaces (root groups) and group membership.
 
 ```bash
 # ── Node A: create a namespace and context ──
-meroctl --node node1 namespace create
+meroctl --node node1 namespace create --application-id <app-id>
 # → <namespace-id>
 
-meroctl --node node1 context create --application-id <app-id>
+meroctl --node node1 context create --application-id <app-id> --group-id <namespace-id>
 # → <context-id>
 
 # Generate an invitation for another node to join
@@ -163,11 +164,15 @@ meroctl node use node1
 meroctl app install --path target/wasm32-unknown-unknown/release/myapp.wasm
 # → copy the application-id
 
-# 4. Create a context
-meroctl context create --application-id <application-id>
+# 4. Create a namespace (root group) for the app
+meroctl namespace create --application-id <application-id>
+# → copy the namespace-id
+
+# 5. Create a context (--group-id required — use the namespace-id)
+meroctl context create --application-id <application-id> --group-id <namespace-id>
 # → copy the context-id
 
-# 5. Interact with the app (method positional, --context flag, no --view)
+# 6. Interact with the app (method positional, --context flag, no --view)
 meroctl call set --context <context-id> --args '{"key":"foo","value":"bar"}'
 meroctl call get --context <context-id> --args '{"key":"foo"}'
 ```

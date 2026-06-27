@@ -80,9 +80,11 @@ npx calimero-sdk build src/index.ts -o build/service.wasm
 # Install on node (app install is node-level — no context; --path is the WASM)
 meroctl --node <NODE> app install \
   --path build/service.wasm
-# → save the application-id, then create a context:
-meroctl --node <NODE> context create --application-id <APP_ID>
-# → save the context-id
+# → save the application-id, then create a namespace (root group) and a context:
+meroctl --node <NODE> namespace create --application-id <APP_ID>
+# → save the namespace-id (also a group id)
+meroctl --node <NODE> context create --application-id <APP_ID> --group-id <NAMESPACE_ID>
+# → save the context-id  (--group-id is required — a context is bound to a group)
 
 # Call a method (method name is positional; context via --context)
 meroctl --node <NODE> call set \

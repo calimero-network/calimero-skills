@@ -125,18 +125,22 @@ meroctl app install \
   --path target/wasm32-unknown-unknown/app-release/myapp.wasm
 # Returns: application-id
 
-# 2. Create a context (instance of the app — init() is called)
-meroctl context create --application-id <application-id>
+# 2. Create a namespace (root group) for the app
+meroctl namespace create --application-id <application-id>
+# Returns: namespace-id (also a group id)
+
+# 3. Create a context (instance of the app — init() is called). --group-id is required.
+meroctl context create --application-id <application-id> --group-id <namespace-id>
 # Returns: context-id
 
-# 3. Call a mutation
-meroctl call <context-id> set --args '{"key":"hello","value":"world"}'
+# 4. Call a mutation (METHOD is positional, the context is the --context flag)
+meroctl call set --context <context-id> --args '{"key":"hello","value":"world"}'
 
-# 4. Call a view (read-only)
-meroctl call <context-id> get --args '{"key":"hello"}' --view
+# 5. Call a view (read-only — same form, there is NO --view flag)
+meroctl call get --context <context-id> --args '{"key":"hello"}'
 
-# Dev mode: auto-reinstall when WASM changes
-meroctl context create --watch target/wasm32-unknown-unknown/app-release/myapp.wasm
+# Dev mode: auto-reinstall when WASM changes (--group-id still required)
+meroctl context create --watch target/wasm32-unknown-unknown/app-release/myapp.wasm --group-id <namespace-id>
 ```
 
 For `merod` setup and full `meroctl` reference, see `calimero-merod` and `calimero-meroctl` skills.
@@ -209,7 +213,8 @@ env::xcall(context_id: &[u8; 32], method: &str, params: &[u8]);
 - **More CRDT collections** — the ordered `SortedMap` and `SortedSet` (range/prefix/paged queries);
   the authored `AuthoredMap` and `AuthoredVector` (per-entry/slot author ownership — use instead of
   `UnorderedMap` + hand-rolled max-wins when only the author may edit their data); and
-  `SharedStorage` (a group-writable single value). See `references/state-collections.md`.
+  `WriterSetCell` (a shared value gated by an authenticated, rotatable writer set — the `shared`
+  module's type; there is no `SharedStorage` collection). See `references/state-collections.md`.
 - **Native unit tests with `TestHost`** — exercise app logic in-process without a WASM build (enable
   `calimero-storage`'s `testing` feature as a dev-dependency). Far faster than a full deploy.
   Canonical example: `core/apps/kv-store/src/lib.rs` (unit tests) and

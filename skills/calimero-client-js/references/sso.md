@@ -12,8 +12,13 @@ consumes that hash automatically, so users skip the manual login flow.
 | `refresh_token`    | Token to obtain a new access token         |
 | `node_url`         | URL of the local node to connect to        |
 | `application_id`   | The installed application's ID on the node |
-| `context_id`       | Context the token is scoped to             |
-| `context_identity` | Executor public key (identity)             |
+| `context_id`       | Context the token is scoped to (may be **absent** under MultiContext) |
+| `context_identity` | Executor public key (may be **absent** under MultiContext) |
+
+> `parseAuthCallback` still parses `context_id` / `context_identity` when present, but the auth flow
+> no longer selects a context for you (`AppMode.SingleContext` is deprecated). Under
+> `AppMode.MultiContext` they often arrive empty — your app picks or creates the context (see
+> "Selecting or creating a context" below).
 
 ## The rule: let `MeroProvider` own a token-bearing hash
 
@@ -60,6 +65,38 @@ function preSeedColdOpen(): void {
   if (applicationId) setApplicationId(applicationId);
 }
 ```
+
+## Selecting or creating a context
+
+`AppMode.SingleContext` is deprecated (since mero-react 2.1.0, removed in 3.0.0). Under
+`AppMode.MultiContext` the auth callback authenticates the user against a node/app but does **not**
+pick a context — your app does. List the user's contexts and, when there are none, create the
+namespace → group → context chain yourself:
+
+```typescript
+import { useMero } from '@calimero-network/mero-react';
+
+const { mero, applicationId } = useMero();
+
+// 1. Namespace (root group) bound to the app
+const { namespaceId } = await mero.admin.createNamespace({
+  applicationId,
+  upgradePolicy: 'Automatic', // or 'LazyOnAccess'
+});
+
+// 2. (Optional) a subgroup for narrower access — otherwise use namespaceId as the group
+const { groupId } = await mero.admin.createGroupInNamespace(namespaceId, { name: 'team' });
+
+// 3. Context bound to that group — groupId is REQUIRED
+const { contextId, memberPublicKey } = await mero.admin.createContext({
+  applicationId,
+  groupId, // or namespaceId to bind to the root group directly
+});
+```
+
+> Call `mero.admin.*` directly (rather than the `useCreateNamespace` / `useCreateContext` hooks)
+> when you need the underlying server error to surface to the user — `useAsyncMutation` swallows it.
+> For listing, use `useContexts` and `useNamespacesForApplication`.
 
 ## Important
 

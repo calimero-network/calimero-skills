@@ -33,15 +33,21 @@ Context deleted (state and storage wiped)
 
 ## Creating a context
 
+A context is always bound to a **group**, so create a namespace (the root group) first and pass its
+id as `--group-id` — `context create` **requires** `--group-id`.
+
 ```bash
-meroctl --node node1 context create --application-id <application-id>
+meroctl --node node1 namespace create --application-id <application-id>
+# Returns: namespace-id (also a group id)
+
+meroctl --node node1 context create --application-id <application-id> --group-id <namespace-id>
 # Returns: context-id
 ```
 
-Dev mode — auto-reinstalls when the WASM file changes:
+Dev mode — auto-reinstalls when the WASM file changes (`--group-id` still required):
 
 ```bash
-meroctl --node node1 context create --watch path/to/app.wasm
+meroctl --node node1 context create --watch path/to/app.wasm --group-id <namespace-id>
 ```
 
 ## Multi-node participation (namespace + group model)
@@ -51,10 +57,10 @@ invitation; joining nodes accept it, then join the context via group membership.
 
 ```bash
 # ── Node A (creator) ──
-meroctl --node node1 namespace create
+meroctl --node node1 namespace create --application-id <app-id>
 # → <namespace-id>
 
-meroctl --node node1 context create --application-id <app-id>
+meroctl --node node1 context create --application-id <app-id> --group-id <namespace-id>
 # → <context-id>
 
 meroctl --node node1 namespace invite <namespace-id>

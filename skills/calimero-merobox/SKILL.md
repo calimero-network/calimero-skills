@@ -35,62 +35,67 @@ Requires Docker 20.10+ running.
 
 ## Node management
 
+`merobox run` starts a *count* of nodes with an auto-incrementing prefix (e.g. `calimero-node-1`,
+`calimero-node-2`); it does not take a `--name`.
+
 ```bash
-# Start a node
-merobox run --name my-node
+# Start one node (default count is 1)
+merobox run
 
-# Start with custom ports
-merobox run --name my-node --server-port 2428 --swarm-port 2528
+# Start N nodes with a custom name prefix
+merobox run --count 2 --prefix calimero-node
 
-# List running nodes
-merobox list
+# Run against a native merod binary instead of Docker
+merobox run --no-docker --binary-path /path/to/merod --auth-mode embedded
 
-# Check node health
-merobox health my-node
+# Start with the auth service (Traefik + auth middleware)
+merobox run --auth-service
 
-# View logs
-merobox logs my-node
-merobox logs my-node --follow   # follow in real-time
+# Health check (use --node to target one; omit to check all)
+merobox health --node calimero-node-1
 
-# Stop a node
-merobox stop my-node
+# View logs (node name is positional)
+merobox logs calimero-node-1
+merobox logs calimero-node-1 --follow   # follow in real-time
 
-# Delete all node data (destructive)
-merobox nuke my-node
+# Stop a node (positional name) or all of them
+merobox stop calimero-node-1
+merobox stop --all
+
+# Destroy all merobox nodes + data (destructive; filter with --prefix)
+merobox nuke --force
 ```
 
-## App and context management
+## App, context, and method operations
+
+The merobox CLI is **node-management and workflow only** (its top-level commands are `run`, `stop`,
+`health`, `logs`, `nuke`, `namespace`, `group`, `bootstrap`, `remote`). It has **no** top-level
+`install` / `application` / `context` / `call` / `identity` / `blob` commands. Do those operations
+one of two ways:
+
+1. **Bootstrap workflows** (the intended path) — declare `install_application`, `create_namespace`,
+   `create_context`, `create_identity`, `call`, `upload_blob`, … steps in YAML (see below).
+2. **meroctl against the running node** — point `meroctl` at the node's API and use its CLI
+   (`meroctl app install`, `meroctl namespace create`, `meroctl context create --group-id …`,
+   `meroctl call …`). See the `calimero-meroctl` skill.
+
+### Namespace and group CLI (these DO exist on merobox)
 
 ```bash
-# Install a WASM app on a node
-merobox install --node my-node --path ./app.wasm --dev
+# Create a namespace (root group) bound to an app → namespace-id (also a group id)
+merobox namespace create <application-id> --node calimero-node-1
 
-# List installed apps
-merobox application list --node my-node
+# List namespaces / the groups under a namespace
+merobox namespace list   --node calimero-node-1
+merobox namespace groups <namespace-id> --node calimero-node-1
 
-# Create a context
-merobox context create --node my-node --application-id <app-id>
+# Invite / join a namespace across nodes
+merobox namespace invite <namespace-id> --node calimero-node-1
+merobox namespace join   <namespace-id> '<invitation-json>' --node calimero-node-2
 
-# List contexts
-merobox context list --node my-node
-
-# Call a method
-merobox call my-node <context-id> <method> '{"key":"hello","value":"world"}'
-```
-
-## Identity management
-
-```bash
-merobox identity generate --node my-node
-```
-
-## Blob storage
-
-```bash
-merobox blob upload   --node my-node --file ./data.txt
-merobox blob list-blobs --node my-node
-merobox blob download --node my-node --blob-id <id> --output ./out.txt
-merobox blob delete   --node my-node --blob-id <id> --yes
+# Groups
+merobox group list --node calimero-node-1
+merobox group join-context <group-id> --node calimero-node-2 --context-id <context-id>
 ```
 
 ## Workflow automation (bootstrap)
@@ -114,9 +119,16 @@ steps:
     outputs:
       app_id: 'application_id'
 
+  - type: create_namespace
+    node: node-1
+    application_id: '{{app_id}}'
+    outputs:
+      ns_id: 'namespace_id'
+
   - type: create_context
     node: node-1
     application_id: '{{app_id}}'
+    group_id: '{{ns_id}}' # REQUIRED — the namespace (root group) id
     outputs:
       ctx_id: 'context.context_id'
 
@@ -146,7 +158,7 @@ steps:
 | Step                  | What it does                                            |
 | --------------------- | ------------------------------------------------------- |
 | `install_application` | Install WASM app, capture `application_id`              |
-| `create_context`      | Create context (optionally in a namespace via `group_id` + `service_name`), capture `context_id` |
+| `create_context`      | Create context — **requires `group_id`** (a namespace/group id, e.g. from `create_namespace`); optional `service_name`. Captures `context_id` |
 | `create_identity`     | Create identity, capture `private_key` and `public_key` |
 | `create_namespace`    | Create a namespace for an app, capture `namespace_id`   |
 | `create_namespace_invitation` | Issue a namespace invitation, capture `invitation` |
@@ -175,9 +187,16 @@ steps:
     outputs:
       app_id: 'application_id'
 
+  - type: create_namespace
+    node: node-1
+    application_id: '{{app_id}}'
+    outputs:
+      ns: 'namespace_id'
+
   - type: create_context
     node: node-1
     application_id: '{{app_id}}'
+    group_id: '{{ns}}' # REQUIRED
     outputs:
       ctx: 'context.context_id'
 

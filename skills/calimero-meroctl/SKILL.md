@@ -28,24 +28,33 @@ meroctl --api http://localhost:2528 context ls
 
 Once a node is registered and set as active, you can omit `--node` from every command.
 
-## Core workflow: app → context → call
+## Core workflow: app → namespace → context → call
+
+A context is always bound to a **group**, and a namespace **is** the root group — so you create a
+namespace first and pass its id as `--group-id`. `meroctl context create` **requires** `--group-id`.
 
 ```bash
 # 1. Install app (--package/--version are optional metadata)
-meroctl app install --path myapp.wasm
+meroctl app install --path myapp.mpk
 # → prints application-id
 
-# 2. Create context (calls init())
-meroctl context create --application-id <application-id>
+# 2. Create a namespace for the app (the namespace IS the root group)
+meroctl namespace create --application-id <application-id>
+# → prints namespace-id  (also usable directly as a group id)
+
+# 3. Create context (calls init()) — bound to the namespace's root group
+meroctl context create --application-id <application-id> --group-id <namespace-id>
 # → prints context-id
 
-# 3. Call a method — METHOD is positional, the context is the --context flag.
+# 4. Call a method — METHOD is positional, the context is the --context flag.
 #    A "view" is simply a read-only method; there is NO --view flag.
 meroctl call set --context <context-id> --args '{"key":"hello","value":"world"}'
 
-# 4. Call a view method (a view is just a read-only method — same call form)
+# 5. Call a view method (a view is just a read-only method — same call form)
 meroctl call get --context <context-id> --args '{"key":"hello"}'
 ```
+
+See `references/` (multi-node setup) for invitations, subgroups, and joining contexts.
 
 ## Global flags
 
@@ -58,7 +67,9 @@ meroctl call get --context <context-id> --args '{"key":"hello"}'
 
 ## Key rules
 
-- `app install` and `context create` are always two separate steps.
+- `app install`, `namespace create`, and `context create` are separate steps. `context create`
+  **requires `--group-id`** — pass the `namespace-id` from `namespace create` (the namespace is the
+  root group), or a subgroup id from `namespace create-group`.
 - `meroctl call` takes the **method name positionally** and the context via `--context` (or `-c`);
   there is **no `--view` flag** — a view is just a read-only method. `call` has no `--as` flag (the
   call flags are `--args`, `--id`, `--substitute`, `-i`/`--interactive`, `--timeout`); `--as` is for

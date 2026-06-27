@@ -121,7 +121,7 @@ state.
 | `ReplicatedGrowableArray`        | Collaborative text / ordered sequence      |
 | `SortedMap` / `SortedSet`        | Ordered map/set — range/prefix/page (0.11) |
 | `AuthoredMap` / `AuthoredVector` | Per-entry/slot author ownership (0.11)     |
-| `SharedStorage<T>`               | Group-writable single value (0.11)         |
+| `WriterSetCell<T>`               | Shared value gated by a writer set (0.11)   |
 
 ## Authentication
 

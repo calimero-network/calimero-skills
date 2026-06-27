@@ -53,7 +53,7 @@ import { AppMode, MeroProvider } from '@calimero-network/mero-react';
 function App() {
   return (
     <MeroProvider
-      mode={AppMode.MultiContext}                 // or AppMode.SingleContext
+      mode={AppMode.MultiContext}                 // use MultiContext (see note below)
       packageName={import.meta.env.VITE_PACKAGE_NAME}
       registryUrl={import.meta.env.VITE_REGISTRY_URL}
     >
@@ -62,6 +62,15 @@ function App() {
   );
 }
 ```
+
+> **`AppMode.SingleContext` is deprecated** (since mero-react 2.1.0; removed in 3.0.0). The auth
+> flow no longer selects a context/namespace/group for you — under MultiContext the auth callback
+> may arrive without a `context_id`/`context_identity`, so your app must pick or create the context
+> itself. Use **`AppMode.MultiContext`**: list with `useContexts` / `useNamespacesForApplication`,
+> and create with `mero.admin.createNamespace` → `createGroupInNamespace` →
+> `createContext({ applicationId, groupId })`. Calling `mero.admin.*` directly (rather than the
+> `useCreate*` hooks) surfaces server errors to the user instead of swallowing them. See
+> `references/sso.md`.
 
 `MeroProviderProps`: `mode` (required), `packageName`, `packageVersion`,
 `registryUrl`, `timeoutMs` (default 30000), `allowedNodeUrls`, `tokenStore`.

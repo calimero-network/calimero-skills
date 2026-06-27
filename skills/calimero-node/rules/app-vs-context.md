@@ -1,6 +1,7 @@
 # Rule: Application and context are not the same thing
 
-Installing an app and creating a context are two separate operations.
+Installing an app and creating a context are separate operations (and a context also needs a
+namespace/group to bind to).
 
 ## WRONG — skipping context creation:
 
@@ -16,11 +17,15 @@ meroctl app install --path myapp.wasm
 meroctl app install --path myapp.wasm
 # Returns: application-id
 
-# 2. Create a context (instantiate the app)
-meroctl context create --application-id <application-id>
+# 2. Create a namespace (root group) for the app
+meroctl namespace create --application-id <application-id>
+# Returns: namespace-id
+
+# 3. Create a context (instantiate the app) — --group-id is required
+meroctl context create --application-id <application-id> --group-id <namespace-id>
 # Returns: context-id
 
-# 3. Now you can call methods (method positional, context via --context)
+# 4. Now you can call methods (method positional, context via --context)
 meroctl call get --context <context-id> --args '{"key":"hello"}'
 ```
 

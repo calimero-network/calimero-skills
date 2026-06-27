@@ -123,7 +123,7 @@ blobs, mesh/network faults, parallel/repeat/pause, script, restart, …).
 | --- | --- | --- |
 | `install_application` | Install a bundle on a node | `node`, `path`, `dev: true`; `outputs: {app_id: applicationId}` |
 | `create_namespace` | Create a namespace for an app | `node`, `application_id`; `outputs: {namespace_id: namespaceId}` |
-| `create_context` | Create a context (optionally in a namespace/service) | `node`, `application_id`, `group_id`, `service_name`; `outputs: {ctx: contextId}` |
+| `create_context` | Create a context bound to a group | `node`, `application_id`, **`group_id`** (required), optional `service_name`; `outputs: {ctx: contextId}` |
 | `create_namespace_invitation` | Issue a namespace invitation | `node`, `namespace_id`; `outputs: {invitation: invitation}` |
 | `join_namespace` | A node joins a namespace via an invitation | `node`, `namespace_id`, `invitation` |
 | `join_context` | A node joins a single context via an invitation | `node`, `invitation` |

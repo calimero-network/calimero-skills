@@ -55,7 +55,7 @@ Alternatively, pass a direct URL without registering:
 meroctl --api http://localhost:2528 context ls
 ```
 
-## Complete workflow: app → context → call
+## Complete workflow: app → namespace → context → call
 
 ```bash
 # (Assumes: meroctl node add node1 ... && meroctl node use node1 already done)
@@ -64,14 +64,18 @@ meroctl --api http://localhost:2528 context ls
 meroctl app install --path myapp.wasm
 # → prints application-id
 
-# 2. Create a context (instantiate the app — init() is called)
-meroctl context create --application-id <application-id>
+# 2. Create a namespace (root group) for the app — needed for the context's --group-id
+meroctl namespace create --application-id <application-id>
+# → prints namespace-id
+
+# 3. Create a context (instantiate the app — init() is called). --group-id is REQUIRED.
+meroctl context create --application-id <application-id> --group-id <namespace-id>
 # → prints context-id
 
-# 3. Call a mutation (method positional, context via --context)
+# 4. Call a mutation (method positional, context via --context)
 meroctl call set --context <context-id> --args '{"key":"hello","value":"world"}'
 
-# 4. Call a view (read-only method — no --view flag exists)
+# 5. Call a view (read-only method — no --view flag exists)
 meroctl call get --context <context-id> --args '{"key":"hello"}'
 ```
 

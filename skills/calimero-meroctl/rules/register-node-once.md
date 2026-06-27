@@ -20,7 +20,7 @@ meroctl call get --context <ctx-id> --args '{}'  # no --node needed
 ```bash
 # Repetitive and error-prone:
 meroctl --node node1 app install --path app.wasm
-meroctl --node node1 context create --application-id <id>
+meroctl --node node1 context create --application-id <id> --group-id <namespace-id>
 meroctl --node node1 call get --context <ctx-id> --args '{}'
 ```
 
