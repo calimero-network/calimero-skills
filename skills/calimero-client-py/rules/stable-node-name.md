@@ -18,7 +18,7 @@ connection = create_connection(api_url=url, node_name=None)
 ```python
 # ✓ Stable, human-readable, unique to this specific node
 connection = create_connection(
-    api_url="http://localhost:2428",
+    api_url="http://localhost:2528",
     node_name="local-dev-node"
 )
 

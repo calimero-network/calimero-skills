@@ -9,7 +9,7 @@
 from calimero_client_py import create_connection, create_client
 
 connection = create_connection(
-    api_url="http://localhost:2428",
+    api_url="http://localhost:2528",
     node_name="my-node"   # stable, unique per node
 )
 client = create_client(connection)
@@ -27,8 +27,9 @@ context = client.get_context(context_id="abc123")
 # Create a context (instance of an installed app)
 context = client.create_context(
     application_id="app-id",
-    protocol="near",          # "near" | "ethereum" | "icp" | "starknet"
-    params=None               # optional JSON string
+    group_id="group-id",      # namespace group this context belongs to
+    params=None,              # optional JSON string of init params
+    service_name=None         # optional service qualifier
 )
 
 # Delete a context

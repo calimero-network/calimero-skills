@@ -52,14 +52,16 @@ mero-sign sign manifest.json --key key.json
        ▼  RFC 8785 JSON Canonicalization (sorts all keys recursively)
        ▼  SHA-256(canonical bytes)
        ▼  Ed25519 sign(hash, private_key)
-       ▼  Inject into manifest:
-          {
-            "alg":      "ed25519",
-            "pubkey":   "base64url-32-bytes",
-            "sig":      "base64url-64-bytes",
-            "signedAt": "ISO-8601"
+       ▼  Add top-level "signerId" (the did:key) + inject into manifest:
+          "signature": {
+            "algorithm": "ed25519",
+            "publicKey": "base64url-32-bytes",
+            "signature": "base64url-64-bytes"
           }
 ```
+
+mero-sign also fills in `minRuntimeVersion` (default `0.1.0`) if the manifest doesn't
+already have it. There is no timestamp field in the signature block.
 
 ## Team workflow
 

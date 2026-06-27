@@ -6,15 +6,16 @@ Human-readable names for the long IDs you'd otherwise hardcode. Three scopes, al
 ## Context & application aliases
 
 ```ts
-// create
-await admin.createContextAlias({ name: 'my-chat', value: contextId });
-await admin.createApplicationAlias({ name: 'chat-app', value: applicationId });
+// create — the request flattens the id field (contextId / applicationId),
+// not a generic { name, value }
+await admin.createContextAlias({ alias: 'my-chat', contextId });
+await admin.createApplicationAlias({ alias: 'chat-app', applicationId });
 
-// resolve (value is undefined if not found)
+// resolve by alias name (value is undefined if not found)
 const { value } = await admin.lookupContextAlias('my-chat'); // → contextId
 const app = await admin.lookupApplicationAlias('chat-app');
 
-// list / delete
+// list / delete (delete takes the alias name)
 const { aliases } = await admin.listContextAliases(); // [{ name, value }]
 await admin.listApplicationAliases();
 await admin.deleteContextAlias('my-chat');
@@ -26,7 +27,7 @@ await admin.deleteApplicationAlias('chat-app');
 Name the identities (public keys) inside a context — e.g. "my-key":
 
 ```ts
-await admin.createContextIdentityAlias(contextId, { name: 'my-key', value: publicKey });
+await admin.createContextIdentityAlias(contextId, { alias: 'my-key', identity: publicKey });
 const { value } = await admin.lookupContextIdentityAlias(contextId, 'my-key'); // → publicKey
 const { aliases } = await admin.listContextIdentityAliases(contextId);
 await admin.deleteContextIdentityAlias(contextId, 'my-key');

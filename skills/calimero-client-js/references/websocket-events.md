@@ -1,18 +1,28 @@
-# WebSocket Events
+# Event subscriptions
 
 Subscribe to real-time events emitted by the application running on the node.
 
-## Event types
+mero-js delivers events over **SSE** by default (`mero.events`, the
+`SseClient`). A `WsClient` (`mero.ws`) also exists but is **experimental** —
+prefer SSE for production. In React, `useSubscription` wraps `mero.events`.
 
-The node sends two kinds of events to subscribers:
+## Event shape delivered to your callback
 
-| type             | when                                | payload                        |
-| ---------------- | ----------------------------------- | ------------------------------ |
-| `StateMutation`  | Another member mutated shared state | `{ newRoot: string }`          |
-| `ExecutionEvent` | App emitted `app::emit!()`          | `{ events: ExecutionEvent[] }` |
+Both `mero.events` and `useSubscription` emit a flattened event:
 
-An `ExecutionEvent` entry: `{ kind: string; data: any }` where `kind` matches the Rust event variant
-name and `data` may be a byte array (UTF-8 JSON) or a plain object.
+```typescript
+interface SseEventData {
+  contextId: string;
+  type?: string;   // event discriminator (e.g. "AppVersionChanged"), if tagged
+  data: unknown;   // payload — byte-array payloads are auto-decoded to JSON
+}
+```
+
+> The client already decodes byte-array (`number[]`) payloads from UTF-8 JSON
+> before invoking your callback, so `data` is normally a plain object. The raw
+> node-level `StateMutation` / `ExecutionEvent` envelope and its `events[]`
+> array (see the `calimero-core` skill) are a node-protocol detail; what reaches
+> your callback is the flattened `{ contextId, type, data }`.
 
 ---
 
@@ -22,38 +32,21 @@ name and `data` may be a byte array (UTF-8 JSON) or a plain object.
 import { useSubscription } from '@calimero-network/mero-react';
 
 function MyComponent({ contextId }: { contextId: string }) {
-  useSubscription([contextId], (event: { contextId: string; data: unknown }) => {
-    const payload = event.data as any;
+  // callback receives SseEventData: { contextId, type?, data }
+  useSubscription([contextId], (event) => {
+    // Simplest, most robust pattern: any event for this context means
+    // "something changed" — refetch state from the node.
+    refreshFromNode();
 
-    // ExecutionEvent: data has an `events` array
-    if (Array.isArray(payload?.events)) {
-      for (const e of payload.events) {
-        const data = decodeEventData(e.data);
-        switch (e.kind) {
-          case 'Inserted':
-            console.log('inserted', data);
-            break;
-          case 'Removed':
-            console.log('removed', data);
-            break;
-        }
-      }
-    }
+    // If you need the payload:
+    console.log(event.type, event.data);
   });
 }
-
-// Byte-array payloads are JSON-encoded; decode them:
-function decodeEventData(data: unknown): unknown {
-  if (Array.isArray(data) && data.every((n) => typeof n === 'number')) {
-    try {
-      return JSON.parse(new TextDecoder().decode(new Uint8Array(data)));
-    } catch {
-      return data;
-    }
-  }
-  return data;
-}
 ```
+
+The most common and most robust pattern (used by the foundation app) is to
+treat any event for a context as a "refetch" trigger rather than diffing the
+payload — see `useChatRoom` in the foundation app.
 
 ## Subscribe to multiple contexts
 
@@ -64,77 +57,57 @@ useSubscription([gameContextId, lobbyContextId], (event) => {
 });
 ```
 
+`useSubscription` manages the SSE connection lifecycle (connect, re-subscribe
+on reconnect, cleanup on unmount) for you.
+
 ---
 
-## Legacy calimero-client: WsSubscriptionsClient
+## mero-js (non-React): mero.events
 
 ```typescript
-import {
-  WsSubscriptionsClient,
-  getAppEndpointKey,
-  getContextId,
-} from '@calimero-network/calimero-client';
+import { MeroJs } from '@calimero-network/mero-js';
 
-const ws = new WsSubscriptionsClient(getAppEndpointKey()!, '/ws');
-await ws.connect();
-ws.subscribe([getContextId()!]);
-ws.addCallback((event) => {
-  if (event.type === 'ExecutionEvent') {
-    for (const e of event.data.events) {
-      console.log(e.kind, e.data);
-    }
-  }
-  if (event.type === 'StateMutation') {
-    refreshDataFromNode();
-  }
+const mero = new MeroJs({ baseUrl });
+// …authenticate…
+
+const handler = (event: { contextId: string; type?: string; data: unknown }) => {
+  console.log(event.contextId, event.type, event.data);
+};
+
+mero.events.on('event', handler);
+mero.events.on('error', (err) => console.error('SSE error', err));
+await mero.events.connect();
+await mero.events.subscribe([contextId]);
+
+// Cleanup
+mero.events.off('event', handler);
+await mero.events.unsubscribe([contextId]);
+mero.close(); // closes SSE + WS clients
+```
+
+### Typed convenience for app-version changes
+
+```typescript
+const unsubscribe = mero.events.onAppVersionChanged((e) => {
+  // e: { contextId, fromVersion?, toVersion? }
+  console.log('app upgraded', e.fromVersion, '→', e.toVersion);
 });
-```
-
-Cleanup:
-
-```typescript
-ws.removeCallback(myCallback);
-ws.unsubscribe([contextId]);
-ws.disconnect();
-```
-
----
-
-## React hook for legacy client
-
-```typescript
-import { useEffect } from 'react';
-import {
-  WsSubscriptionsClient,
-  getAppEndpointKey,
-  getContextId,
-} from '@calimero-network/calimero-client';
-
-function useNodeEvents(onEvent: (event: any) => void) {
-  useEffect(() => {
-    const nodeUrl = getAppEndpointKey();
-    const contextId = getContextId();
-    if (!nodeUrl || !contextId) return;
-
-    const ws = new WsSubscriptionsClient(nodeUrl, '/ws');
-    ws.connect().then(() => {
-      ws.subscribe([contextId]);
-      ws.addCallback(onEvent);
-    });
-
-    return () => {
-      ws.removeCallback(onEvent);
-      ws.unsubscribe([contextId]);
-      ws.disconnect();
-    };
-  }, [onEvent]);
-}
+// later: unsubscribe();
 ```
 
 ---
 
 ## Connection notes
 
-- `WsSubscriptionsClient` does **not** reconnect automatically — handle reconnect manually
-- `useSubscription` from `mero-react` manages the connection lifecycle for you
-- WebSocket tokens are **not** auto-refreshed unlike `rpcClient` HTTP calls
+- `useSubscription` (mero-react) manages the connection lifecycle for you.
+- `mero.events` (SSE) reconnects automatically and re-subscribes to its tracked
+  context IDs after a reconnect.
+- `mero.ws` (`WsClient`) is **experimental** — use `mero.events` (SSE) in production.
+
+---
+
+> **DEPRECATED:** `@calimero-network/calimero-client`'s `WsSubscriptionsClient`
+> (`new WsSubscriptionsClient(url, '/ws')`, `.addCallback`, `event.type ===
+> 'ExecutionEvent'`, `event.data.events`) is **forbidden** in generated apps.
+> Replace it with `useSubscription` (React) or `mero.events` (mero-js); both
+> deliver the flattened `{ contextId, type, data }` shape shown above.

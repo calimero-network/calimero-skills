@@ -15,8 +15,8 @@ const res = await admin.createNamespaceInvitation(namespaceId);
 // → { invitation: SignedGroupOpenInvitation, groupName?: string }
 //
 // SignedGroupOpenInvitation = {
-//   invitation: { inviterIdentity, groupId, expirationHeight, secretSalt,
-//                 protocol, network, contractId },
+//   invitation: { inviterIdentity, groupId, expirationTimestamp, secretSalt,
+//                 invitedRole? },   // inviterIdentity/groupId/secretSalt are number[]
 //   inviterSignature: string,
 // }
 ```
@@ -89,7 +89,7 @@ If you use `@calimero-network/mero-react`, prefer the hooks over raw admin calls
 provider's client and auth for you:
 
 ```ts
-const { createInvitation } = useCreateNamespaceInvitation();
+const { createNamespaceInvitation } = useCreateNamespaceInvitation();
 const { joinNamespace } = useJoinNamespace();
 ```
 

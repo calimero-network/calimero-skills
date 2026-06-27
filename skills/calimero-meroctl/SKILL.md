@@ -43,7 +43,7 @@ meroctl context create --application-id <application-id>
 #    A "view" is simply a read-only method; there is NO --view flag.
 meroctl call set --context <context-id> --args '{"key":"hello","value":"world"}'
 
-# 4. Call a view method (optionally as a specific identity with --as)
+# 4. Call a view method (a view is just a read-only method — same call form)
 meroctl call get --context <context-id> --args '{"key":"hello"}'
 ```
 
@@ -60,8 +60,9 @@ meroctl call get --context <context-id> --args '{"key":"hello"}'
 
 - `app install` and `context create` are always two separate steps.
 - `meroctl call` takes the **method name positionally** and the context via `--context` (or `-c`);
-  there is **no `--view` flag** — a view is just a read-only method. Use `--as <identity>` to call
-  as a specific identity, and `-i`/`--interactive` for a persistent WebSocket shell.
+  there is **no `--view` flag** — a view is just a read-only method. `call` has no `--as` flag (the
+  call flags are `--args`, `--id`, `--substitute`, `-i`/`--interactive`, `--timeout`); `--as` is for
+  identity-aliasing subcommands like `context create`/`identity`, not `call`.
 - Identity management is **under `context`** (`meroctl context identity …`) — there is no top-level
   `meroctl identity` command.
 - Uninstall apps with `meroctl app uninstall <app-id>` (not `app remove`).

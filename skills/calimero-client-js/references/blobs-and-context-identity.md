@@ -10,11 +10,12 @@ Store binary the CRDT state shouldn't carry inline (images, files). State holds 
 
 ```ts
 const { blobId, size } = await admin.uploadBlob({ data: new Uint8Array(/* … */) });
-// data: Uint8Array | ArrayBuffer
+// data: Uint8Array | ArrayBuffer | Blob
 
 const { blobs } = await admin.listBlobs(); // [{ blobId, size }]
-const info = await admin.getBlob(blobId); // { blobId, size }
-const { deleted } = await admin.deleteBlob(blobId);
+const info = await admin.getBlobInfo(blobId); // { blobId, size, hash?, mimeType? }
+const bytes = await admin.getBlob(blobId); // ArrayBuffer (the raw blob bytes)
+const { deleted } = await admin.deleteBlob(blobId); // { blobId, deleted }
 ```
 
 Pattern: `uploadBlob` → store `blobId` in your app state (e.g. a message's `attachmentId`) → other
@@ -28,12 +29,15 @@ that context.
 ```ts
 const { publicKey } = await admin.generateContextIdentity(); // new keypair
 const { identities } = await admin.getContextIdentities(contextId); // all members' keys
-const owned = await admin.getContextIdentitiesOwned(contextId); // keys THIS node owns
+const { identities: owned } = await admin.getContextIdentitiesOwned(contextId); // keys THIS node owns
 ```
 
-Use `getContextIdentitiesOwned` to pick the `executorPublicKey` for `rpc.execute()` — it's a key the
-local node can actually sign with. Falling back to a random/foreign key is the classic "execute
-fails / unauthorized" bug.
+Use `getContextIdentitiesOwned` to resolve **the caller's own identity** in a context (e.g.
+`identities[0]`) — the key the local node actually holds. The foundation app uses it as the message
+**sender identity** (`msg.sender === myKey` → "is this mine") and feeds it to the generated client,
+which still forwards it as the `executorPublicKey` arg on `rpc.execute()`. Note `executorPublicKey`
+is `@deprecated` and **ignored by the server** now (see `rpc-calls.md`), so a wrong/foreign value no
+longer makes `execute()` fail — but you still want your real owned key for sender/identity logic.
 
 ## Gotchas
 

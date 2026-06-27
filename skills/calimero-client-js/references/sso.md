@@ -1,72 +1,77 @@
 # SSO — Calimero Desktop Integration
 
-When a user opens your app from Calimero Desktop, auth tokens are passed via the URL hash. Reading
-them lets users skip the manual login flow entirely.
+When a user opens your app from Calimero Desktop, auth tokens arrive in the URL
+hash — the **same** auth-callback format as web login. `MeroProvider` (mero-react)
+consumes that hash automatically, so users skip the manual login flow.
 
 ## Hash parameters
 
-| Parameter        | Description                                |
-| ---------------- | ------------------------------------------ |
-| `access_token`   | JWT for authenticated node calls           |
-| `refresh_token`  | Token to obtain a new access token         |
-| `node_url`       | URL of the local node to connect to        |
-| `application_id` | The installed application's ID on the node |
+| Parameter          | Description                                |
+| ------------------ | ------------------------------------------ |
+| `access_token`     | JWT for authenticated node calls           |
+| `refresh_token`    | Token to obtain a new access token         |
+| `node_url`         | URL of the local node to connect to        |
+| `application_id`   | The installed application's ID on the node |
+| `context_id`       | Context the token is scoped to             |
+| `context_identity` | Executor public key (identity)             |
 
-## Reading from hash
+## The rule: let `MeroProvider` own a token-bearing hash
 
-```typescript
-function readSSOParams(): {
-  accessToken: string | null;
-  refreshToken: string | null;
-  nodeUrl: string | null;
-  applicationId: string | null;
-} {
-  const hash = window.location.hash.slice(1); // remove leading #
-  const params = new URLSearchParams(hash);
-  return {
-    accessToken: params.get('access_token'),
-    refreshToken: params.get('refresh_token'),
-    nodeUrl: params.get('node_url'),
-    applicationId: params.get('application_id'),
-  };
-}
+A hash that contains `access_token` is an auth callback owned by mero-react.
+`MeroProvider` runs `parseAuthCallback(location.href)` on first render, stores
+the tokens where mero-js reads them (the `mero-tokens` blob), sets the
+node/app/context, and strips the hash. **Do not read or strip a token-bearing
+hash yourself** — doing so races ahead of React and leaves the token in the
+wrong place, so every API call goes out unauthenticated (401).
+
+So a Desktop SSO app needs **no** custom token handling — just mount
+`MeroProvider`:
+
+```tsx
+import { AppMode, MeroProvider } from '@calimero-network/mero-react';
+
+<MeroProvider mode={AppMode.MultiContext} packageName={PKG} registryUrl={REGISTRY}>
+  <App />
+</MeroProvider>;
 ```
 
-## Using SSO tokens on app startup
+## Optional: pre-seed a token-less cold open
 
-Use the storage helpers from `@calimero-network/calimero-client`:
+A cold Desktop open can arrive with `node_url` / `application_id` but **no**
+token (mero-react ignores a token-less callback). To pre-fill the connect
+screen, seed those before React mounts — but bail on any hash that carries a
+token:
 
 ```typescript
-import {
-  setAppEndpointKey,
-  setAccessToken,
-  setRefreshToken,
-  setApplicationId,
-  setContextAndIdentityFromJWT,
-} from '@calimero-network/calimero-client';
+import { setNodeUrl, setApplicationId } from '@calimero-network/mero-react';
 
-async function initApp() {
-  const sso = readSSOParams();
+// Run once, before ReactDOM.render — best-effort, never throws into render.
+function preSeedColdOpen(): void {
+  const hash = window.location.hash.replace(/^#/, '');
+  if (!hash) return;
+  const p = new URLSearchParams(hash);
 
-  if (sso.accessToken && sso.nodeUrl) {
-    // Opened from Desktop — store tokens and skip login
-    setAppEndpointKey(sso.nodeUrl);
-    setAccessToken(sso.accessToken);
-    if (sso.refreshToken) setRefreshToken(sso.refreshToken);
-    if (sso.applicationId) setApplicationId(sso.applicationId);
-    // Extract contextId + executorPublicKey from the JWT claims
-    setContextAndIdentityFromJWT(sso.accessToken);
-    // Clear hash so tokens aren't in browser history
-    history.replaceState(null, '', window.location.pathname);
-    renderApp();
-  } else {
-    // No SSO — show manual login
-    renderLogin();
-  }
+  // Token-bearing hash → it's an auth callback. Leave it entirely to mero-react.
+  if (p.get('access_token')) return;
+
+  const nodeUrl = p.get('node_url')?.trim();
+  const applicationId = (p.get('application_id') ?? '').trim();
+  if (nodeUrl) setNodeUrl(nodeUrl);
+  if (applicationId) setApplicationId(applicationId);
 }
 ```
 
 ## Important
 
-Always fall back to manual login if the hash params are absent — the app must work when opened
-directly in a browser, not only from Desktop.
+- Never strip or store a token-bearing hash manually — `MeroProvider` does it.
+- The app must also work when opened directly in a browser (web login via
+  `connectToNode` / `ConnectButton`), not only from Desktop.
+- Detect the Desktop shell with `'__TAURI_INTERNALS__' in window` if you need
+  to branch behaviour (e.g. skip a manual connect screen).
+
+---
+
+> **DEPRECATED:** the old `@calimero-network/calimero-client` SSO pattern
+> (`setAppEndpointKey` / `setAccessToken` / `setContextAndIdentityFromJWT` from
+> a hand-parsed hash) is **forbidden** in generated apps. `MeroProvider` owns
+> the auth callback now.

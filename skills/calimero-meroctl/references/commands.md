@@ -86,15 +86,16 @@ meroctl context sync <context-id>
 ## call — invoke app methods
 
 The **method name is positional**; the context is passed with `--context` (or `-c`). There is **no
-`--view` flag** — calling a read-only method just reads. Use `--as <identity>` to call as a specific
-identity, and `-i`/`--interactive` to open a persistent WebSocket shell for many calls.
+`--view` flag** — calling a read-only method just reads. `call` has **no `--as` flag** either; its
+flags are `--args`, `--id`, `--substitute`, `-i`/`--interactive`, `--timeout`. (`--as` exists on
+identity-aliasing subcommands like `context create`/`identity`, not on `call`.)
 
 ```bash
 # Mutation — changes shared CRDT state
 meroctl call <method-name> --context <context-id> --args '{"key":"val"}'
 
-# View / read-only method (same form; optionally as a specific identity)
-meroctl call <method-name> --context <context-id> --args '{"key":"val"}' --as <identity-pubkey>
+# View / read-only method (same form — a view is just a read-only method)
+meroctl call <method-name> --context <context-id> --args '{}'
 
 # Method with no arguments
 meroctl call list_all --context <context-id> --args '{}'

@@ -1,128 +1,118 @@
 # RPC Calls
 
-Calling application methods on a Calimero node.
+Calling application methods on a Calimero node via `mero.rpc` (mero-js / mero-react).
 
-## The `rpcClient` singleton
+## The `mero.rpc` client
 
-`@calimero-network/calimero-client` exports a pre-configured `rpcClient` singleton. Import it
-directly — do not construct `JsonRpcClient` manually.
+Get a `MeroJs` instance from `useMero()` (React) or construct one directly
+(`new MeroJs({ baseUrl })`). Its `.rpc` getter is a lazily-initialized
+`RpcClient` — do not construct `RpcClient` manually.
 
 ```typescript
-import { rpcClient, getContextId, getExecutorPublicKey } from '@calimero-network/calimero-client';
+import { useMero } from '@calimero-network/mero-react';
+
+const { mero } = useMero();
+// mero.rpc.execute(...)
 ```
 
 ---
 
 ## Execute a method (mutation or view — same call)
 
+`execute()` returns the method's **output directly** and **throws** an
+`RpcError` on failure. There is no `{ result: { output } }` envelope to unwrap
+and no `response.error` to check — use `try/catch`.
+
 ```typescript
-const response = await rpcClient.execute<ArgsType, OutputType>({
-  contextId: getContextId()!,
+const output = await mero.rpc.execute<OutputType>({
+  contextId,
   method: 'methodName',
   argsJson: {
     /* your args */
   },
-  executorPublicKey: getExecutorPublicKey()!,
 });
+// `output` is already the unwrapped result
+```
 
-if (response.error) {
-  console.error(response.error.error.cause.info?.message);
-} else {
-  console.log(response.result?.output);
+`ExecuteParams`:
+
+```typescript
+interface ExecuteParams {
+  contextId: string;
+  method: string;
+  argsJson?: Record<string, unknown>;
+  /** @deprecated No longer used by the server. Ignored if provided. */
+  executorPublicKey?: string;
 }
 ```
+
+> Generated abi-codegen clients still pass `executorPublicKey` for back-compat,
+> but the server ignores it. New code can omit it.
 
 ---
 
 ## Calling a mutation (changes state)
 
 ```typescript
-const response = await rpcClient.execute<{ key: string; value: string }, void>({
-  contextId: getContextId()!,
+await mero.rpc.execute<void>({
+  contextId,
   method: 'set',
   argsJson: { key: 'hello', value: 'world' },
-  executorPublicKey: getExecutorPublicKey()!,
 });
-
-if (response.error) {
-  console.error('set failed:', response.error.error.cause.info?.message);
-}
 ```
 
 ## Calling a view (read-only)
 
 ```typescript
-const response = await rpcClient.execute<{ key: string }, string | null>({
-  contextId: getContextId()!,
+const value = await mero.rpc.execute<string | null>({
+  contextId,
   method: 'get',
   argsJson: { key: 'hello' },
-  executorPublicKey: getExecutorPublicKey()!,
 });
-
-if (!response.error) {
-  console.log(response.result?.output); // "world"
-}
+console.log(value); // "world"
 ```
 
 ---
 
-## Response shape
+## RpcError
+
+On failure `execute()` throws `RpcError`:
 
 ```typescript
-// Success:
-{ result: { output: T } }
+import { RpcError } from '@calimero-network/mero-js';
 
-// Error:
-{
-  error: {
-    id: number;
-    jsonrpc: string;
-    code: number;                  // HTTP-like code (400, 401, 500)
-    error: {
-      name: string;                // e.g. "FunctionCallError"
-      cause: {
-        name: string;
-        info?: { message: string };
-      };
-    };
-    headers?: Record<string, string>;
-  }
+class RpcError extends Error {
+  code: number;       // JSON-RPC / server error code
+  type?: string;      // server-specific error type, when present
+  data?: unknown;     // server-specific error payload
 }
 ```
 
----
-
-## Error names
-
-| name                  | meaning                                            |
-| --------------------- | -------------------------------------------------- |
-| `FunctionCallError`   | App method returned an error                       |
-| `RpcExecutionError`   | Node couldn't execute the method                   |
-| `InvalidRequestError` | Malformed request (wrong context-id, missing args) |
-| `AuthenticationError` | JWT expired, revoked, or missing                   |
-| `UnknownServerError`  | Unexpected server error                            |
+The underlying JSON-RPC call is `POST /jsonrpc` with
+`{ jsonrpc: '2.0', method: 'execute', params: { contextId, method, argsJson } }`.
+The HTTP client transparently refreshes the access token on a `401` and retries
+the request (see `rules/token-refresh.md`).
 
 ---
 
-## Error handling with 401
-
-The HTTP client inside `rpcClient` automatically refreshes tokens on `401 token_expired`. For
-`token_revoked` or `invalid_token` you need to re-authenticate:
+## Error handling
 
 ```typescript
-const response = await rpcClient.execute({ ... });
+import { RpcError } from '@calimero-network/mero-js';
 
-if (response.error) {
-  const { code, headers } = response.error;
-  const authError = headers?.['x-auth-error'];
-
-  if (code === 401 && (authError === 'token_revoked' || authError === 'invalid_token')) {
-    // Token cannot be refreshed — send user to login
-    clientLogout();
-    return;
+try {
+  const value = await mero.rpc.execute<string | null>({
+    contextId,
+    method: 'get',
+    argsJson: { key: 'hello' },
+  });
+  // use value
+} catch (err) {
+  if (err instanceof RpcError) {
+    console.error(`RPC failed (${err.code}):`, err.message, err.data);
+  } else {
+    throw err;
   }
-
-  throw new Error(response.error.error.cause.info?.message ?? 'Unknown error');
 }
 ```
 
@@ -131,30 +121,34 @@ if (response.error) {
 ## Complete example: typed wrapper
 
 ```typescript
-import { rpcClient, getContextId, getExecutorPublicKey } from '@calimero-network/calimero-client';
+import { MeroJs, RpcError } from '@calimero-network/mero-react';
 
-async function setItem(key: string, value: string): Promise<void> {
-  const response = await rpcClient.execute<{ key: string; value: string }, void>({
-    contextId: getContextId()!,
+async function setItem(mero: MeroJs, contextId: string, key: string, value: string): Promise<void> {
+  await mero.rpc.execute<void>({
+    contextId,
     method: 'set',
     argsJson: { key, value },
-    executorPublicKey: getExecutorPublicKey()!,
   });
-  if (response.error) {
-    throw new Error(response.error.error.cause.info?.message);
-  }
 }
 
-async function getItem(key: string): Promise<string | null> {
-  const response = await rpcClient.execute<{ key: string }, string | null>({
-    contextId: getContextId()!,
-    method: 'get',
-    argsJson: { key },
-    executorPublicKey: getExecutorPublicKey()!,
-  });
-  if (response.error) {
-    throw new Error(response.error.error.cause.info?.message);
+async function getItem(mero: MeroJs, contextId: string, key: string): Promise<string | null> {
+  try {
+    return await mero.rpc.execute<string | null>({
+      contextId,
+      method: 'get',
+      argsJson: { key },
+    });
+  } catch (err) {
+    if (err instanceof RpcError) throw new Error(err.message);
+    throw err;
   }
-  return response.result?.output ?? null;
 }
 ```
+
+---
+
+> **DEPRECATED:** the old `@calimero-network/calimero-client` `rpcClient`
+> singleton (where `execute()` resolved to `{ result: { output }, error }`
+> instead of throwing) is **forbidden** in generated apps. Replace
+> `rpcClient.execute(...)` + `response.result.output` / `response.error` with
+> `mero.rpc.execute(...)` + `try/catch`.

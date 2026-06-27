@@ -1,171 +1,133 @@
 # Authentication
 
-## Storage helpers
+Auth is handled by `MeroProvider` (mero-react) — it drives the login redirect,
+consumes the auth callback, persists tokens, and restores existing sessions.
+You almost never store tokens by hand.
 
-`@calimero-network/calimero-client` provides these storage functions (backed by `localStorage`):
+## How it works
 
-```typescript
-import {
-  // Node URL
-  setAppEndpointKey,
-  getAppEndpointKey,
-  // JWT tokens
-  setAccessToken,
-  getAccessToken,
-  setRefreshToken,
-  getRefreshToken,
-  // Context and identity (extracted from JWT)
-  setContextId,
-  getContextId,
-  setExecutorPublicKey,
-  getExecutorPublicKey,
-  setContextAndIdentityFromJWT, // extracts + stores contextId + executorPublicKey from JWT
-  // App ID
-  setApplicationId,
-  getApplicationId,
-  // Auth endpoint (separate from node URL)
-  setAuthEndpointURL,
-  getAuthEndpointURL,
-  // Decoded JWT payload
-  getJWTObject, // returns { context_id, context_identity, exp, permissions, ... }
-  // Full auth config (throws if required fields are missing)
-  getAuthConfig, // returns { appEndpointKey, contextId, executorPublicKey, jwtToken }
-  // Logout (clears all tokens + reloads)
-  clientLogout,
-} from '@calimero-network/calimero-client';
-```
+1. **Login redirect.** `connectToNode(url)` (from `useMero()`) sends the user to
+   the node's auth page (`<nodeUrl>/auth/login?...`) with a `callback-url` back
+   to your app.
+2. **Callback.** The node redirects back with tokens + identifiers in the URL
+   hash. On first render `MeroProvider` runs `parseAuthCallback(window.location.href)`,
+   validates the `node_url` against the node login was initiated with (and
+   `allowedNodeUrls`), stores the tokens, then strips the hash.
+3. **Session restore.** On later loads `MeroProvider` restores tokens from its
+   token store (`LocalStorageTokenStore` by default) and verifies them by calling
+   `mero.admin.getContexts()`.
 
----
+## Auth-callback hash parameters
 
-## SSO login (from Calimero Desktop — recommended path)
+`parseAuthCallback` reads these from the URL hash:
 
-When the app is opened by Desktop, tokens arrive in the URL hash. Store them:
+| Parameter          | Maps to                           |
+| ------------------ | --------------------------------- |
+| `access_token`     | access token (required)           |
+| `refresh_token`    | refresh token                     |
+| `node_url`         | node URL to connect to            |
+| `application_id`   | installed application id          |
+| `context_id`       | context the token is scoped to    |
+| `context_identity` | executor public key (identity)    |
 
-```typescript
-function initFromDesktopSSO(): boolean {
-  const hash = new URLSearchParams(window.location.hash.slice(1));
-  const accessToken = hash.get('access_token');
-  const refreshToken = hash.get('refresh_token');
-  const nodeUrl = hash.get('node_url');
-  const appId = hash.get('application_id');
-
-  if (!accessToken || !nodeUrl) return false;
-
-  // Store everything
-  setAppEndpointKey(nodeUrl);
-  setAccessToken(accessToken);
-  if (refreshToken) setRefreshToken(refreshToken);
-  if (appId) setApplicationId(appId);
-
-  // Extract contextId and executorPublicKey from JWT claims
-  setContextAndIdentityFromJWT(accessToken);
-
-  // Remove tokens from URL bar (don't let them sit in browser history)
-  history.replaceState(null, '', window.location.pathname + window.location.search);
-
-  return true;
-}
-```
+> The same hash format is used by **both** web login and Calimero Desktop SSO.
+> Do **not** parse or strip a token-bearing hash yourself — that races
+> `MeroProvider` and leaves tokens in the wrong place (every call then 401s).
+> See `sso.md`.
 
 ---
 
-## Manual login (no Desktop)
+## Reading auth state — useMero
 
 ```typescript
-import {
-  setAppEndpointKey,
-  setAccessToken,
-  setRefreshToken,
-  setContextAndIdentityFromJWT,
-} from '@calimero-network/calimero-client';
+import { useMero } from '@calimero-network/mero-react';
 
-async function login(nodeUrl: string, accessToken: string, refreshToken: string) {
-  setAppEndpointKey(nodeUrl);
-  setAccessToken(accessToken);
-  setRefreshToken(refreshToken);
-  setContextAndIdentityFromJWT(accessToken);
-}
+const {
+  isAuthenticated,
+  isOnline,
+  mero,            // MeroJs instance, or null
+  nodeUrl,
+  applicationId,
+  contextId,
+  contextIdentity, // executor public key from the callback
+  connectToNode,
+  logout,
+  isLoading,
+} = useMero();
 ```
+
+Gate UI on `isLoading` first (auth is being restored), then `isAuthenticated`.
 
 ---
 
-## Checking if authenticated
+## Logging in (no Desktop)
 
 ```typescript
-import { getAuthConfig } from '@calimero-network/calimero-client';
+const { connectToNode } = useMero();
 
-function isAuthenticated(): boolean {
-  const config = getAuthConfig();
-  return config.error === null;
-}
+// Sends the user to the node's auth page; on success they return authenticated.
+// Use the node's HTTP/RPC port (default 2528) — 2428 is the P2P swarm port.
+connectToNode('http://localhost:2528');
 ```
 
----
-
-## Reading the JWT payload
-
-```typescript
-import { getJWTObject } from '@calimero-network/calimero-client';
-
-const jwt = getJWTObject();
-// jwt.context_id        — the context this token is scoped to
-// jwt.context_identity  — the identity (executor public key)
-// jwt.exp               — expiry timestamp (seconds)
-// jwt.permissions       — array of permission strings
-```
+Or use the prebuilt `ConnectButton` / `LoginModal` from mero-react.
 
 ---
 
 ## Logout
 
 ```typescript
-import { clientLogout } from '@calimero-network/calimero-client';
+const { logout } = useMero();
 
-// Clears all tokens from localStorage and reloads the page
-clientLogout();
+// Clears tokens + all mero-react storage and resets provider state.
+logout();
 ```
 
 ---
 
-## App startup pattern (SSO + fallback)
+## Persistence helpers (mero-react storage)
+
+mero-react exports localStorage helpers for the node URL / app id / context that
+the provider also uses. You rarely need these directly (the SSO bootstrap uses
+`setNodeUrl` / `setApplicationId` to pre-fill a token-less cold open):
 
 ```typescript
 import {
-  setAppEndpointKey,
-  setAccessToken,
-  setRefreshToken,
-  setApplicationId,
-  setContextAndIdentityFromJWT,
-  getAuthConfig,
-} from '@calimero-network/calimero-client';
-
-async function bootstrap() {
-  // Try SSO from Desktop hash
-  const hash = new URLSearchParams(window.location.hash.slice(1));
-  const accessToken = hash.get('access_token');
-  const nodeUrl = hash.get('node_url');
-
-  if (accessToken && nodeUrl) {
-    setAppEndpointKey(nodeUrl);
-    setAccessToken(accessToken);
-    const rt = hash.get('refresh_token');
-    if (rt) setRefreshToken(rt);
-    const appId = hash.get('application_id');
-    if (appId) setApplicationId(appId);
-    setContextAndIdentityFromJWT(accessToken);
-    history.replaceState(null, '', window.location.pathname);
-    renderApp();
-    return;
-  }
-
-  // Check if already authenticated from a previous session
-  const config = getAuthConfig();
-  if (config.error === null) {
-    renderApp();
-    return;
-  }
-
-  // Not authenticated — show manual login
-  renderLogin();
-}
+  getNodeUrl, setNodeUrl, clearNodeUrl,
+  getApplicationId, setApplicationId, clearApplicationId,
+  getContextId, setContextId, clearContextId,
+  getContextIdentity, setContextIdentity, clearContextIdentity,
+  clearAllStorage,
+} from '@calimero-network/mero-react';
 ```
+
+The access/refresh tokens themselves live in the mero-js token store
+(`LocalStorageTokenStore`, the `mero-tokens` localStorage blob) — managed by the
+provider, not these helpers.
+
+---
+
+## Custom token store (advanced)
+
+To persist tokens somewhere other than localStorage, pass a `tokenStore` to
+`MeroProvider`:
+
+```typescript
+import { MeroProvider, MemoryTokenStore } from '@calimero-network/mero-react';
+
+<MeroProvider mode={AppMode.MultiContext} tokenStore={new MemoryTokenStore()}>
+  {/* … */}
+</MeroProvider>
+```
+
+`mero-js` also exports `MemoryTokenStore` and `LocalStorageTokenStore` and the
+`TokenStore` interface for non-React use.
+
+---
+
+> **DEPRECATED:** the `@calimero-network/calimero-client` storage helpers
+> (`setAppEndpointKey`, `setAccessToken`, `setRefreshToken`,
+> `setContextAndIdentityFromJWT`, `getJWTObject`, `getAuthConfig`,
+> `clientLogout`, …) are **forbidden** in generated apps. Do not store tokens by
+> hand — let `MeroProvider` own the callback and use `useMero()` for state and
+> `logout()`.

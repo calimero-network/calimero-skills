@@ -12,7 +12,7 @@ meroctl node use node1
 # All subsequent commands use the active node automatically:
 meroctl app install --path app.wasm              # no --node needed
 meroctl context ls                               # no --node needed
-meroctl call <ctx-id> get --args '{}' --view     # no --node needed
+meroctl call get --context <ctx-id> --args '{}'  # no --node needed
 ```
 
 ## Don't do this
@@ -21,7 +21,7 @@ meroctl call <ctx-id> get --args '{}' --view     # no --node needed
 # Repetitive and error-prone:
 meroctl --node node1 app install --path app.wasm
 meroctl --node node1 context create --application-id <id>
-meroctl --node node1 call <ctx-id> get --args '{}' --view
+meroctl --node node1 call get --context <ctx-id> --args '{}'
 ```
 
 ## Exception: multiple nodes
