@@ -146,13 +146,17 @@ steps:
 | Step                  | What it does                                            |
 | --------------------- | ------------------------------------------------------- |
 | `install_application` | Install WASM app, capture `application_id`              |
-| `create_context`      | Create context, capture `context_id` and `seed`         |
+| `create_context`      | Create context (optionally in a namespace via `group_id` + `service_name`), capture `context_id` |
 | `create_identity`     | Create identity, capture `private_key` and `public_key` |
+| `create_namespace`    | Create a namespace for an app, capture `namespace_id`   |
+| `create_namespace_invitation` | Issue a namespace invitation, capture `invitation` |
+| `join_namespace`      | Join a node to a namespace via its invitation           |
 | `join_context`        | Join a node to a context (targeted invitation)          |
 | `invite_open`         | Create open invitation (anyone can join)                |
 | `join_open`           | Join via open invitation                                |
 | `call`                | Execute app method, capture output                      |
 | `wait`                | Sleep N seconds                                         |
+| `wait_for_sync`       | Pause until nodes have synced state                     |
 | `repeat`              | Loop with index variable                                |
 | `assert`              | Validate values (`is_set`, `contains`, `==`)            |
 | `json_assert`         | JSON equality/subset checks                             |
