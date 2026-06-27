@@ -108,11 +108,11 @@ if (distinct.length === 0) {
 const pinned = distinct.length === 1 ? distinct[0] : null;
 
 // ── 2. Freshness (opt-in): is `pinned` the latest core release? ──
-function fetchLatestCoreTag() {
+function fetchTagsPage(page) {
   return new Promise((resolve, reject) => {
     const opts = {
       hostname: 'api.github.com',
-      path: '/repos/calimero-network/core/tags?per_page=100',
+      path: `/repos/calimero-network/core/tags?per_page=100&page=${page}`,
       headers: {
         'User-Agent': 'calimero-skills-version-check',
         Accept: 'application/vnd.github+json',
@@ -127,13 +127,7 @@ function fetchLatestCoreTag() {
           if (res.statusCode !== 200)
             return reject(new Error(`GitHub API ${res.statusCode}: ${body.slice(0, 200)}`));
           try {
-            // core release tags look like 0.11.0-rc.8 (optionally v-prefixed).
-            const tags = JSON.parse(body)
-              .map((t) => t.name.replace(/^v/, ''))
-              .filter((n) => /^\d+\.\d+\.\d+(?:-rc\.\d+)?$/.test(n));
-            if (!tags.length) return reject(new Error('no core release tags found'));
-            tags.sort(compareRc);
-            resolve(tags[tags.length - 1]);
+            resolve(JSON.parse(body));
           } catch (e) {
             reject(e);
           }
@@ -141,6 +135,26 @@ function fetchLatestCoreTag() {
       })
       .on('error', reject);
   });
+}
+
+// The tags endpoint has no guaranteed order, so we page through ALL tags (not
+// just the first 100) and take the max — otherwise a newer rc beyond page 1
+// could be missed. Capped at 10 pages (1000 tags) as a safety bound.
+async function fetchLatestCoreTag() {
+  const all = [];
+  for (let page = 1; page <= 10; page++) {
+    const batch = await fetchTagsPage(page);
+    if (!Array.isArray(batch) || batch.length === 0) break;
+    all.push(...batch);
+    if (batch.length < 100) break; // last page
+  }
+  // core release tags look like 0.11.0-rc.8 (optionally v-prefixed).
+  const tags = all
+    .map((t) => t.name.replace(/^v/, ''))
+    .filter((n) => /^\d+\.\d+\.\d+(?:-rc\.\d+)?$/.test(n));
+  if (!tags.length) throw new Error('no core release tags found');
+  tags.sort(compareRc);
+  return tags[tags.length - 1];
 }
 
 async function main() {
