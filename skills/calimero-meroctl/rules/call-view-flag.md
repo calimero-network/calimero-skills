@@ -34,6 +34,8 @@ meroctl call set --context <context-id> --args '{"key":"foo","value":"bar"}'
 
 ## Don't do this
 
+<!-- validate-ignore: no-view-flag (intentional WRONG example demonstrating the missing flag) -->
+
 ```bash
 # WRONG: there is no --view flag, and the context is a flag, not a leading positional
 meroctl call <ctx-id> get_posts --args '{}' --view

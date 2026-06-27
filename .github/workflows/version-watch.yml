@@ -1,0 +1,29 @@
+name: Version watch
+
+# Fails when calimero-network/core cuts a newer release than the skills pin.
+# This is a SIGNAL job, deliberately kept off the per-PR gate so upstream
+# moving never blocks a content PR — it runs on a schedule (and on demand) and
+# goes red so maintainers know to bump the pins and re-audit against the new rc.
+
+on:
+  schedule:
+    - cron: '0 6 * * 1' # every Monday 06:00 UTC
+  workflow_dispatch: {}
+
+jobs:
+  check-latest-core:
+    name: Skills pin vs latest core release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Compare skills pin to latest core tag
+        run: npm run check:versions:latest
+        env:
+          # GITHUB_TOKEN lifts the unauthenticated GitHub API rate limit.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

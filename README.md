@@ -340,6 +340,31 @@ skills/<skill-name>/
 The install script appends skill content to your editor's context file, wrapped in markers so
 re-running updates the block cleanly.
 
+## Validation
+
+CI (and `npm test`) runs these checks; run them locally before opening a PR:
+
+| Command                            | What it enforces                                                                                                                                                                               |
+| ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm run format:check`             | Prettier formatting (`.md`/`.json`/`.js`/`.ts`)                                                                                                                                                |
+| `npm run lint:md`                  | Markdown structure (markdownlint)                                                                                                                                                              |
+| `npm test` → `test.js`             | Every skill has `SKILL.md` + non-empty `references/` and `rules/`                                                                                                                              |
+| `npm test` → `validate-content.js` | **Content rules** in fenced code blocks — no `meroctl call --as`/`--view`, `context create` carries `--group-id`, no `SharedStorage`, no deprecated `@calimero-network/calimero-client` import |
+| `npm test` → `check-versions.js`   | Core version pins agree (`0.11.0-rc.N` consistent across skills)                                                                                                                               |
+
+The content linter scans only fenced code blocks (never prose) and strips comments. A deliberate
+counter-example (a "Don't do this" block) opts out with an HTML comment on the line before the
+fence:
+
+```text
+<!-- validate-ignore: no-view-flag (intentional WRONG example) -->
+```
+
+A separate scheduled workflow (`version-watch.yml`, also `npm run check:versions:latest`) compares
+the pinned core version to the latest `calimero-network/core` release tag and goes red when core
+cuts a newer rc — the cue to bump `EXPECTED_CORE_VERSION` in `scripts/check-versions.js` and
+re-audit the skills against the new release.
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for how to add or update a skill.
