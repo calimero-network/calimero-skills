@@ -119,10 +119,17 @@ function fetchTagsPage(page) {
       },
     };
     if (process.env.GITHUB_TOKEN) opts.headers.Authorization = `Bearer ${process.env.GITHUB_TOKEN}`;
+    const MAX_BYTES = 10 * 1024 * 1024; // 10 MB cap — one tags page is ~tens of KB
     https
       .get(opts, (res) => {
         let body = '';
-        res.on('data', (c) => (body += c));
+        res.on('data', (c) => {
+          body += c;
+          if (body.length > MAX_BYTES) {
+            res.destroy();
+            reject(new Error('GitHub API response exceeded size cap'));
+          }
+        });
         res.on('end', () => {
           if (res.statusCode !== 200)
             return reject(new Error(`GitHub API ${res.statusCode}: ${body.slice(0, 200)}`));
