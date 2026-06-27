@@ -36,12 +36,11 @@ maturin develop --release
 ## Minimal working example
 
 ```python
-import asyncio
 from calimero_client_py import create_connection, create_client
 
 def main():
     connection = create_connection(
-        api_url="http://localhost:2428",
+        api_url="http://localhost:2528",
         node_name="my-local-node"   # must be stable — see rules/
     )
     client = create_client(connection)

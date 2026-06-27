@@ -1,0 +1,55 @@
+name: Version watch
+
+# Checks that the skills pin the LATEST calimero-network/core release.
+#
+# Runs on every PR/push (so the status is visible while reviewing a change) and
+# on a weekly schedule (so a new core release is noticed even with no activity).
+# It goes red when core has cut a newer rc than the skills pin — the cue to
+# update the core pins in the skill files and re-audit against the new release.
+# (The expected version is derived from the pins themselves; nothing hardcoded.)
+#
+# This is a SIGNAL check, intentionally a SEPARATE workflow from the main CI
+# gate. Keep it OUT of branch-protection "required checks": upstream cutting a
+# release should surface loudly, but must not block an unrelated content PR from
+# merging. (The per-PR CI gate already enforces internal pin CONSISTENCY via
+# `npm test` → check-versions.js offline.)
+
+on:
+  pull_request:
+    branches: [master, main]
+  push:
+    branches: [master, main]
+  schedule:
+    - cron: '0 6 * * 1' # every Monday 06:00 UTC
+  workflow_dispatch: {}
+
+# Read-only job: it only reads the repo and queries the public GitHub API.
+permissions:
+  contents: read
+
+# One run at a time per ref — a manual dispatch during a scheduled run (or rapid
+# dispatches) won't pile up duplicate read-only checks.
+concurrency:
+  group: version-watch-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check-latest-core:
+    name: Skills pin vs latest core release
+    runs-on: ubuntu-latest
+    # Bounded so a slow/hung GitHub API call can't hold a runner to the 6h default.
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # No `npm ci` / cache: check:versions:latest uses only Node built-ins (fs/https/path).
+      - name: Compare skills pin to latest core tag
+        run: npm run check:versions:latest
+        env:
+          # GITHUB_TOKEN lifts the unauthenticated GitHub API rate limit.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

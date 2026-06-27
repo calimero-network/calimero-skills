@@ -26,11 +26,11 @@ crate-type = ["cdylib"]
 # Pin to the matching node release by GIT TAG. Calimero RC releases are cut as
 # git tags (and may land on crates.io a little later), so the tag form always
 # resolves and keeps the app in lockstep with the merod it runs on.
-calimero-sdk     = { git = "https://github.com/calimero-network/core", tag = "0.11.0-rc.6" }
-calimero-storage = { git = "https://github.com/calimero-network/core", tag = "0.11.0-rc.6" }
+calimero-sdk     = { git = "https://github.com/calimero-network/core", tag = "0.11.0-rc.8" }
+calimero-storage = { git = "https://github.com/calimero-network/core", tag = "0.11.0-rc.8" }
 
 [build-dependencies]
-calimero-wasm-abi = { git = "https://github.com/calimero-network/core", tag = "0.11.0-rc.6" }
+calimero-wasm-abi = { git = "https://github.com/calimero-network/core", tag = "0.11.0-rc.8" }
 serde_json        = "1"
 
 [profile.app-release]
@@ -56,13 +56,12 @@ fn main() {
 
 ```rust
 use calimero_sdk::app;
-use calimero_sdk::borsh::{BorshDeserialize, BorshSerialize};
-use calimero_sdk::serde::Serialize;
 use calimero_storage::collections::{LwwRegister, UnorderedMap};
 
+// `#[app::state]` injects the borsh derives + `#[borsh(crate = ...)]` itself
+// (SDK 0.11+); a manual `#[derive(BorshSerialize, BorshDeserialize)]` here
+// would collide and fail to compile.
 #[app::state(emits = for<'a> Event<'a>)]
-#[derive(Debug, BorshSerialize, BorshDeserialize)]
-#[borsh(crate = "calimero_sdk::borsh")]
 pub struct KvStore {
     items: UnorderedMap<String, LwwRegister<String>>,
 }
@@ -127,27 +126,35 @@ meroctl app install \
   --path target/wasm32-unknown-unknown/app-release/myapp.wasm
 # Returns: application-id
 
-# 2. Create a context (instance of the app — init() is called)
-meroctl context create --application-id <application-id>
+# 2. Create a namespace (root group) for the app
+meroctl namespace create --application-id <application-id>
+# Returns: namespace-id (also a group id)
+
+# 3. Create a context (instance of the app — init() is called). --group-id is required.
+meroctl context create --application-id <application-id> --group-id <namespace-id>
 # Returns: context-id
 
-# 3. Call a mutation
-meroctl call <context-id> set --args '{"key":"hello","value":"world"}'
+# 4. Call a mutation (METHOD is positional, the context is the --context flag)
+meroctl call set --context <context-id> --args '{"key":"hello","value":"world"}'
 
-# 4. Call a view (read-only)
-meroctl call <context-id> get --args '{"key":"hello"}' --view
+# 5. Call a view (read-only — same form, there is NO --view flag)
+meroctl call get --context <context-id> --args '{"key":"hello"}'
 
-# Dev mode: auto-reinstall when WASM changes
-meroctl context create --watch target/wasm32-unknown-unknown/app-release/myapp.wasm
+# Dev mode: auto-reinstall when WASM changes (--group-id still required)
+meroctl context create --watch target/wasm32-unknown-unknown/app-release/myapp.wasm --group-id <namespace-id>
 ```
 
 For `merod` setup and full `meroctl` reference, see `calimero-merod` and `calimero-meroctl` skills.
 
 ## Key rules
 
-- State struct derives `BorshDeserialize, BorshSerialize` — **not** `Default`
-- Add `#[borsh(crate = "calimero_sdk::borsh")]` to all borsh types
-- Add `#[serde(crate = "calimero_sdk::serde")]` to all serde types
+- The `#[app::state]` struct does **not** hand-write `BorshDeserialize`/`BorshSerialize` or
+  `Default` — `#[app::state]` injects the borsh derives + `#[borsh(crate = ...)]` itself, and a
+  manual borsh derive collides (compile error). See `rules/state-derives.md`.
+- For **other** borsh types (collection value structs, `#[app::private]` types) you do derive borsh
+  by hand and add `#[borsh(crate = "calimero_sdk::borsh")]`
+- Add `#[serde(crate = "calimero_sdk::serde")]` to types you derive serde on by hand (the
+  `#[app::event]` enum gets serde injected, so don't add it there)
 - Never use `HashMap`, `Vec`, `BTreeMap` directly for **persisted shared state** — use CRDT
   collections
 - `Vec<T>` and `Option<T>` are fine for local / return types — just not for fields that need CRDT
@@ -207,7 +214,9 @@ env::xcall(context_id: &[u8; 32], method: &str, params: &[u8]);
 - **More CRDT collections** — the ordered `SortedMap` and `SortedSet` (range/prefix/paged queries);
   the authored `AuthoredMap` and `AuthoredVector` (per-entry/slot author ownership — use instead of
   `UnorderedMap` + hand-rolled max-wins when only the author may edit their data); and
-  `SharedStorage` (a group-writable single value). See `references/state-collections.md`.
+  `SharedStorage<T>` (a group-writable value gated by a writer set —
+  `SharedStorage::new(writers, frozen)`, alias of `PermissionedStorage<T, WriterSetAcl>`). See
+  `references/state-collections.md`.
 - **Native unit tests with `TestHost`** — exercise app logic in-process without a WASM build (enable
   `calimero-storage`'s `testing` feature as a dev-dependency). Far faster than a full deploy.
   Canonical example: `core/apps/kv-store/src/lib.rs` (unit tests) and

@@ -27,7 +27,7 @@ import { UnorderedMap } from '@calimero-network/calimero-sdk-js/collections';
 
 const map = new UnorderedMap<string, string>();
 map.set('key', 'value');
-const val = map.get('key'); // 'value' | undefined
+const val = map.get('key'); // 'value' | null
 const exists = map.has('key'); // boolean
 map.remove('key');
 const all = map.entries(); // [['key', 'value'], ...]
@@ -59,7 +59,7 @@ vec.push('first');
 vec.push('second');
 const item = vec.get(0); // 'first'
 const last = vec.pop(); // 'second'
-const len = vec.len(); // 1 (bigint)
+const len = vec.len(); // 1 (number)
 ```
 
 ## LwwRegister\<T\>
@@ -71,19 +71,33 @@ import { LwwRegister } from '@calimero-network/calimero-sdk-js/collections';
 
 const reg = new LwwRegister<string>();
 reg.set('current value');
-const current = reg.get(); // 'current value' | undefined
+const current = reg.get(); // 'current value' | null
 ```
 
 ## UserStorage
 
-User-owned signed data. Writes are verified by the owner's signature.
+Per-user, owner-signed data. The key is always the **current executor's** PublicKey — you write your
+own slot and read anyone's. Writes are signed by Calimero Core's storage layer and signature /
+replay-protection are enforced when actions sync to other nodes.
 
 ```typescript
 import { UserStorage } from '@calimero-network/calimero-sdk-js/collections';
 
 const storage = new UserStorage<string>();
-storage.set(executorId, 'my value');
-const val = storage.get(executorId);
+
+// Write for the current executor (key is set automatically). Returns the previous value or null.
+storage.insert('my value');
+
+// Read the current executor's value
+const mine = storage.get(); // string | null
+
+// Read another user's value by their 32-byte PublicKey
+const theirs = storage.getForUser(somePublicKey); // string | null
+
+// Membership checks and removal (current executor)
+storage.containsCurrentUser(); // boolean
+storage.containsUser(somePublicKey); // boolean
+storage.remove(); // removes current executor's value; returns previous or null
 ```
 
 ## FrozenStorage
@@ -94,8 +108,8 @@ Immutable, content-addressed storage. Write once; content never changes.
 import { FrozenStorage } from '@calimero-network/calimero-sdk-js/collections';
 
 const frozen = new FrozenStorage<string>();
-const id = frozen.store('immutable content');
-const val = frozen.get(id);
+const hash = frozen.add('immutable content'); // returns the 32-byte SHA-256 content hash
+const val = frozen.get(hash); // string | null
 ```
 
 ## Nested collections

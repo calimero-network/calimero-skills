@@ -52,25 +52,30 @@ pnpm build
 ## Deploy to node
 
 ```bash
-# Install the app
+# Install the app (node-level — no context; --path is the WASM file)
 meroctl --node <NODE> app install \
-  --path build/service.wasm \
-  --context-id <CONTEXT_ID>
+  --path build/service.wasm
+# → save the application-id
 
-# Create a new context (runs @Init)
+# Create a namespace (root group) for the app
+meroctl --node <NODE> namespace create \
+  --application-id <APP_ID>
+# → save the namespace-id (also a group id)
+
+# Create a new context (runs @Init) — --group-id is required (a context is bound to a group)
 meroctl --node <NODE> context create \
-  --app-id <APP_ID>
+  --application-id <APP_ID> \
+  --group-id <NAMESPACE_ID>
+# → save the context-id
 
-# Call a mutation
-meroctl --node <NODE> call \
-  --context-id <CONTEXT_ID> \
-  --method set \
+# Call a mutation (method name is positional; context via --context)
+meroctl --node <NODE> call set \
+  --context <CONTEXT_ID> \
   --args '{"key":"hello","value":"world"}'
 
-# Call a view
-meroctl --node <NODE> call \
-  --context-id <CONTEXT_ID> \
-  --method get \
+# Call a view (same form — read-only methods just read; there is no --view flag)
+meroctl --node <NODE> call get \
+  --context <CONTEXT_ID> \
   --args '{"key":"hello"}'
 ```
 

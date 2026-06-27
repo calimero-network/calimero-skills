@@ -30,12 +30,16 @@ merod --node node1 run
 
 ## Key flags
 
-| Flag                   | Purpose                                             | Default           |
-| ---------------------- | --------------------------------------------------- | ----------------- |
-| `--node <name>`        | Node identity name (used to namespace config files) | required          |
-| `--home <path>`        | Base directory for all config and data              | system config dir |
-| `--server-port <port>` | HTTP/WS API port (init only)                        | `2528`            |
-| `--swarm-port <port>`  | P2P swarm port (init only)                          | `2428`            |
+`--node` / `-n` and `--home` are **root** flags — they go before the `init`/`run` subcommand (e.g.
+`merod --node node1 init`). The port and auth flags belong to the `init` subcommand.
+
+| Flag                   | Purpose                                                 | Default       |
+| ---------------------- | ------------------------------------------------------- | ------------- |
+| `--node <name>` / `-n` | Node identity name (root flag; namespaces config files) | required      |
+| `--home <path>`        | Base directory for all config and data (root flag)      | OS config dir |
+| `--server-port <port>` | HTTP/WS API port (init only)                            | `2528`        |
+| `--swarm-port <port>`  | P2P swarm port (init only)                              | `2428`        |
+| `--auth-mode <mode>`   | Auth mode: `proxy` or `embedded` (init; run overrides)  | `proxy`       |
 
 ## Port responsibilities
 

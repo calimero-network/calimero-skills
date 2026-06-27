@@ -1,21 +1,29 @@
-# Rule: rpcClient handles token refresh automatically — but not all 401s
+# Rule: mero-js refreshes tokens automatically — but not all 401s
 
-`rpcClient` (from `@calimero-network/calimero-client`) automatically retries with a refreshed token
-when the server returns `401 token_expired`. **You do not need to implement a refresh wrapper around
-`rpcClient.execute()` calls.**
+The mero-js HTTP client (used by `mero.rpc`, `mero.admin`, `mero.auth`) automatically refreshes the
+access token and retries the request when the server returns `401` with the
+`x-auth-error: token_expired` header. **You do not need a refresh wrapper around
+`mero.rpc.execute()` / `mero.admin.*` calls.**
 
-What you DO need to handle: 401s that cannot be refreshed.
+What you DO need to handle: 401s that cannot be refreshed (`token_revoked`, `invalid_token`, or an
+expired refresh token) — the call **throws** in that case, so handle it in `catch` and send the user
+back to login (`useMero().logout()`).
 
-## WRONG — manual refresh wrapper (not needed for rpcClient):
+> Errors are **thrown** (mero-js does not return a `{ error }` object). There is no `response.error`
+> to inspect. Two error classes matter: an **application** error (a JSON-RPC error in a 2xx body)
+> throws `RpcError` (`.code`); an **HTTP** failure — including an unrefreshable `401` — throws
+> `HTTPError` (`.status`). Both are exported from `@calimero-network/mero-js`.
+
+## WRONG — manual refresh wrapper (not needed):
 
 ```typescript
-// ✗ Don't do this — rpcClient already retries on token_expired
+// ✗ Don't do this — mero-js already retries on token_expired
 async function callWithRefresh<T>(fn: () => Promise<T>) {
   try {
     return await fn();
   } catch (err: any) {
     if (err?.code === 401) {
-      await refreshAccessToken(); // rpcClient already does this
+      await refreshAccessToken(); // mero-js already does this
       return fn();
     }
     throw err;
@@ -23,57 +31,54 @@ async function callWithRefresh<T>(fn: () => Promise<T>) {
 }
 ```
 
-## CORRECT — handle only non-refreshable auth failures:
+## CORRECT — let it retry, catch the unrefreshable failures:
 
 ```typescript
-const response = await rpcClient.execute({ ... });
+import { HTTPError, RpcError } from '@calimero-network/mero-js'; // error classes live in mero-js
+import { useMero } from '@calimero-network/mero-react'; // React hook lives in mero-react
 
-if (response.error) {
-  const authError = response.error.headers?.['x-auth-error'];
+const { mero, logout } = useMero();
 
-  if (response.error.code === 401) {
-    if (authError === 'token_revoked' || authError === 'invalid_token') {
-      // Token is invalid — cannot be refreshed. Send user to login.
-      clientLogout();
-      return;
-    }
-    // token_expired: rpcClient already retried and the retry failed.
-    // This means the refresh token is also expired — send to login.
-    clientLogout();
+try {
+  const value = await mero.rpc.execute<string | null>({
+    contextId,
+    method: 'get',
+    argsJson: { key },
+  });
+  // use value
+} catch (err) {
+  // token_expired was already retried transparently. Reaching here with a 401
+  // means the token could not be refreshed (revoked / invalid / refresh token
+  // expired). An unrefreshable 401 surfaces as an `HTTPError` (status 401), not
+  // an `RpcError` — `RpcError` carries application/JSON-RPC errors, not the HTTP
+  // status. Send the user back to login.
+  if (err instanceof HTTPError && err.status === 401) {
+    logout();
     return;
   }
-
-  throw new Error(response.error.error.cause.info?.message ?? 'Unknown error');
-}
-```
-
-## WebSocket connections are different — no auto-refresh
-
-`WsSubscriptionsClient` does **not** auto-refresh tokens. If the token expires while a WebSocket
-connection is open, events will stop arriving silently. Reconnect manually:
-
-```typescript
-async function connectWithAuth() {
-  const ws = new WsSubscriptionsClient(getAppEndpointKey()!, '/ws');
-  try {
-    await ws.connect();
-    ws.subscribe([getContextId()!]);
-    ws.addCallback(handleEvent);
-  } catch (err: any) {
-    if (err?.status === 401) {
-      // Token expired before WS connect — logout and re-authenticate
-      clientLogout();
-    }
+  if (err instanceof RpcError) {
+    // application-level failure — handle/surface it, don't log the user out
     throw err;
   }
+  throw err;
 }
 ```
+
+> `MeroProvider` also wires the SSE connection to call `logout()` automatically when the event
+> stream fails with a 401, so a revoked session usually logs the user out without per-call handling.
+
+## Events are different — SSE/WS tokens are not auto-refreshed
+
+`mero.events` (SSE) and `mero.ws` (experimental) authenticate the long-lived connection once with
+the current token; an expired token will surface as a connection `error`. In mero-react,
+`useSubscription` / `MeroProvider` reconnect and (on a 401) log the user out for you. In standalone
+mero-js, listen for the `error` event and re-`connect()` after re-authenticating.
 
 ## Summary
 
-| Scenario                          | Handled by                                    |
-| --------------------------------- | --------------------------------------------- |
-| `401 token_expired` on RPC call   | `rpcClient` automatically (transparent retry) |
-| `401 token_revoked` on RPC call   | You — redirect to login                       |
-| `401 invalid_token` on RPC call   | You — redirect to login                       |
-| Auth failure on WebSocket connect | You — catch and redirect to login             |
+| Scenario                              | Handled by                                            |
+| ------------------------------------- | ----------------------------------------------------- |
+| `401 token_expired` on RPC/admin call | mero-js automatically (transparent retry)             |
+| `401 token_revoked` / `invalid_token` | You — catch the throw, `logout()` to re-login         |
+| Refresh token also expired            | You — catch the throw, `logout()` to re-login         |
+| Auth failure on the event stream      | `MeroProvider` / `useSubscription` (logout/reconnect) |

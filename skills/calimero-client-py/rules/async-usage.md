@@ -16,7 +16,7 @@ async def main():
 ```python
 # ✓ Call methods directly — no await needed
 def main():
-    conn = create_connection(api_url="http://localhost:2428", node_name="dev")
+    conn = create_connection(api_url="http://localhost:2528", node_name="dev")
     client = create_client(conn)
     contexts = client.list_contexts()   # synchronous, returns result directly
     print(contexts)
@@ -30,7 +30,7 @@ main()
 from calimero_client_py import create_connection, create_client
 import json
 
-conn = create_connection(api_url="http://localhost:2428", node_name="dev")
+conn = create_connection(api_url="http://localhost:2528", node_name="dev")
 client = create_client(conn)
 
 result = client.execute_function(

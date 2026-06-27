@@ -1,6 +1,9 @@
-# Rule: Method, event, and type names must all be unique
+# Rule: Method, event, and type names must each be unique within their own collection
 
-The ABI validator rejects manifests where names clash — across methods, events, and types.
+The ABI validator rejects manifests with duplicate names **within** a collection: two methods with
+the same name, two events with the same name, or two type definitions with the same name. (Names are
+checked per-collection — the validator does _not_ reject a type and a method that happen to share a
+name. JSON object keys also can't repeat, so a duplicate type name is structurally impossible.)
 
 ## WRONG — duplicate method names:
 
@@ -13,14 +16,11 @@ The ABI validator rejects manifests where names clash — across methods, events
 }
 ```
 
-## WRONG — type name same as method name:
+## WRONG — duplicate event names:
 
 ```json
 {
-  "types": {
-    "set": { "kind": "record", "fields": [] }
-  },
-  "methods": [{ "name": "set", "params": [] }]
+  "events": [{ "name": "ItemSet" }, { "name": "ItemSet" }]
 }
 ```
 

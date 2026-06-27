@@ -5,22 +5,27 @@
 ```rust
 use std::collections::HashMap;
 
-#[derive(Default, BorshDeserialize, BorshSerialize)]
+#[app::state(emits = for<'a> Event<'a>)]
 pub struct AppState {
     data: HashMap<String, String>, // ✗ WRONG
 }
 ```
 
-**CORRECT** — use Calimero CRDT collections:
+**CORRECT** — use Calimero CRDT collections from `calimero_storage::collections`:
 
 ```rust
-use calimero_sdk::state::UnorderedMap;
+use calimero_storage::collections::{LwwRegister, UnorderedMap};
 
-#[derive(Default, BorshDeserialize, BorshSerialize)]
+#[app::state(emits = for<'a> Event<'a>)]
 pub struct AppState {
-    data: UnorderedMap<String, String>, // ✓ CORRECT
+    data: UnorderedMap<String, LwwRegister<String>>, // ✓ CORRECT
 }
 ```
+
+**Import path:** the CRDT collections (`UnorderedMap`, `UnorderedSet`, `Vector`, `Counter`,
+`LwwRegister`, `SortedMap`, `SortedSet`, `AuthoredMap`, `AuthoredVector`, `UserStorage`,
+`FrozenStorage`, ...) all live in `calimero_storage::collections`. There is no
+`calimero_sdk::state::UnorderedMap` — `calimero_sdk::state` only holds the `AppState` trait.
 
 **Why:** `std::collections` types do not participate in the CRDT merge process. Data written to them
 by one node will never reach other context members. The bug is silent — the app compiles and runs

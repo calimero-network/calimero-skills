@@ -77,21 +77,23 @@ Nested collections (`Map<K, Set<V>>`) propagate changes automatically — no man
 # Build to WASM
 npx calimero-sdk build src/index.ts -o build/service.wasm
 
-# Install on node
+# Install on node (app install is node-level — no context; --path is the WASM)
 meroctl --node <NODE> app install \
-  --path build/service.wasm \
-  --context-id <CONTEXT_ID>
+  --path build/service.wasm
+# → save the application-id, then create a namespace (root group) and a context:
+meroctl --node <NODE> namespace create --application-id <APP_ID>
+# → save the namespace-id (also a group id)
+meroctl --node <NODE> context create --application-id <APP_ID> --group-id <NAMESPACE_ID>
+# → save the context-id  (--group-id is required — a context is bound to a group)
 
-# Call a method
-meroctl --node <NODE> call \
-  --context-id <CONTEXT_ID> \
-  --method set \
+# Call a method (method name is positional; context via --context)
+meroctl --node <NODE> call set \
+  --context <CONTEXT_ID> \
   --args '{"key":"hello","value":"world"}'
 
-# Call a view
-meroctl --node <NODE> call \
-  --context-id <CONTEXT_ID> \
-  --method get \
+# Call a view (same form — a read-only method just reads; there is no --view flag)
+meroctl --node <NODE> call get \
+  --context <CONTEXT_ID> \
   --args '{"key":"hello"}'
 ```
 
@@ -116,17 +118,18 @@ import { emit } from '@calimero-network/calimero-sdk-js';
 emit({ type: 'ItemAdded', key: 'foo', value: 'bar' });
 ```
 
-Events are pushed to all context members via WebSocket. Clients subscribe using
-`WsSubscriptionsClient` from `@calimero-network/calimero-client`.
+Events are pushed to all context members via WebSocket. Clients subscribe with `useSubscription`
+(mero-react) or `mero.events` (mero-js) — see the `calimero-client-js` skill.
 
 ## Private storage (node-local)
 
 ```typescript
 import { createPrivateEntry } from '@calimero-network/calimero-sdk-js';
 
-const secret = createPrivateEntry<string>();
+// A key (string or Uint8Array) is required — it names the node-local entry.
+const secret = createPrivateEntry<string>('api-key');
 secret.set('my-api-key');
-const val = secret.get();
+const val = secret.get(); // string | null
 ```
 
 Private entries are never broadcast to other nodes.

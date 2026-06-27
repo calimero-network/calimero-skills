@@ -6,7 +6,9 @@ Most `create` commands print an ID on stdout. Capture it with shell variable ass
 
 ```bash
 APP_ID=$(meroctl app install --path app.wasm | grep -oP '(?<=application-id: )[\w-]+')
-CTX_ID=$(meroctl context create --application-id "$APP_ID" | grep -oP '(?<=context-id: )[\w-]+')
+# A namespace (root group) is required before a context — capture its id for --group-id.
+NS_ID=$(meroctl namespace create --application-id "$APP_ID" | grep -oP '(?<=namespace-id: )[\w-]+')
+CTX_ID=$(meroctl context create --application-id "$APP_ID" --group-id "$NS_ID" | grep -oP '(?<=context-id: )[\w-]+')
 meroctl call set --context "$CTX_ID" --args '{"key":"hello","value":"world"}'
 ```
 
@@ -40,8 +42,12 @@ meroctl --output-format json app ls
     APP_ID=$(meroctl app install --path app.wasm | grep -oP '(?<=application-id: )[\w-]+')
     echo "APP_ID=$APP_ID" >> $GITHUB_ENV
 
-    # Create context
-    CTX_ID=$(meroctl context create --application-id "$APP_ID" | grep -oP '(?<=context-id: )[\w-]+')
+    # Create a namespace (root group) — required to get a --group-id for the context
+    NS_ID=$(meroctl namespace create --application-id "$APP_ID" | grep -oP '(?<=namespace-id: )[\w-]+')
+    echo "NS_ID=$NS_ID" >> $GITHUB_ENV
+
+    # Create context (--group-id required)
+    CTX_ID=$(meroctl context create --application-id "$APP_ID" --group-id "$NS_ID" | grep -oP '(?<=context-id: )[\w-]+')
     echo "CTX_ID=$CTX_ID" >> $GITHUB_ENV
 
 - name: Run integration tests
@@ -57,8 +63,8 @@ Use `--watch` during development to automatically reinstall the WASM and update 
 the file changes:
 
 ```bash
-# Watches app.wasm, reinstalls on change
-meroctl context create --watch path/to/app.wasm
+# Watches app.wasm, reinstalls on change (--group-id still required)
+meroctl context create --watch path/to/app.wasm --group-id "$NS_ID"
 ```
 
 ## Calling methods in a loop
@@ -73,9 +79,9 @@ done
 
 ```bash
 # Node A: setup
-meroctl --node node1 namespace create
+meroctl --node node1 namespace create --application-id "$APP_ID"
 NS_ID=<paste namespace-id>
-meroctl --node node1 context create --application-id "$APP_ID"
+meroctl --node node1 context create --application-id "$APP_ID" --group-id "$NS_ID"
 CTX_ID=<paste context-id>
 INVITE=$(meroctl --node node1 namespace invite "$NS_ID")
 

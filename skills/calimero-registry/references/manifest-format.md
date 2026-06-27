@@ -8,7 +8,9 @@ optionally be signed with `mero-sign` before pushing.
 When you run `calimero-registry bundle create`, the CLI generates a `manifest.json` inside the
 bundle directory. You can also supply a manifest via `-m, --manifest <path>` to pre-fill fields.
 
-## Manifest V2 format
+## Manifest V2 format (single-service)
+
+`calimero-registry bundle create` (one WASM file → one bundle) generates a single-`wasm` manifest:
 
 ```json
 {
@@ -22,39 +24,88 @@ bundle directory. You can also supply a manifest via `-m, --manifest <path>` to 
   },
   "wasm": {
     "path": "app.wasm",
-    "hash": "sha256:...",
+    "hash": "sha256-hex-or-null",
     "size": 12345
   },
+  "abi": {
+    "path": "abi.json",
+    "hash": "sha256-hex-or-null",
+    "size": 512
+  },
+  "migrations": [],
   "links": {
     "frontend": "https://example.com",
     "github": "https://github.com/example/myapp",
     "docs": "https://example.com/docs"
   },
-  "minRuntimeVersion": "0.3.0"
+  "minRuntimeVersion": "0.1.0"
 }
 ```
 
+`migrations` is always present (an empty array when there are none); the registry preserves it as-is
+because dropping it would change the signed payload.
+
+## Manifest V2 format (multi-service)
+
+Studio-built apps bundle one or more services (each its own WASM + ABI) under a `services[]` array
+instead of a single top-level `wasm`. This is what `foundation-app`'s `build-bundle.sh` emits, and
+what the registry's multipart `push-file` endpoint expects:
+
+```json
+{
+  "version": "1.0",
+  "package": "com.example.myapp",
+  "appVersion": "1.0.0",
+  "minRuntimeVersion": "0.1.0",
+  "metadata": {
+    "name": "My Application",
+    "description": "Application description",
+    "author": "Calimero Studio"
+  },
+  "services": [
+    {
+      "name": "chat",
+      "wasm": { "path": "chat.wasm", "size": 283441, "hash": null },
+      "abi": { "path": "chat-abi.json", "size": 3294, "hash": null }
+    }
+  ],
+  "migrations": [],
+  "links": {
+    "frontend": "https://my-app.example.com/",
+    "github": "https://github.com/example/myapp/tree/deploy-branch"
+  }
+}
+```
+
+Each `services[]` entry has `name` (also the bundled WASM filename) plus `wasm` and `abi` artifact
+objects (`{ path, size, hash }`).
+
 ## After signing with mero-sign
 
-mero-sign injects a `signature` block:
+`mero-sign sign` adds a top-level `signerId` (the signer's `did:key`) and injects a `signature`
+block with the keys `algorithm`, `publicKey`, `signature`:
 
 ```json
 {
   "version": "1.0",
   "package": "com.example.myapp",
   ...
+  "signerId": "did:key:z6Mkt7Ejb12a1BxvRiUpd5YWkMrk8KVjaShW2vMt6trm7FGH",
   "signature": {
-    "alg": "ed25519",
-    "pubkey": "yuKE404BaldXazEIUC4XrVGFyXxxyoRVjrrGhcKk1P4",
-    "sig": "base64url-64-bytes",
-    "signedAt": "2026-03-13T12:00:00Z"
+    "algorithm": "ed25519",
+    "publicKey": "yuKE404BaldXazEIUC4XrVGFyXxxyoRVjrrGhcKk1P4",
+    "signature": "base64url-64-bytes"
   }
 }
 ```
 
+There is no timestamp field. `mero-sign` also fills in `minRuntimeVersion` (default `0.1.0`) if it
+is absent. The registry accepts either these core key names (`algorithm`/`publicKey`/ `signature`)
+or the legacy short names (`alg`/`pubkey`/`sig`), but `mero-sign` always writes the long form.
+
 ## Package ownership
 
-- The first push establishes the package owner via the Ed25519 `signature.pubkey`
+- The first push establishes the package owner via the Ed25519 `signature.publicKey`
 - Only the owner (or keys in `manifest.owners`) can push subsequent versions
 - For team publishing, add teammates' public keys to `manifest.owners`:
 

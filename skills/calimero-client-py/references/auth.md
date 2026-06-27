@@ -47,7 +47,7 @@ def seed_tokens(access_token: str, refresh_token: str, expires_at: int):
 Once tokens are cached, `create_client()` loads and uses them automatically:
 
 ```python
-connection = create_connection(api_url="http://localhost:2428", node_name="my-node")
+connection = create_connection(api_url="http://localhost:2528", node_name="my-node")
 client = create_client(connection)
 # Tokens loaded from ~/.merobox/auth_cache/ — no manual token handling needed
 ```

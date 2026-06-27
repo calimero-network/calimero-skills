@@ -19,29 +19,36 @@ Events can only be emitted inside mutation methods (not `@View()` methods).
 
 ## Receiving events on the client
 
-Clients use `WsSubscriptionsClient` from `@calimero-network/calimero-client`:
+Receive events with **mero-js** / **mero-react**. mero-js delivers events over SSE (`mero.events`)
+and **flattens** the node envelope, so the callback gets `SseEventData: { contextId, type?, data }`
+— your emitted object arrives directly as `data`.
 
 ```typescript
-import {
-  WsSubscriptionsClient,
-  getAppEndpointKey,
-  getContextId,
-} from '@calimero-network/calimero-client';
+// React — useSubscription manages the SSE connection lifecycle for you
+import { useSubscription } from '@calimero-network/mero-react';
 
-const ws = new WsSubscriptionsClient(getAppEndpointKey()!, '/ws');
-await ws.connect();
-ws.subscribe([getContextId()!]);
-
-ws.addCallback((event) => {
-  if (event.type === 'ExecutionEvent') {
-    for (const e of event.data.events) {
-      // e.kind — matches the `type` field from emit()
-      // e.data — the rest of the emitted object
-      console.log(e.kind, e.data);
-    }
+useSubscription([contextId], (event) => {
+  // event: { contextId, type?, data }
+  if (event.type === 'ItemAdded') {
+    const { key, value } = event.data as { key: string; value: string };
+    console.log('added', key, value);
   }
 });
 ```
+
+```typescript
+// Non-React — mero.events (SseClient)
+import { MeroJs } from '@calimero-network/mero-js';
+
+const handler = (event) => console.log(event.contextId, event.type, event.data);
+mero.events.on('event', handler);
+await mero.events.connect();
+await mero.events.subscribe([contextId]);
+// later: mero.events.off('event', handler); await mero.events.unsubscribe([contextId]);
+```
+
+See the `calimero-client-js` skill's `references/websocket-events.md` for the full event shape,
+reconnection behaviour, and the `mero.ws` (experimental) alternative.
 
 ## Event typing (recommended)
 

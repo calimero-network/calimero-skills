@@ -62,11 +62,13 @@ meroctl app uninstall <application-id>
 ## context — manage contexts
 
 ```bash
-# Create a context (instantiates app — calls init())
-meroctl context create --application-id <application-id>
+# Create a context (instantiates app — calls init()). --group-id is REQUIRED: a context is
+# always bound to a group. Pass the namespace-id from `namespace create` (a namespace is the
+# root group), or a subgroup id from `namespace create-group`.
+meroctl context create --application-id <application-id> --group-id <namespace-id>
 
 # Create in dev mode (auto-reinstall when WASM file changes)
-meroctl context create --watch path/to/app.wasm
+meroctl context create --watch path/to/app.wasm --group-id <namespace-id>
 
 # List all contexts on this node
 meroctl context ls
@@ -86,15 +88,16 @@ meroctl context sync <context-id>
 ## call — invoke app methods
 
 The **method name is positional**; the context is passed with `--context` (or `-c`). There is **no
-`--view` flag** — calling a read-only method just reads. Use `--as <identity>` to call as a specific
-identity, and `-i`/`--interactive` to open a persistent WebSocket shell for many calls.
+`--view` flag** — calling a read-only method just reads. `call` has **no `--as` flag** either; its
+flags are `--args`, `--id`, `--substitute`, `-i`/`--interactive`, `--timeout`. (`--as` exists on
+identity-aliasing subcommands like `context create`/`identity`, not on `call`.)
 
 ```bash
 # Mutation — changes shared CRDT state
 meroctl call <method-name> --context <context-id> --args '{"key":"val"}'
 
-# View / read-only method (same form; optionally as a specific identity)
-meroctl call <method-name> --context <context-id> --args '{"key":"val"}' --as <identity-pubkey>
+# View / read-only method (same form — a view is just a read-only method)
+meroctl call <method-name> --context <context-id> --args '{}'
 
 # Method with no arguments
 meroctl call list_all --context <context-id> --args '{}'
@@ -123,14 +126,25 @@ meroctl context identity alias add <name> <identity> --context <context-id>
 
 ---
 
-## namespace — multi-node trust
+## namespace — application instances & multi-node trust
+
+A namespace is the **root group** for an application instance (its own Ed25519 identity, bound to
+one app). Its id doubles as a group id, so you pass it as `--group-id` when creating contexts.
 
 ```bash
-# Create a namespace (this node is the trust root)
-meroctl namespace create
+# Create a namespace bound to an app (--application-id is required) — this node is the trust root
+meroctl namespace create --application-id <application-id>
+# → namespace-id
 
-# List namespaces on this node
-meroctl namespace ls
+# List namespaces on this node (root groups / application instances)
+meroctl namespace list                 # alias: meroctl namespace ls
+
+# List the groups directly under a namespace
+meroctl namespace groups <namespace-id>
+
+# Create a child group (subgroup) inside a namespace
+meroctl namespace create-group <namespace-id> --alias <name>
+# → group-id
 
 # Generate an invite token (share with the joining node)
 meroctl namespace invite <namespace-id>
@@ -145,11 +159,14 @@ meroctl namespace join <namespace-id> '<invitation-json>'
 
 ```bash
 # List groups
-meroctl group ls
+meroctl group list
 
 # Join a context via group membership (after joining the namespace)
 meroctl group join-context <context-id>
 ```
+
+> `meroctl group create` is **deprecated** — create namespaces with `meroctl namespace create` and
+> subgroups with `meroctl namespace create-group`.
 
 ---
 
@@ -168,11 +185,15 @@ meroctl node use node1
 meroctl app install --path target/wasm32-unknown-unknown/release/myapp.wasm
 # → save application-id
 
-# 4. Create context
-meroctl context create --application-id <application-id>
+# 4. Create a namespace (root group) for the app
+meroctl namespace create --application-id <application-id>
+# → save namespace-id
+
+# 5. Create context — --group-id is required (use the namespace-id)
+meroctl context create --application-id <application-id> --group-id <namespace-id>
 # → save context-id
 
-# 5. Develop interactively (method positional, --context flag, no --view)
+# 6. Develop interactively (method positional, --context flag, no --view)
 meroctl call set --context <context-id> --args '{"key":"foo","value":"bar"}'
 meroctl call get --context <context-id> --args '{"key":"foo"}'
 ```

@@ -29,11 +29,12 @@ members.
 | `SortedSet<T>`            | Ordered unique set                    | Ordered `range`/`prefix`/`page` (0.11)               |
 | `AuthoredMap<K, V>`       | Per-entry author ownership            | Only an entry's author can modify it (0.11)          |
 | `AuthoredVector<T>`       | Per-slot author ownership             | Only a slot's author can modify it (0.11)            |
-| `SharedStorage<T>`        | Group-writable single value           | Explicit writer set; prefer over map+max-wins (0.11) |
+| `SharedStorage<T>`        | Group-writable value (writer set)     | Explicit writer set; prefer over map+max-wins (0.11) |
 
 > **0.11 additions** — `SortedMap`/`SortedSet` add ordered range/prefix/paged queries (a node-local
 > ordered index over the same add-wins entry set); `AuthoredMap`/`AuthoredVector` enforce per-entry/
-> slot author ownership; `SharedStorage` is a group-writable single value gated by a writer set.
+> slot author ownership; `SharedStorage<T>` (`SharedStorage::new(writers, frozen)`, alias of
+> `PermissionedStorage<T, WriterSetAcl>`) is a group-writable value gated by a writer set.
 
 ---
 
