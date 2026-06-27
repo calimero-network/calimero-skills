@@ -25,11 +25,11 @@ crate-type = ["cdylib"]
 [dependencies]
 # Pre-release: the version must be specified explicitly (a bare "0.11" won't
 # resolve a pre-release). Track the latest published rc on crates.io.
-calimero-sdk     = "0.11.0-rc.5"
-calimero-storage = "0.11.0-rc.5"
+calimero-sdk     = "0.11.0-rc.6"
+calimero-storage = "0.11.0-rc.6"
 
 [build-dependencies]
-calimero-wasm-abi = "0.11.0-rc.5"
+calimero-wasm-abi = "0.11.0-rc.6"
 serde_json        = "1"
 
 [profile.app-release]
@@ -55,13 +55,12 @@ fn main() {
 
 ```rust
 use calimero_sdk::app;
-use calimero_sdk::borsh::{BorshDeserialize, BorshSerialize};
-use calimero_sdk::serde::Serialize;
 use calimero_storage::collections::{LwwRegister, UnorderedMap};
 
+// `#[app::state]` injects the borsh derives + `#[borsh(crate = ...)]` itself
+// (SDK 0.11+); a manual `#[derive(BorshSerialize, BorshDeserialize)]` here
+// would collide and fail to compile.
 #[app::state(emits = for<'a> Event<'a>)]
-#[derive(Debug, BorshSerialize, BorshDeserialize)]
-#[borsh(crate = "calimero_sdk::borsh")]
 pub struct KvStore {
     items: UnorderedMap<String, LwwRegister<String>>,
 }
@@ -144,9 +143,13 @@ For `merod` setup and full `meroctl` reference, see `calimero-merod` and `calime
 
 ## Key rules
 
-- State struct derives `BorshDeserialize, BorshSerialize` — **not** `Default`
-- Add `#[borsh(crate = "calimero_sdk::borsh")]` to all borsh types
-- Add `#[serde(crate = "calimero_sdk::serde")]` to all serde types
+- The `#[app::state]` struct does **not** hand-write `BorshDeserialize`/`BorshSerialize` or
+  `Default` — `#[app::state]` injects the borsh derives + `#[borsh(crate = ...)]` itself, and a
+  manual borsh derive collides (compile error). See `rules/state-derives.md`.
+- For **other** borsh types (collection value structs, `#[app::private]` types) you do derive borsh
+  by hand and add `#[borsh(crate = "calimero_sdk::borsh")]`
+- Add `#[serde(crate = "calimero_sdk::serde")]` to types you derive serde on by hand (the
+  `#[app::event]` enum gets serde injected, so don't add it there)
 - Never use `HashMap`, `Vec`, `BTreeMap` directly for **persisted shared state** — use CRDT
   collections
 - `Vec<T>` and `Option<T>` are fine for local / return types — just not for fields that need CRDT
