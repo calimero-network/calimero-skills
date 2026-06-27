@@ -4,8 +4,9 @@ name: Version watch
 #
 # Runs on every PR/push (so the status is visible while reviewing a change) and
 # on a weekly schedule (so a new core release is noticed even with no activity).
-# It goes red when core has cut a newer rc than the skills pin — the cue to bump
-# EXPECTED_CORE_VERSION in scripts/check-versions.js and re-audit against it.
+# It goes red when core has cut a newer rc than the skills pin — the cue to
+# update the core pins in the skill files and re-audit against the new release.
+# (The expected version is derived from the pins themselves; nothing hardcoded.)
 #
 # This is a SIGNAL check, intentionally a SEPARATE workflow from the main CI
 # gate. Keep it OUT of branch-protection "required checks": upstream cutting a

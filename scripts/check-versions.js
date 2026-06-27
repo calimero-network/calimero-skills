@@ -4,20 +4,21 @@
 /**
  * Version-pin checker for the Calimero skills.
  *
- * The skills pin the Rust SDK / core crates to a specific Calimero release
- * (e.g. `0.11.0-rc.8`). Two ways those pins go stale:
+ * Nothing is hardcoded — the "expected" version is DERIVED from the skill pins
+ * themselves and validated against the live upstream release. Two checks:
  *
- *  1. Internal drift — one skill is bumped, another is forgotten, so the docs
- *     contradict each other. (Always checked, offline, deterministic.)
- *  2. Upstream drift — `calimero-network/core` cuts a newer rc and the skills
- *     still teach the old one. (Checked when CHECK_LATEST_CORE=1, which queries
- *     the GitHub API — intended for a dedicated CI job that has network.)
+ *  1. Consistency (offline, always; part of `npm test`). Every core pin across
+ *     the skills must agree with the others. Catches the case where one skill
+ *     is bumped and another is forgotten.
  *
- * ─────────────────────────────────────────────────────────────────────────
- *  BUMP THIS when core cuts a new release, then update the pins it reports.
+ *  2. Freshness (online, CHECK_LATEST_CORE=1; the version-watch workflow).
+ *     The (single, consistent) pinned version must equal the latest
+ *     calimero-network/core release tag, fetched at run time. Catches the case
+ *     where core cuts a newer rc and the skills still teach the old one.
+ *
+ * To move to a new release you just edit the pins in the skill files — there is
+ * no separate constant to keep in sync.
  */
-const EXPECTED_CORE_VERSION = '0.11.0-rc.8';
-// ─────────────────────────────────────────────────────────────────────────
 
 const fs = require('fs');
 const path = require('path');
@@ -26,15 +27,17 @@ const https = require('https');
 const ROOT = path.join(__dirname, '..');
 const SKILLS_DIR = path.join(ROOT, 'skills');
 
-// Matches a full SemVer-ish version, e.g. 0.11.0-rc.6 / 0.11.0 / 0.1.0.
-// Bare "0.11" feature-version mentions ("0.11 additions") are intentionally NOT
-// matched — they are stable across rc bumps and must not trip the checker.
-const PIN_RE = /\b\d+\.\d+\.\d+(?:-rc\.\d+)?\b/g;
-// A *core* pin is one on EXPECTED's major.minor line (e.g. "0.11."). This keeps
-// unrelated versions out — npm package pins (^0.1.0), minRuntimeVersion (0.1.0),
-// .mpk filenames (myapp-0.1.0.mpk) all live on other lines and are ignored.
-const CORE_PREFIX = EXPECTED_CORE_VERSION.split('.').slice(0, 2).join('.') + '.'; // "0.11."
-const isCorePin = (v) => v.startsWith(CORE_PREFIX);
+// A *core* pin is unambiguous: it is the version attached to a calimero-network/core
+// git-tag dependency, or to a calimero core crate's crates.io version. This is how
+// we tell a real core pin apart from unrelated versions (npm ^0.1.0,
+// minRuntimeVersion 0.1.0, .mpk filenames) without guessing by number shape.
+const CORE_CRATES = '(?:calimero-sdk|calimero-storage|calimero-storage-macros|calimero-wasm-abi)';
+const CORE_PIN_RES = [
+  // { git = "…/calimero-network/core", tag = "0.11.0-rc.8" }
+  /calimero-network\/core"\s*,\s*tag\s*=\s*"([^"]+)"/g,
+  // calimero-sdk = "0.11.0-rc.8"   (crates.io form)
+  new RegExp(`${CORE_CRATES}\\s*=\\s*"([^"]+)"`, 'g'),
+];
 
 function walk(dir) {
   const out = [];
@@ -47,12 +50,11 @@ function walk(dir) {
 }
 
 function compareRc(a, b) {
-  // compare two "X.Y.Z" or "X.Y.Z-rc.N" strings; returns -1/0/1
+  // compare "X.Y.Z" or "X.Y.Z-rc.N"; returns -1/0/1
   const parse = (v) => {
     const [base, rc] = v.split('-rc.');
     const nums = base.split('.').map(Number);
-    // a release with no -rc is NEWER than its rc (rc.∞ < final)
-    nums.push(rc === undefined ? Infinity : Number(rc));
+    nums.push(rc === undefined ? Infinity : Number(rc)); // final > any rc
     return nums;
   };
   const pa = parse(a);
@@ -64,38 +66,48 @@ function compareRc(a, b) {
   return 0;
 }
 
-// ── 1. Offline: every core pin in the skills must equal EXPECTED_CORE_VERSION ──
-const drift = [];
-let pinCount = 0;
+// ── Collect every core pin (version → occurrences) ──
+const pins = new Map(); // version -> [{file, line, text}]
 for (const file of walk(SKILLS_DIR)) {
   const rel = path.relative(ROOT, file);
   const lines = fs.readFileSync(file, 'utf8').split('\n');
   lines.forEach((line, idx) => {
-    for (const m of line.matchAll(PIN_RE)) {
-      const v = m[0];
-      if (!isCorePin(v)) continue;
-      pinCount++;
-      if (v !== EXPECTED_CORE_VERSION) {
-        drift.push({ file: rel, line: idx + 1, found: v, text: line.trim() });
+    for (const re of CORE_PIN_RES) {
+      re.lastIndex = 0;
+      for (const m of line.matchAll(re)) {
+        const v = m[1];
+        if (!pins.has(v)) pins.set(v, []);
+        pins.get(v).push({ file: rel, line: idx + 1, text: line.trim() });
       }
     }
   });
 }
 
-console.log(`\nVersion-pin check: expected core version = ${EXPECTED_CORE_VERSION}`);
-console.log(`Scanned skills, found ${pinCount} core pin(s).\n`);
-
+const distinct = [...pins.keys()];
+const total = [...pins.values()].reduce((n, occ) => n + occ.length, 0);
 let failed = false;
-if (drift.length) {
-  failed = true;
-  console.error(`✗ ${drift.length} pin(s) do not match ${EXPECTED_CORE_VERSION}:`);
-  for (const d of drift) console.error(`    ${d.file}:${d.line}  found ${d.found}  —  ${d.text}`);
-  console.error('\n  Update these pins, or bump EXPECTED_CORE_VERSION if the whole set moved.\n');
+
+console.log(`\nVersion-pin check: found ${total} core pin(s) across the skills.\n`);
+
+// ── 1. Consistency: all pins must agree ──
+if (distinct.length === 0) {
+  console.warn('  ! no core pins found — nothing to check\n');
+} else if (distinct.length === 1) {
+  console.log(`  ✓ all ${total} core pin(s) agree on ${distinct[0]}\n`);
 } else {
-  console.log(`  ✓ all ${pinCount} core pin(s) match ${EXPECTED_CORE_VERSION}\n`);
+  failed = true;
+  console.error(`✗ core pins disagree — ${distinct.length} different versions in use:`);
+  for (const [v, occ] of pins) {
+    console.error(`    ${v}:`);
+    for (const o of occ) console.error(`      ${o.file}:${o.line}  ${o.text}`);
+  }
+  console.error('\n  Make every core pin the same version.\n');
 }
 
-// ── 2. Online (opt-in): is EXPECTED_CORE_VERSION still the latest core release? ──
+// The version the skills currently target (only meaningful when consistent).
+const pinned = distinct.length === 1 ? distinct[0] : null;
+
+// ── 2. Freshness (opt-in): is `pinned` the latest core release? ──
 function fetchLatestCoreTag() {
   return new Promise((resolve, reject) => {
     const opts = {
@@ -115,9 +127,10 @@ function fetchLatestCoreTag() {
           if (res.statusCode !== 200)
             return reject(new Error(`GitHub API ${res.statusCode}: ${body.slice(0, 200)}`));
           try {
+            // core release tags look like 0.11.0-rc.8 (optionally v-prefixed).
             const tags = JSON.parse(body)
               .map((t) => t.name.replace(/^v/, ''))
-              .filter(isCorePin);
+              .filter((n) => /^\d+\.\d+\.\d+(?:-rc\.\d+)?$/.test(n));
             if (!tags.length) return reject(new Error('no core release tags found'));
             tags.sort(compareRc);
             resolve(tags[tags.length - 1]);
@@ -131,24 +144,22 @@ function fetchLatestCoreTag() {
 }
 
 async function main() {
-  if (process.env.CHECK_LATEST_CORE === '1') {
+  if (process.env.CHECK_LATEST_CORE === '1' && pinned) {
     try {
       const latest = await fetchLatestCoreTag();
-      console.log(`Latest core tag on GitHub: ${latest}`);
-      if (compareRc(EXPECTED_CORE_VERSION, latest) < 0) {
+      console.log(`Latest core release tag: ${latest}  (skills pin ${pinned})`);
+      if (compareRc(pinned, latest) < 0) {
         failed = true;
         console.error(
-          `\n✗ core has cut a newer release (${latest}) than the skills pin (${EXPECTED_CORE_VERSION}).`
+          `\n✗ core has cut a newer release (${latest}) than the skills pin (${pinned}).`
         );
-        console.error(
-          '  Bump EXPECTED_CORE_VERSION in scripts/check-versions.js and update the pins it lists,'
-        );
-        console.error('  re-verifying skill content against the new release.\n');
+        console.error('  Update the core pins in the skill files to the new release and re-audit');
+        console.error('  the skill content against it.\n');
       } else {
-        console.log(`  ✓ ${EXPECTED_CORE_VERSION} is current (>= latest core tag)\n`);
+        console.log(`  ✓ ${pinned} is current (>= latest core tag)\n`);
       }
     } catch (e) {
-      // Network/rate-limit failures must not break the offline gate.
+      // Network/rate-limit failures must not break the offline consistency gate.
       console.warn(`  ! skipped latest-core check (${e.message})\n`);
     }
   }

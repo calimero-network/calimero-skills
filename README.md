@@ -360,10 +360,12 @@ fence:
 <!-- validate-ignore: no-view-flag (intentional WRONG example) -->
 ```
 
-A separate scheduled workflow (`version-watch.yml`, also `npm run check:versions:latest`) compares
-the pinned core version to the latest `calimero-network/core` release tag and goes red when core
-cuts a newer rc — the cue to bump `EXPECTED_CORE_VERSION` in `scripts/check-versions.js` and
-re-audit the skills against the new release.
+A separate workflow (`version-watch.yml`, also `npm run check:versions:latest`) compares the pinned
+core version to the latest `calimero-network/core` release tag and goes red when core cuts a newer
+rc — the cue to update the core pins in the skill files and re-audit against the new release. The
+"expected" version is **derived from the skill pins themselves** (nothing is hardcoded): the
+consistency check requires all pins to agree, and the freshness check compares that pinned version
+to the live latest tag.
 
 ## Contributing
 
