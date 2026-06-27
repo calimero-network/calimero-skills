@@ -85,9 +85,8 @@ carry an `inner_type`; `inner_type` is only valid on `record`). Valid `crdt_type
 `lww_register`, `unordered_map`, `unordered_set`, `vector`, `counter`, `replicated_growable_array`,
 `authored_map`, `authored_vector`, and **(0.11)** `sorted_map`, `sorted_set`, `shared_storage`.
 
-> `shared_storage` is the **ABI wire tag** (core's `CrdtCollectionType::SharedStorage`, serialized
-> snake_case) for the Rust `WriterSetCell` collection. The wire tag keeps the `shared_storage` name;
-> only the Rust type is named `WriterSetCell` — they are deliberately not the same string.
+> `shared_storage` is the ABI wire tag (`CrdtCollectionType::SharedStorage`, snake_case) for the
+> Rust `SharedStorage<T>` collection.
 
 ## Type definitions (`types` object)
 

@@ -214,8 +214,9 @@ env::xcall(context_id: &[u8; 32], method: &str, params: &[u8]);
 - **More CRDT collections** — the ordered `SortedMap` and `SortedSet` (range/prefix/paged queries);
   the authored `AuthoredMap` and `AuthoredVector` (per-entry/slot author ownership — use instead of
   `UnorderedMap` + hand-rolled max-wins when only the author may edit their data); and
-  `WriterSetCell` (a shared value gated by an authenticated, rotatable writer set — the `shared`
-  module's type; there is no `SharedStorage` collection). See `references/state-collections.md`.
+  `SharedStorage<T>` (a group-writable value gated by a writer set —
+  `SharedStorage::new(writers, frozen)`, alias of `PermissionedStorage<T, WriterSetAcl>`). See
+  `references/state-collections.md`.
 - **Native unit tests with `TestHost`** — exercise app logic in-process without a WASM build (enable
   `calimero-storage`'s `testing` feature as a dev-dependency). Far faster than a full deploy.
   Canonical example: `core/apps/kv-store/src/lib.rs` (unit tests) and

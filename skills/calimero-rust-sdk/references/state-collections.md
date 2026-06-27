@@ -8,28 +8,28 @@ imported from `calimero_storage::collections`.
 
 ## Available Collections
 
-| Type                      | Use for                                 | Notes                                                                      |
-| ------------------------- | --------------------------------------- | -------------------------------------------------------------------------- |
-| `UnorderedMap<K, V>`      | Key-value mapping                       | Most collection ops return `Result<>` — use `?`                            |
-| `UnorderedSet<T>`         | Unique value set                        |                                                                            |
-| `Vector<T>`               | Ordered list (append-only)              |                                                                            |
-| `LwwRegister<T>`          | Single last-write-wins value            | Wrap map values: `UnorderedMap<K, LwwRegister<V>>`                         |
-| `Counter`                 | Grow-only counter (GCounter by default) | `.increment()`, `.value()`                                                 |
-| `Counter<true>`           | PN-Counter (supports decrement)         | Same API + `.decrement()`                                                  |
-| `FrozenStorage<T>`        | Immutable content-addressed entries     |                                                                            |
-| `UserStorage<T>`          | Per-member isolated storage             | Not synced to other members                                                |
-| `ReplicatedGrowableArray` | CRDT text / ordered sequence            | Collaborative editing                                                      |
-| `SortedMap<K, V>`         | Key-value mapping with ordered keys     | Supports range / prefix / paged queries                                    |
-| `SortedSet<T>`            | Ordered unique value set                | Range / prefix / paged iteration                                           |
-| `AuthoredMap<K, V>`       | Per-entry ownership                     | Only an entry's author can modify it (no spoofing)                         |
-| `AuthoredVector<T>`       | Per-slot ownership                      | Only a slot's author can modify it                                         |
-| `WriterSetCell<T>`        | Shared value gated by a writer set      | Authenticated, rotatable writer set; prefer over `UnorderedMap` + max-wins |
+| Type                      | Use for                                 | Notes                                                      |
+| ------------------------- | --------------------------------------- | ---------------------------------------------------------- |
+| `UnorderedMap<K, V>`      | Key-value mapping                       | Most collection ops return `Result<>` — use `?`            |
+| `UnorderedSet<T>`         | Unique value set                        |                                                            |
+| `Vector<T>`               | Ordered list (append-only)              |                                                            |
+| `LwwRegister<T>`          | Single last-write-wins value            | Wrap map values: `UnorderedMap<K, LwwRegister<V>>`         |
+| `Counter`                 | Grow-only counter (GCounter by default) | `.increment()`, `.value()`                                 |
+| `Counter<true>`           | PN-Counter (supports decrement)         | Same API + `.decrement()`                                  |
+| `FrozenStorage<T>`        | Immutable content-addressed entries     |                                                            |
+| `UserStorage<T>`          | Per-member isolated storage             | Not synced to other members                                |
+| `ReplicatedGrowableArray` | CRDT text / ordered sequence            | Collaborative editing                                      |
+| `SortedMap<K, V>`         | Key-value mapping with ordered keys     | Supports range / prefix / paged queries                    |
+| `SortedSet<T>`            | Ordered unique value set                | Range / prefix / paged iteration                           |
+| `AuthoredMap<K, V>`       | Per-entry ownership                     | Only an entry's author can modify it (no spoofing)         |
+| `AuthoredVector<T>`       | Per-slot ownership                      | Only a slot's author can modify it                         |
+| `SharedStorage<T>`        | Group-writable value (writer set)       | Explicit writer set; prefer over `UnorderedMap` + max-wins |
 
 > **0.11 additions:** the ordered collections `SortedMap` and `SortedSet` (range/prefix/paged
 > queries); the authored collections `AuthoredMap` and `AuthoredVector` (per-entry/slot author
 > ownership — prefer these over `UnorderedMap` + a hand-rolled max-wins `Mergeable` when "only the
-> author may edit their own data"); and `WriterSetCell` (a shared value gated by an authenticated,
-> rotatable writer set — the `shared` module's type; there is no `SharedStorage` collection).
+> author may edit their own data"); and `SharedStorage<T>` (a group-writable value gated by a writer
+> set — `SharedStorage::new(writers, frozen)`, alias of `PermissionedStorage<T, WriterSetAcl>`).
 > Canonical usage lives in `core/apps/`: `sorted-kv-store`, `sorted-set-store`,
 > `kv-store-with-shared-storage`, and `scaffolding-e2e` (exercises all of them).
 
@@ -40,7 +40,7 @@ use calimero_storage::collections::{
     Counter, FrozenStorage, LwwRegister, ReplicatedGrowableArray,
     UnorderedMap, UnorderedSet, UserStorage, Vector,
     // 0.11 additions:
-    SortedMap, SortedSet, AuthoredMap, AuthoredVector, WriterSetCell,
+    SortedMap, SortedSet, AuthoredMap, AuthoredVector, SharedStorage,
 };
 ```
 

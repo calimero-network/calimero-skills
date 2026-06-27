@@ -64,13 +64,6 @@ const RULES = [
       '`meroctl context create` requires --group-id (a context is bound to a group; pass the namespace-id from `namespace create`).',
   },
   {
-    id: 'no-sharedstorage',
-    langs: RUST,
-    check: (l) => /\bSharedStorage\b/.test(l),
-    message:
-      'There is no `SharedStorage` collection — the shared-value type is `WriterSetCell` (calimero_storage::collections).',
-  },
-  {
     id: 'no-deprecated-client',
     langs: TS,
     check: (l) => /['"]@calimero-network\/calimero-client['"]/.test(l),
