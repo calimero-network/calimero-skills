@@ -98,6 +98,10 @@ Notes on the shape:
   There is no `mutate`/`query` split — `rpc.execute` is used for every method (mero-js has no
   separate read transport yet; a method's `intent`, if present, is emitted only as an `@intent`
   JSDoc tag).
+  > The generator still threads `executorPublicKey` through, but mero-js marks it `@deprecated` ("No
+  > longer used by the server. Ignored if provided.") — the caller comes from the auth token. This
+  > reference mirrors the **current** `mero-devtools-js/abi-codegen` output; the field is harmless
+  > (ignored) and will drop out when the generator stops emitting it.
 - `rpc.execute` returns the result directly (or throws an `RpcError`) — there is no `{ output }` /
   `{ error }` wrapper to unwrap.
 

@@ -23,6 +23,12 @@ on:
     - cron: '0 6 * * 1' # every Monday 06:00 UTC
   workflow_dispatch: {}
 
+# One run at a time per ref — a manual dispatch during a scheduled run (or rapid
+# dispatches) won't pile up duplicate read-only checks.
+concurrency:
+  group: version-watch-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   check-latest-core:
     name: Skills pin vs latest core release

@@ -1,9 +1,9 @@
 # Rule: #[app::state] goes on the struct, #[app::logic] on the impl block
 
-**WRONG:**
+**WRONG** — `#[app::state]` placed on an `impl` (the pre-0.11 mistake); it belongs on the struct:
 
 ```rust
-#[app::state]   // ✗ WRONG — state goes on the STRUCT, not an impl
+#[app::state]   // ✗ this is on an impl — WRONG; #[app::state] must go on the struct
 impl AppState {}
 
 #[app::logic]

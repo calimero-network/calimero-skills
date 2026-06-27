@@ -60,7 +60,7 @@ function compareRc(a, b) {
   const pa = parse(a);
   const pb = parse(b);
   for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
-    const d = (pa[i] || 0) - (pb[i] || 0);
+    const d = (pa[i] ?? 0) - (pb[i] ?? 0);
     if (d !== 0) return d < 0 ? -1 : 1;
   }
   return 0;

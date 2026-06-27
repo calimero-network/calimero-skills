@@ -87,19 +87,26 @@ import { setNodeUrl, setApplicationId } from '@calimero-network/mero-react';
 
 export function bootstrapSso(): void {
   if (typeof window === 'undefined') return;
-  const hash = window.location.hash.replace(/^#/, '');
-  if (!hash) return;
+  // Best-effort, never throws into render: a sandboxed iframe or private-mode
+  // browser can make the storage setters throw (localStorage unavailable). A
+  // failed pre-seed must not crash the app before React mounts.
+  try {
+    const hash = window.location.hash.replace(/^#/, '');
+    if (!hash) return;
 
-  const p = new URLSearchParams(hash);
+    const p = new URLSearchParams(hash);
 
-  // Token-bearing hash → it's an auth callback. Leave it ENTIRELY to MeroProvider.
-  if (p.get('access_token')) return;
+    // Token-bearing hash → it's an auth callback. Leave it ENTIRELY to MeroProvider.
+    if (p.get('access_token')) return;
 
-  // Token-less cold open: pre-seed node URL / app id so the connect screen is pre-filled.
-  const nodeUrl = p.get('node_url')?.trim();
-  const applicationId = p.get('application_id')?.trim();
-  if (nodeUrl) setNodeUrl(nodeUrl);
-  if (applicationId) setApplicationId(applicationId);
+    // Token-less cold open: pre-seed node URL / app id so the connect screen is pre-filled.
+    const nodeUrl = p.get('node_url')?.trim();
+    const applicationId = p.get('application_id')?.trim();
+    if (nodeUrl) setNodeUrl(nodeUrl);
+    if (applicationId) setApplicationId(applicationId);
+  } catch (err) {
+    console.warn('bootstrapSso: pre-seed skipped', err);
+  }
 }
 ```
 

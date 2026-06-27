@@ -28,7 +28,8 @@
 const fs = require('fs');
 const path = require('path');
 
-const SKILLS_DIR = path.join(__dirname, '..', 'skills');
+const ROOT = path.join(__dirname, '..');
+const SKILLS_DIR = path.join(ROOT, 'skills');
 
 const BASH = ['bash', 'sh', 'shell', 'console'];
 const TS = ['ts', 'tsx', 'js', 'jsx', 'typescript', 'javascript'];
@@ -56,7 +57,9 @@ const RULES = [
   {
     id: 'context-create-group-id',
     langs: BASH,
-    check: (l) => /\bmeroctl\b.*\bcontext create\b/.test(l) && !/--group-id\b/.test(l),
+    // `context create` but NOT `context create-group` (the `(?!-)` guards the
+    // substring case). A namespace/group create command is a different thing.
+    check: (l) => /\bmeroctl\b.*\bcontext create(?!-)\b/.test(l) && !/--group-id\b/.test(l),
     message:
       '`meroctl context create` requires --group-id (a context is bound to a group; pass the namespace-id from `namespace create`).',
   },
@@ -111,8 +114,46 @@ function walk(dir) {
 const violations = [];
 let blocksChecked = 0;
 
-for (const file of walk(SKILLS_DIR)) {
-  const rel = path.relative(path.join(__dirname, '..'), file);
+/**
+ * Evaluate one collected code block against the applicable rules.
+ * Shared by the closing-fence path and the end-of-file (unclosed block) path.
+ */
+function evaluateBlock({ rel, lang, family, startLine, ignore, buf }) {
+  if (!family || ignore === 'ALL') return;
+  const applicable = RULES.filter(
+    (r) => r.langs.includes(lang) && !(ignore instanceof Set && ignore.has(r.id))
+  );
+  if (!applicable.length) return;
+  blocksChecked++;
+
+  // build logical lines (join bash continuations), strip comments
+  const logical = [];
+  let acc = '';
+  for (const raw of buf) {
+    const stripped = stripComment(raw, family);
+    if (family === 'bash' && /\\\s*$/.test(raw)) {
+      acc += stripped.replace(/\\\s*$/, ' ');
+      continue;
+    }
+    logical.push(acc + stripped);
+    acc = '';
+  }
+  if (acc) logical.push(acc);
+
+  for (const ll of logical) {
+    if (!ll.trim()) continue;
+    for (const r of applicable) {
+      if (r.check(ll)) {
+        violations.push({ file: rel, block: startLine, rule: r.id, line: ll.trim() });
+      }
+    }
+  }
+}
+
+const allFiles = walk(SKILLS_DIR);
+
+for (const file of allFiles) {
+  const rel = path.relative(ROOT, file);
   const lines = fs.readFileSync(file, 'utf8').split('\n');
 
   let inBlock = false;
@@ -151,43 +192,7 @@ for (const file of walk(SKILLS_DIR)) {
     }
 
     if (inBlock && line.trim() === '```') {
-      // end of block — evaluate
-      if (family && ignore !== 'ALL') {
-        const applicable = RULES.filter(
-          (r) => r.langs.includes(lang) && !(ignore instanceof Set && ignore.has(r.id))
-        );
-        if (applicable.length) {
-          blocksChecked++;
-          // build logical lines (join bash continuations), strip comments
-          const logical = [];
-          let acc = '';
-          for (const raw of buf) {
-            const stripped = stripComment(raw, family);
-            if (family === 'bash' && /\\\s*$/.test(raw)) {
-              acc += stripped.replace(/\\\s*$/, ' ');
-              continue;
-            }
-            logical.push(acc + stripped);
-            acc = '';
-          }
-          if (acc) logical.push(acc);
-
-          for (const ll of logical) {
-            if (!ll.trim()) continue;
-            for (const r of applicable) {
-              if (r.check(ll)) {
-                violations.push({
-                  file: rel,
-                  block: startLine,
-                  rule: r.id,
-                  line: ll.trim(),
-                  message: r.message,
-                });
-              }
-            }
-          }
-        }
-      }
+      evaluateBlock({ rel, lang, family, startLine, ignore, buf });
       inBlock = false;
       family = null;
       continue;
@@ -195,10 +200,17 @@ for (const file of walk(SKILLS_DIR)) {
 
     if (inBlock) buf.push(line);
   }
+
+  // A fenced block left open at EOF would otherwise be dropped silently —
+  // evaluate it so a violation on the file's last block is never missed.
+  if (inBlock) {
+    console.warn(`  ! ${rel}: unclosed code fence at end of file — evaluating partial block`);
+    evaluateBlock({ rel, lang, family, startLine, ignore, buf });
+  }
 }
 
 console.log(
-  `\nContent linter: scanned fenced code blocks in ${walk(SKILLS_DIR).length} markdown files (${blocksChecked} blocks matched a rule's language).\n`
+  `\nContent linter: scanned fenced code blocks in ${allFiles.length} markdown files (${blocksChecked} blocks matched a rule's language).\n`
 );
 
 if (violations.length === 0) {
