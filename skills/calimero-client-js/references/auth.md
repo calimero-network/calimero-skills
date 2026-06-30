@@ -68,6 +68,25 @@ connectToNode('http://localhost:2528');
 
 Or use the prebuilt `ConnectButton` / `LoginModal` from mero-react.
 
+### ConnectButton / LoginModal
+
+`ConnectButton` renders the connect/connected/reconnecting button and embeds a `LoginModal` for
+node selection. `connectionType` controls what the modal offers (default `RemoteAndLocal`):
+
+- **Local** — connects to the default local node (`http://node1.127.0.0.1.nip.io`). Unchanged.
+- **Remote** — _(mero-react ≥ 4.1.0)_ auto-discovers running local nodes instead of making the user
+  type a URL. On open it probes the well-known dev ports — `2428, 2429, 2528, 2529` — at
+  `GET /admin-api/health` (the public, no-auth liveness route) and:
+  - lists each healthy node as a radio choice **plus an always-present "Enter node URL manually"
+    option** (this is the path for a hardcoded/merobox URL — it's still verified via
+    `admin-api/is-authed` before connecting);
+  - shows **"No local node found"** and falls through to the manual URL field when nothing answers;
+  - offers a **Rescan** action to re-probe after a node is started.
+
+  Override the probed ports with the `localNodePorts` prop. The discovery primitives are also
+  exported for direct use: `discoverLocalNodes()`, `probeNodeHealth()`, `nodeEndpoint()`,
+  `localNodeUrl()`, `DEFAULT_LOCAL_NODE_PORTS`.
+
 ---
 
 ## Logout
