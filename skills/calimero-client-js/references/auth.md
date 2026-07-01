@@ -70,8 +70,8 @@ Or use the prebuilt `ConnectButton` / `LoginModal` from mero-react.
 
 ### ConnectButton / LoginModal
 
-`ConnectButton` renders the connect/connected/reconnecting button and embeds a `LoginModal` for
-node selection. `connectionType` controls what the modal offers (default `RemoteAndLocal`):
+`ConnectButton` renders the connect/connected/reconnecting button and embeds a `LoginModal` for node
+selection. `connectionType` controls what the modal offers (default `RemoteAndLocal`):
 
 - **Local** — connects to the default local node (`http://node1.127.0.0.1.nip.io`). Unchanged.
 - **Remote** — _(mero-react ≥ 4.1.0)_ auto-discovers running local nodes instead of making the user
