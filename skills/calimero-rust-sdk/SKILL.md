@@ -26,11 +26,11 @@ crate-type = ["cdylib"]
 # Pin to the matching node release by GIT TAG. Calimero RC releases are cut as
 # git tags (and may land on crates.io a little later), so the tag form always
 # resolves and keeps the app in lockstep with the merod it runs on.
-calimero-sdk     = { git = "https://github.com/calimero-network/core", tag = "0.11.0-rc.8" }
-calimero-storage = { git = "https://github.com/calimero-network/core", tag = "0.11.0-rc.8" }
+calimero-sdk     = { git = "https://github.com/calimero-network/core", tag = "0.11.0-rc.9" }
+calimero-storage = { git = "https://github.com/calimero-network/core", tag = "0.11.0-rc.9" }
 
 [build-dependencies]
-calimero-wasm-abi = { git = "https://github.com/calimero-network/core", tag = "0.11.0-rc.8" }
+calimero-wasm-abi = { git = "https://github.com/calimero-network/core", tag = "0.11.0-rc.9" }
 serde_json        = "1"
 
 [profile.app-release]
