@@ -120,14 +120,14 @@ calimero-registry bundle push myapp-1.1.0.mpk --remote
 
 ## CI auto-publish
 
-Publish a new version automatically on every merge to the default branch that touches the
-contract: a `build-bundle.sh` that resolves the next version **from the registry itself** (latest
-published `appVersion` + patch bump), signs in CI from a `MERO_SIGN_KEY` secret, and a GitHub
-Actions workflow that pushes the `.mpk`. Users provide their own two secrets: `MERO_SIGN_KEY`
-(generate with `mero-sign generate-key`) and `CALIMERO_REGISTRY_API_KEY` (registry Organizations
-page). Full workflow template, version-resolution snippet, and gotchas (registry-cli needs
-Node ≥ 24; mero-sign installs from the core repo by git tag; queue — don't cancel — concurrent
-deploys): see `references/ci-auto-publish.md`.
+Publish a new version automatically on every merge to the default branch that touches the contract:
+a `build-bundle.sh` that resolves the next version **from the registry itself** (latest published
+`appVersion` + patch bump), signs in CI from a `MERO_SIGN_KEY` secret, and a GitHub Actions workflow
+that pushes the `.mpk`. Users provide their own two secrets: `MERO_SIGN_KEY` (generate with
+`mero-sign generate-key`) and `CALIMERO_REGISTRY_API_KEY` (registry Organizations page). Full
+workflow template, version-resolution snippet, and gotchas (registry-cli needs Node ≥ 24; CI
+installs mero-sign from the core repo by git tag because the crates.io release lags core; queue —
+don't cancel — concurrent deploys): see `references/ci-auto-publish.md`.
 
 ## Related skills
 
