@@ -20,9 +20,9 @@ calimero-storage-macros  = { git = "https://github.com/calimero-network/core", t
 
 ```rust
 use calimero_sdk::app;
+use calimero_sdk::app::Mergeable;
 use calimero_sdk::borsh::{BorshDeserialize, BorshSerialize};
 use calimero_storage::collections::{Counter, UnorderedMap};
-use calimero_storage_macros::Mergeable;
 
 /// All fields are CRDTs — derive macro just calls merge() on each field
 #[derive(Debug, Mergeable, BorshSerialize, BorshDeserialize)]
