@@ -5,8 +5,13 @@ Ed25519 key management and manifest signing tool. Source: `calimero-network/core
 ## Install
 
 ```bash
-# From crates.io (recommended)
+# From crates.io (fine for local use; the published version lags core releases)
 cargo install mero-sign
+
+# From the core repo by tag (what CI uses — current and reproducible)
+cargo install mero-sign --locked \
+  --git https://github.com/calimero-network/core \
+  --tag 0.11.0-rc.13
 
 # From source
 git clone https://github.com/calimero-network/core

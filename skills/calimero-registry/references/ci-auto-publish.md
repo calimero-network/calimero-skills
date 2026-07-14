@@ -1,21 +1,21 @@
 # CI auto-publish (GitHub Actions)
 
-Publish a new bundle version to the App Registry automatically on every merge to the default
-branch that touches the contract. Proven in production by `calimero-network/mero-chat`,
-`mero-blocks`, and `merraria`.
+Publish a new bundle version to the App Registry automatically on every merge to the default branch
+that touches the contract. Proven in production by `calimero-network/mero-chat`, `mero-blocks`, and
+`merraria`.
 
 ## How it works
 
 1. A `build-bundle.sh` script builds the WASM, resolves the **next version from the registry
-   itself** (latest published `appVersion` + patch bump — no manual version edits, no drift),
-   writes `manifest.json`, signs it with `mero-sign`, and tars everything into an `.mpk`.
+   itself** (latest published `appVersion` + patch bump — no manual version edits, no drift), writes
+   `manifest.json`, signs it with `mero-sign`, and tars everything into an `.mpk`.
 2. A `deploy-bundle.yml` workflow runs that script on pushes to the default branch that touch
    `logic/**`, then pushes the `.mpk` with `calimero-registry bundle push --remote`.
 
 ## Required repository secrets (users set these up themselves)
 
-| Secret                      | What it is                                                                                                                                                                     |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Secret                      | What it is                                                                                                                                                                      |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `MERO_SIGN_KEY`             | Full JSON content of a `mero-sign` key file (`{private_key, public_key, signer_id}`). Generate once with `mero-sign generate-key --output my-key.json` and paste the file body. |
 | `CALIMERO_REGISTRY_API_KEY` | API token from the registry **Organizations** page (CLI Access section).                                                                                                        |
 
@@ -129,7 +129,7 @@ jobs:
           path: ~/.cargo/bin/mero-sign
           key: mero-sign-${{ runner.os }}-${{ env.MERO_SIGN_REF }}
 
-      # mero-sign is not on crates.io — install from the core repo by tag
+      # crates.io lags core releases — install from the core repo by tag for a current, pinned build
       - name: Install mero-sign
         if: steps.cache-mero-sign.outputs.cache-hit != 'true'
         run: |
@@ -174,14 +174,15 @@ jobs:
 
 - **Node ≥ 24**: `@calimero-network/registry-cli@1.15+` fails to install on the runner default
   (Node 20) — always add the `setup-node` step before `npm install -g`.
-- **mero-sign is not on crates.io** — install it from the core repo with `--git` + `--tag`; cache
-  the binary keyed on the tag.
+- **mero-sign on crates.io lags core releases** (`0.11.0-rc.4` at time of writing vs core at
+  `rc.13`+) — in CI, install it from the core repo with `--git` + `--tag` for a current,
+  reproducible build; cache the binary keyed on the tag.
 - **Don't cancel concurrent deploys** — two runs can resolve the same next version; queue them
   (`cancel-in-progress: false`).
-- **Version floor**: `FALLBACK_VERSION` only applies when the registry is unreachable or the
-  package was never published — pushing a version that already exists is rejected.
-- **Pinned override**: `APP_VERSION_OVERRIDE=x.y.z ./logic/build-bundle.sh` for migration bundles
-  or explicit pins.
+- **Version floor**: `FALLBACK_VERSION` only applies when the registry is unreachable or the package
+  was never published — pushing a version that already exists is rejected.
+- **Pinned override**: `APP_VERSION_OVERRIDE=x.y.z ./logic/build-bundle.sh` for migration bundles or
+  explicit pins.
 
 ## Full working examples
 
