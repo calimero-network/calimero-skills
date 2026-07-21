@@ -61,10 +61,17 @@ items: UnorderedMap<String, LwwRegister<String>>,
 // Write
 self.items.insert(key, LwwRegister::new(value))?;
 
-// In-place update (no clone needed)
+// In-place update (mutate if present, nothing else touches `self.items`).
+// The `get_mut` guard writes back on drop and holds a mutable borrow of the
+// whole map until then, so it must not overlap any other use of the map.
 if let Some(mut guard) = self.items.get_mut(&key)? {
     guard.set(new_value);
 }
+
+// Update-or-insert: do NOT `insert` in an `else` while the guard is alive
+// (E0499). Use the Entry API instead:
+let mut guard = self.items.entry(key)?.or_insert(LwwRegister::new(default_value))?;
+guard.set(new_value);
 
 // Read
 let val = self.items.get(&key)?.map(|v| v.get().clone());
