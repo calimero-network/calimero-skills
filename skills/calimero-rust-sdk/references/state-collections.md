@@ -111,11 +111,10 @@ self.items.clear()?;
 
 ## Mutating a value in place
 
-`get_mut` returns a `ValueMut` guard. **The guard writes the value back to storage
-when it drops, and holds a mutable borrow of the entire collection until then.**
-Use it only for the pure "mutate if present, nothing else touches this collection"
-case - the guard must not overlap ANY other use of the same collection (a `get`,
-an `insert`, an `entries`, etc.).
+`get_mut` returns a `ValueMut` guard. **The guard writes the value back to storage when it drops,
+and holds a mutable borrow of the entire collection until then.** Use it only for the pure "mutate
+if present, nothing else touches this collection" case - the guard must not overlap ANY other use of
+the same collection (a `get`, an `insert`, an `entries`, etc.).
 
 ```rust
 // OK: `guard` is the only thing touching `self.items` in its scope.
@@ -124,18 +123,18 @@ if let Some(mut guard) = self.items.get_mut(&key)? {
 }
 ```
 
-The write-back is the same Update action as `insert`, so it does **not** bypass
-CRDT merge - `insert` on an existing key runs this exact `get_mut` + write-back
-path internally. The only hazard is borrow scope, never merge semantics.
+The write-back is the same Update action as `insert`, so it does **not** bypass CRDT merge -
+`insert` on an existing key runs this exact `get_mut` + write-back path internally. The only hazard
+is borrow scope, never merge semantics.
 
 ## Update-or-insert
 
-For "mutate if present, otherwise insert a default", do NOT hold a `get_mut`
-guard across the `insert` - the guard keeps `self.items` mutably borrowed, so the
-`insert` in the other branch is `E0499`.
+For "mutate if present, otherwise insert a default", do NOT hold a `get_mut` guard across the
+`insert` - the guard keeps `self.items` mutably borrowed, so the `insert` in the other branch is
+`E0499`.
 
-**Preferred - Entry API.** One borrow, inserts the default only when absent, then
-hands back a guard to mutate:
+**Preferred - Entry API.** One borrow, inserts the default only when absent, then hands back a guard
+to mutate:
 
 ```rust
 use calimero_storage::collections::unordered_map::Entry;
@@ -143,8 +142,8 @@ let mut guard = self.items.entry(key)?.or_insert(LwwRegister::new(default_value)
 guard.set(new_value); // value is now guaranteed present; written back on drop
 ```
 
-**Alternative - get, mutate, insert (disjoint borrows).** `get` returns an owned
-copy that holds no borrow, so the branches never overlap:
+**Alternative - get, mutate, insert (disjoint borrows).** `get` returns an owned copy that holds no
+borrow, so the branches never overlap:
 
 ```rust
 let next = match self.items.get(&key)? {
