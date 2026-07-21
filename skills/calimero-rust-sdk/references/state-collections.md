@@ -102,21 +102,75 @@ let old = self.items.remove(&key)?;
 // All entries
 let all: Vec<(K, V)> = self.items.entries()?.collect();
 
-// In-place mutation via guard
-if let Some(mut guard) = self.items.get_mut(&key)? {
-    guard.set(new_value);
-}
-
-// Entry API (like HashMap::entry)
-use calimero_storage::collections::unordered_map::Entry;
-let entry = self.items.entry(key)?;
-let val = entry.or_insert(LwwRegister::new(default_value))?;
-
 // Length
 let n = self.items.len()?;
 
 // Clear
 self.items.clear()?;
+```
+
+## Mutating a value in place
+
+`get_mut` returns a `ValueMut` guard. **The guard writes the value back to storage
+when it drops, and holds a mutable borrow of the entire collection until then.**
+Use it only for the pure "mutate if present, nothing else touches this collection"
+case - the guard must not overlap ANY other use of the same collection (a `get`,
+an `insert`, an `entries`, etc.).
+
+```rust
+// OK: `guard` is the only thing touching `self.items` in its scope.
+if let Some(mut guard) = self.items.get_mut(&key)? {
+    guard.set(new_value); // written back to storage when `guard` drops
+}
+```
+
+The write-back is the same Update action as `insert`, so it does **not** bypass
+CRDT merge - `insert` on an existing key runs this exact `get_mut` + write-back
+path internally. The only hazard is borrow scope, never merge semantics.
+
+## Update-or-insert
+
+For "mutate if present, otherwise insert a default", do NOT hold a `get_mut`
+guard across the `insert` - the guard keeps `self.items` mutably borrowed, so the
+`insert` in the other branch is `E0499`.
+
+**Preferred - Entry API.** One borrow, inserts the default only when absent, then
+hands back a guard to mutate:
+
+```rust
+use calimero_storage::collections::unordered_map::Entry;
+let mut guard = self.items.entry(key)?.or_insert(LwwRegister::new(default_value))?;
+guard.set(new_value); // value is now guaranteed present; written back on drop
+```
+
+**Alternative - get, mutate, insert (disjoint borrows).** `get` returns an owned
+copy that holds no borrow, so the branches never overlap:
+
+```rust
+let next = match self.items.get(&key)? {
+    Some(v) => { let mut t = v.get().clone(); /* mutate t */ t }
+    None    => default_value,
+};
+self.items.insert(key, LwwRegister::new(next))?;
+```
+
+**Anti-patterns (both fail to compile with `E0499`):**
+
+```rust
+// WRONG: the guard's mutable borrow of `self.items` is still live in `else`.
+if let Some(mut guard) = self.items.get_mut(&key)? {
+    guard.set(new_value);
+} else {
+    self.items.insert(key, LwwRegister::new(default_value))?; // E0499
+}
+
+// WRONG: binding the guard to a local first does NOT fix it. `ValueMut` has a
+// Drop impl, so its borrow lives to the end of the scope, not the match arm.
+let existing = self.items.get_mut(&key)?;
+match existing {
+    Some(mut guard) => guard.set(new_value),
+    None => self.items.insert(key, LwwRegister::new(default_value))?, // E0499
+}
 ```
 
 ## Constructor
