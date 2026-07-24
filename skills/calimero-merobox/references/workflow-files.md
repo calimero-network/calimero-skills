@@ -76,6 +76,7 @@ steps:
     node: app-node-1
     application_id: '{{app_id}}'
     group_id: '{{namespace_id}}'
+    params: '{"name": "Goa Trip"}'
     outputs:
       ctx: contextId
 
@@ -119,20 +120,26 @@ These are the step types you'll use most (used by real app workflows). The full 
 `merobox/merobox/commands/bootstrap/steps/` — there are many more (groups, proposals, identity,
 blobs, mesh/network faults, parallel/repeat/pause, script, restart, …).
 
-| `type:`                       | Purpose                                             | Key fields                                                                                                |
-| ----------------------------- | --------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| `install_application`         | Install a bundle on a node                          | `node`, `path`, `dev: true`; `outputs: {app_id: applicationId}`                                           |
-| `create_namespace`            | Create a namespace for an app                       | `node`, `application_id`; `outputs: {namespace_id: namespaceId}`                                          |
-| `create_context`              | Create a context bound to a group                   | `node`, `application_id`, **`group_id`** (required), optional `service_name`; `outputs: {ctx: contextId}` |
-| `create_namespace_invitation` | Issue a namespace invitation                        | `node`, `namespace_id`; `outputs: {invitation: invitation}`                                               |
-| `join_namespace`              | A node joins a namespace via an invitation          | `node`, `namespace_id`, `invitation`                                                                      |
-| `join_context`                | A node joins a single context via an invitation     | `node`, `invitation`                                                                                      |
-| `call`                        | Execute a context method (mutate or view)           | `node`, `context_id`, `method`, `args`                                                                    |
-| `json_assert`                 | Assert a call result matches an expected JSON shape | `node`, `context_id`, `method`, `args`, assertion fields                                                  |
-| `wait_for_sync`               | Pause until nodes have synced                       | `node`, optional timeout                                                                                  |
+| `type:`                       | Purpose                                             | Key fields                                                                                                                   |
+| ----------------------------- | --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `install_application`         | Install a bundle on a node                          | `node`, `path`, `dev: true`; `outputs: {app_id: applicationId}`                                                              |
+| `create_namespace`            | Create a namespace for an app                       | `node`, `application_id`; `outputs: {namespace_id: namespaceId}`                                                             |
+| `create_context`              | Create a context bound to a group                   | `node`, `application_id`, **`group_id`** (required), optional `service_name`, optional `params`; `outputs: {ctx: contextId}` |
+| `create_namespace_invitation` | Issue a namespace invitation                        | `node`, `namespace_id`; `outputs: {invitation: invitation}`                                                                  |
+| `join_namespace`              | A node joins a namespace via an invitation          | `node`, `namespace_id`, `invitation`                                                                                         |
+| `join_context`                | A node joins a single context via an invitation     | `node`, `invitation`                                                                                                         |
+| `call`                        | Execute a context method (mutate or view)           | `node`, `context_id`, `method`, `args`                                                                                       |
+| `json_assert`                 | Assert a call result matches an expected JSON shape | `node`, `context_id`, `method`, `args`, assertion fields                                                                     |
+| `wait_for_sync`               | Pause until nodes have synced                       | `node`, optional timeout                                                                                                     |
 
 > There is **no** `install_app`, `invite_member`, or `setup:` block, and steps are keyed by `type:`,
 > not `step:`. Variable capture is per-step `outputs:` → `{{var}}`, not `{{stepname.field}}`.
+
+> `create_context`'s `params` is the app's init payload. It must be a JSON **string**, not a YAML
+> map — `params: {name: "Goa Trip"}` fails validation, `params: '{"name": "Goa Trip"}'` works.
+> `{{var}}` placeholders inside the string are resolved before the JSON is parsed. Its keys match
+> the `#[app::init]` argument names in snake_case. A service whose init requires params will panic
+> when the context is created without them, so pass `params: '{}'` for an explicit "no params".
 
 ## Running a workflow
 

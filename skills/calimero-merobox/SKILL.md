@@ -155,26 +155,26 @@ steps:
 
 ### Available step types
 
-| Step                          | What it does                                                                                                                                  |
-| ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| `install_application`         | Install WASM app, capture `application_id`                                                                                                    |
-| `create_context`              | Create context — **requires `group_id`** (a namespace/group id, e.g. from `create_namespace`); optional `service_name`. Captures `context_id` |
-| `create_identity`             | Create identity, capture `private_key` and `public_key`                                                                                       |
-| `create_namespace`            | Create a namespace for an app, capture `namespace_id`                                                                                         |
-| `create_namespace_invitation` | Issue a namespace invitation, capture `invitation`                                                                                            |
-| `join_namespace`              | Join a node to a namespace via its invitation                                                                                                 |
-| `join_context`                | Join a node to a context (targeted invitation)                                                                                                |
-| `invite_open`                 | Create open invitation (anyone can join)                                                                                                      |
-| `join_open`                   | Join via open invitation                                                                                                                      |
-| `call`                        | Execute app method, capture output                                                                                                            |
-| `wait`                        | Sleep N seconds                                                                                                                               |
-| `wait_for_sync`               | Pause until nodes have synced state                                                                                                           |
-| `repeat`                      | Loop with index variable                                                                                                                      |
-| `assert`                      | Validate values (`is_set`, `contains`, `==`)                                                                                                  |
-| `json_assert`                 | JSON equality/subset checks                                                                                                                   |
-| `upload_blob`                 | Upload file to blob storage, capture `blob_id`                                                                                                |
-| `script`                      | Run a shell script                                                                                                                            |
-| `fuzzy_test`                  | Randomized load test (30-60+ min)                                                                                                             |
+| Step                          | What it does                                                                                                                                                                                          |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `install_application`         | Install WASM app, capture `application_id`                                                                                                                                                            |
+| `create_context`              | Create context — **requires `group_id`** (a namespace/group id, e.g. from `create_namespace`); optional `service_name`, optional `params` (JSON string of `#[app::init]` args). Captures `context_id` |
+| `create_identity`             | Create identity, capture `private_key` and `public_key`                                                                                                                                               |
+| `create_namespace`            | Create a namespace for an app, capture `namespace_id`                                                                                                                                                 |
+| `create_namespace_invitation` | Issue a namespace invitation, capture `invitation`                                                                                                                                                    |
+| `join_namespace`              | Join a node to a namespace via its invitation                                                                                                                                                         |
+| `join_context`                | Join a node to a context (targeted invitation)                                                                                                                                                        |
+| `invite_open`                 | Create open invitation (anyone can join)                                                                                                                                                              |
+| `join_open`                   | Join via open invitation                                                                                                                                                                              |
+| `call`                        | Execute app method, capture output                                                                                                                                                                    |
+| `wait`                        | Sleep N seconds                                                                                                                                                                                       |
+| `wait_for_sync`               | Pause until nodes have synced state                                                                                                                                                                   |
+| `repeat`                      | Loop with index variable                                                                                                                                                                              |
+| `assert`                      | Validate values (`is_set`, `contains`, `==`)                                                                                                                                                          |
+| `json_assert`                 | JSON equality/subset checks                                                                                                                                                                           |
+| `upload_blob`                 | Upload file to blob storage, capture `blob_id`                                                                                                                                                        |
+| `script`                      | Run a shell script                                                                                                                                                                                    |
+| `fuzzy_test`                  | Randomized load test (30-60+ min)                                                                                                                                                                     |
 
 ### Multi-node example
 
