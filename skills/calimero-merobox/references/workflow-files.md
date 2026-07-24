@@ -134,7 +134,7 @@ blobs, mesh/network faults, parallel/repeat/pause, script, restart, …).
 
 > There is **no** `install_app`, `invite_member`, or `setup:` block, and steps are keyed by `type:`,
 > not `step:`. Variable capture is per-step `outputs:` → `{{var}}`, not `{{stepname.field}}`.
-
+>
 > `create_context`'s `params` is the app's init payload. It must be a JSON **string**, not a YAML
 > map — `params: {name: "Goa Trip"}` fails validation, `params: '{"name": "Goa Trip"}'` works.
 > `{{var}}` placeholders inside the string are resolved before the JSON is parsed. Its keys match
