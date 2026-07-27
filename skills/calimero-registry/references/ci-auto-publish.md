@@ -94,7 +94,7 @@ concurrency:
 
 env:
   # Keep in sync with the calimero-sdk tag in logic/Cargo.toml
-  MERO_SIGN_REF: 0.11.0-rc.13
+  MERO_SIGN_REF: 0.11.0-rc.18
 
 jobs:
   deploy:
@@ -147,9 +147,10 @@ jobs:
           MERO_SIGN_KEY_FILE: ${{ runner.temp }}/mero-sign-key.json
         run: ./logic/build-bundle.sh
 
-      # registry-cli >=1.15 requires node >= 24; the ubuntu runner default is 20
+      # registry-cli >=1.15 declares engines.node >= 24 — pin it explicitly rather
+      # than relying on whatever the runner image happens to ship
       - name: Set up Node 24
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: '24'
 
@@ -172,10 +173,11 @@ jobs:
 
 ## Gotchas
 
-- **Node ≥ 24**: `@calimero-network/registry-cli@1.15+` fails to install on the runner default
-  (Node 20) — always add the `setup-node` step before `npm install -g`.
+- **Node ≥ 24**: `@calimero-network/registry-cli@1.15+` declares `engines.node >= 24` and fails to
+  install on older runtimes — always add an explicit `setup-node` step before `npm install -g`
+  instead of trusting the runner image default.
 - **mero-sign on crates.io lags core releases** (`0.11.0-rc.4` at time of writing vs core at
-  `rc.13`+) — in CI, install it from the core repo with `--git` + `--tag` for a current,
+  `rc.18`+) — in CI, install it from the core repo with `--git` + `--tag` for a current,
   reproducible build; cache the binary keyed on the tag.
 - **Don't cancel concurrent deploys** — two runs can resolve the same next version; queue them
   (`cancel-in-progress: false`).

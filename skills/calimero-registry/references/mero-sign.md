@@ -11,7 +11,7 @@ cargo install mero-sign
 # From the core repo by tag (what CI uses — current and reproducible)
 cargo install mero-sign --locked \
   --git https://github.com/calimero-network/core \
-  --tag 0.11.0-rc.13
+  --tag 0.11.0-rc.18
 
 # From source
 git clone https://github.com/calimero-network/core
