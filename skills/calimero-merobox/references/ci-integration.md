@@ -32,8 +32,11 @@ jobs:
         with:
           targets: wasm32-unknown-unknown
 
+      - name: Install cargo-mero
+        run: cargo install --git https://github.com/calimero-network/core cargo-mero
+
       - name: Build the app bundle
-        run: bash logic/build-bundle.sh # produces logic/res/<app>-<ver>.mpk
+        run: cargo mero bundle --dev # produces dist/<package>.mpk
 
       # Provide a merod binary for --no-docker mode (download a release or build it),
       # then ensure it is on PATH or pass --binary-path below.

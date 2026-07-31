@@ -22,11 +22,12 @@ git status  # key.json must NOT appear here
 
 ## CI/CD
 
-In CI, inject the key via an environment variable and write it to a temp file:
+In CI, materialize the key from a secret at build time and point `MERO_SIGN_KEY` at it:
 
 ```bash
-echo "$CALIMERO_SIGNING_KEY" > /tmp/ci-key.json
-mero-sign sign manifest.json --key /tmp/ci-key.json
+export MERO_SIGN_KEY="$RUNNER_TEMP/mero-key.json"
+printf '%s' "$CALIMERO_SIGNING_KEY" > "$MERO_SIGN_KEY"
+cargo mero bundle
 ```
 
 Store `CALIMERO_SIGNING_KEY` as a repository secret (GitHub Secrets, etc.), never in the repo.
@@ -36,7 +37,10 @@ Store `CALIMERO_SIGNING_KEY` as a repository secret (GitHub Secrets, etc.), neve
 Rotate immediately:
 
 ```bash
-mero-sign generate-key --output new-key.json
+cargo mero key generate -o new-key.json
 # Update your public key in the registry
 # Revoke or invalidate the old key
 ```
+
+A new key is a new `signerId`, and the `signerId` is half of the `ApplicationId`. Rotating forks the
+app identity: existing installs will not see bundles signed with the new key as an upgrade.

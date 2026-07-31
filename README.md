@@ -83,6 +83,7 @@ For developers building **Calimero WASM applications** in Rust.
 Covers:
 
 - App skeleton with `#[app]` macros
+- The `cargo mero` toolchain (`new` / `build` / `test` / `bundle`)
 - CRDT state collections (`UnorderedMap`, `Vector`, `Set`)
 - Event emission with `app::emit!()`
 - Private vs shared storage
@@ -154,16 +155,16 @@ For developers **publishing apps** to the Calimero App Registry.
 
 Covers:
 
-- `mero-sign` installation (crates.io and from source)
+- `cargo mero bundle` - build, sign, and pack the `.mpk`
 - Key generation and security
 - `manifest.json` format and required fields
 - Signing workflow (RFC 8785 canonicalization + Ed25519)
-- `calimero-registry bundle create` and `bundle push`
+- `calimero-registry bundle push`
 - Team / org signing patterns
 
 Key rules included:
 
-- Sign the manifest **before** bundling — not after
+- Every bundle is signed, and every artifact hash must match its bytes
 - Never commit `key.json` to version control
 
 ```bash

@@ -28,8 +28,9 @@ Skills should be loaded when the following are detected in the project:
 | `calimero-sdk build` in any script                                     | `calimero-sdk-js`      |
 | `@calimero-network/calimero-client` in `package.json`                  | `calimero-client-js`   |
 | `@calimero-network/mero-js` in `package.json`                          | `calimero-client-js`   |
-| `mero-sign` in any script or Makefile                                  | `calimero-registry`    |
+| `cargo mero bundle` / `cargo mero sign` in any script or workflow      | `calimero-registry`    |
 | `calimero-registry` CLI usage                                          | `calimero-registry`    |
+| `[package.metadata.calimero]` in `Cargo.toml`                          | `calimero-registry`    |
 | `access_token` read from `window.location.hash`                        | `calimero-desktop`     |
 | `readDesktopSSO` / `hash.get('access_token')` pattern in frontend code | `calimero-desktop`     |
 | `merobox` in `package.json` or `requirements.txt`                      | `calimero-merobox`     |
