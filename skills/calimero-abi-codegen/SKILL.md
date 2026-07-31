@@ -5,9 +5,8 @@ a Calimero WASM application's ABI manifest.
 
 ## What it does
 
-Takes an `abi.json` file (exported by `calimero-wasm-abi` during the Rust build) and generates a
-**single `<ClientName>.ts` file** (types are embedded inline — there is no separate `types.ts`)
-containing:
+Takes an `abi.json` file (emitted by `cargo mero build`) and generates a **single `<ClientName>.ts`
+file** (types are embedded inline — there is no separate `types.ts`) containing:
 
 - TypeScript type definitions matching all Rust types (structs, enums)
 - A typed client class with methods for every app function
@@ -157,22 +156,19 @@ const bytes: Uint8Array = board.board.toUint8Array();
 
 ## ABI schema version
 
-The input JSON must have `"schema_version": "wasm-abi/1"`. This is produced automatically by the
-`calimero-wasm-abi` build dependency. A `build.rs` reads the crate's source modules and emits the
-manifest to `res/abi.json`:
+The input JSON must have `"schema_version": "wasm-abi/1"`. `cargo mero build` produces it from the
+crate's module tree and writes it to `res/abi.json`, alongside `res/state-schema.json` and the wasm
+with the ABI embedded as its `calimero_abi_v1` custom section. The app carries no `build.rs`.
 
-```rust
-use calimero_wasm_abi::emitter::emit_manifest_from_crate;
+```bash
+cargo mero build
+npx calimero-abi-codegen -i res/abi.json -o src/generated
+```
 
-fn main() {
-    // Pass each (filename, contents) source module to the emitter, then write
-    // the serialized manifest to res/abi.json. See the calimero-rust-sdk skill
-    // for the full build.rs.
-    let sources = vec![("lib.rs".to_string(), std::fs::read_to_string("src/lib.rs").unwrap())];
-    let manifest = emit_manifest_from_crate(&sources).expect("emit ABI");
-    std::fs::create_dir_all("res").unwrap();
-    std::fs::write("res/abi.json", serde_json::to_string_pretty(&manifest).unwrap()).unwrap();
-}
+To read the ABI back out of a built wasm instead:
+
+```bash
+cargo mero abi extract res/my_app.wasm -o abi.json
 ```
 
 ## Related skills

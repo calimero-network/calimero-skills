@@ -9,7 +9,7 @@
     "p2p",
     "crdt",
     "wasm",
-    "mero-sign",
+    "cargo-mero",
     "calimero-sdk"
   ],
   "homepage": "https://github.com/calimero-network/calimero-skills",

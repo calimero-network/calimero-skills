@@ -4,84 +4,98 @@ You are helping a developer **build and publish a Calimero app bundle** to the A
 
 ## Two tools
 
-| Tool                | Install                                         | Purpose                                                     |
-| ------------------- | ----------------------------------------------- | ----------------------------------------------------------- |
-| `calimero-registry` | `npm install -g @calimero-network/registry-cli` | Bundle creation and registry push                           |
-| `mero-sign`         | `cargo install mero-sign`                       | Ed25519 key management and manifest signing (for ownership) |
+| Tool                | Install                                                                   | Purpose                                    |
+| ------------------- | ------------------------------------------------------------------------- | ------------------------------------------ |
+| `cargo-mero`        | `cargo install --git https://github.com/calimero-network/core cargo-mero` | Builds, signs, and packs the `.mpk` bundle |
+| `calimero-registry` | `npm install -g @calimero-network/registry-cli`                           | Pushes the bundle to the registry          |
+
+`cargo-mero` also ships as a prebuilt `cargo-mero_<target>.tar.gz` on the core releases page. It is
+a cargo subcommand, so once the binary is on `PATH` you invoke it as `cargo mero`.
 
 ## Quick workflow
 
 ```bash
-# 1. Install registry CLI
-npm install -g @calimero-network/registry-cli
+# 1. Generate a signing key (one-time)
+cargo mero key generate -o my-key.json
+echo "my-key.json" >> .gitignore
 
-# 2. Configure registry (one-time)
+# 2. Build every service, write + sign manifest.json, pack the bundle
+cargo mero bundle --key my-key.json
+# -> dist/com.yourorg.myapp.mpk
+
+# 3. Configure the registry (one-time)
 calimero-registry config set registry-url https://apps.calimero.network
 calimero-registry config set api-key your-api-key
 
-# 3. Build WASM (your app's build script)
-./build.sh
-
-# 4. Create bundle (WASM + metadata → .mpk)
-calimero-registry bundle create \
-  --output myapp-1.0.0.mpk \
-  --name "My App" \
-  --description "Does something useful" \
-  --author "Your Name" \
-  --frontend "https://my-app.com" \
-  --github "https://github.com/yourorg/myapp" \
-  path/to/app.wasm \
-  com.yourorg.myapp \
-  1.0.0
-
-# 5. Push to registry
-calimero-registry bundle push myapp-1.0.0.mpk --remote
+# 4. Push
+calimero-registry bundle push dist/com.yourorg.myapp.mpk --remote
 ```
 
-## Signing for ownership (optional but recommended)
+## Bundle metadata comes from Cargo.toml
 
-The registry tracks package ownership via Ed25519 signatures. If you sign the manifest, your key
-becomes the package owner — only your key (or keys in `manifest.owners`) can push future versions.
+`cargo mero bundle` reads `[package.metadata.calimero]` (or `[workspace.metadata.calimero]` for a
+multi-service workspace). Keys are kebab-case; the workspace table wins when both are present.
 
-```bash
-# Generate signing key (one-time)
-mero-sign generate-key --output my-key.json
-echo "my-key.json" >> .gitignore
-
-# After bundle create, sign the manifest inside the bundle:
-mero-sign sign path/to/manifest.json --key my-key.json
-
-# Then push
-calimero-registry bundle push myapp-1.0.0.mpk --remote
+```toml
+[package.metadata.calimero]
+package = "com.yourorg.myapp"          # required, reverse-DNS
+name = "My App"
+description = "Does something useful"
+author = "Your Name"
+min-runtime-version = "0.7.0"
+frontend = "https://my-app.com"        # Desktop opens this URL
 ```
 
-## Bundle create flags
+| `Cargo.toml` key      | `manifest.json` field  | Default                      |
+| --------------------- | ---------------------- | ---------------------------- |
+| `package`             | `package`              | required                     |
+| `name`                | `metadata.name`        | the crate name               |
+| `description`         | `metadata.description` | omitted                      |
+| `author`              | `metadata.author`      | omitted                      |
+| `min-runtime-version` | `minRuntimeVersion`    | `0.1.0`                      |
+| `frontend`            | `links.frontend`       | omitted                      |
+| `services`            | `services[]`           | empty (workspace table only) |
 
-| Flag                    | Required | Description                                            |
-| ----------------------- | -------- | ------------------------------------------------------ |
-| `<wasm-file>`           | Yes      | Path to WASM binary (positional)                       |
-| `[package]`             | Yes      | Reverse-domain package name (e.g. `com.yourorg.myapp`) |
-| `[version]`             | Yes      | SemVer version (e.g. `1.0.0`)                          |
-| `-o, --output <path>`   | No       | Output `.mpk` filename                                 |
-| `-m, --manifest <path>` | No       | Read config from a manifest JSON file                  |
-| `--name <name>`         | No       | App display name                                       |
-| `--description <text>`  | No       | Short description                                      |
-| `--author <name>`       | No       | Author name                                            |
-| `--frontend <url>`      | No       | Frontend URL (used by Desktop to open the app)         |
-| `--github <url>`        | No       | Source repository URL                                  |
-| `--docs <url>`          | No       | Documentation URL                                      |
+The app version is not a metadata key: it defaults to the crate's `[package] version` and is
+overridable with `--app-version`.
+
+## Bundle flags
+
+| Flag                    | Description                                                               |
+| ----------------------- | ------------------------------------------------------------------------- |
+| `--key <file>`          | Sign with a production Ed25519 key file                                   |
+| `--dev`                 | Sign with the well-known dev key: local only, **refused by the registry** |
+| `--app-version`         | Override the `appVersion` recorded in `manifest.json`                     |
+| `--package`             | Override the reverse-DNS package id                                       |
+| `-o, --output`          | Output path for the `.mpk` (defaults to `dist/<package>.mpk`)             |
+| `--profiling`           | Skip `wasm-opt`, keep debug info                                          |
+| `--features`            | Cargo features, comma or space separated, repeatable                      |
+| `--no-default-features` | Disable the crate's default features                                      |
+
+With neither `--key` nor `--dev`, `bundle` reads the `MERO_SIGN_KEY` environment variable as the
+path to a key file. That is the CI-friendly form: materialize the key from a secret, export the
+variable, run `cargo mero bundle`.
+
+## Signing is mandatory
+
+There is no unsigned install path. A bundle is signed as part of packaging, and the node verifies
+both the signature and every artifact's SHA-256 before installing. See `rules/signed-and-hashed.md`.
+
+Your signing key is half of your app's on-node identity
+(`ApplicationId = SHA-256(borsh((package, signerId)))`), so signing every release with the same key
+is what makes the next release an upgrade rather than a new app. See `references/signing.md`.
 
 ## Bundle push flags
 
 ```bash
 # Push to local registry (default)
-calimero-registry bundle push myapp-1.0.0.mpk --local
+calimero-registry bundle push dist/com.yourorg.myapp.mpk --local
 
 # Push to remote registry (uses config file)
-calimero-registry bundle push myapp-1.0.0.mpk --remote
+calimero-registry bundle push dist/com.yourorg.myapp.mpk --remote
 
 # Override config with flags
-calimero-registry bundle push myapp-1.0.0.mpk \
+calimero-registry bundle push dist/com.yourorg.myapp.mpk \
   --remote \
   --url https://apps.calimero.network \
   --api-key your-api-key
@@ -107,27 +121,23 @@ export CALIMERO_API_KEY=your-api-key
 
 ## Updating an existing app (new version)
 
-```bash
-calimero-registry bundle create \
-  --output myapp-1.1.0.mpk \
-  --name "My App" \
-  path/to/app.wasm \
-  com.yourorg.myapp \
-  1.1.0
+Bump `[package] version` in `Cargo.toml` (or pass `--app-version`), then rebuild and push with the
+**same** key - the signer is half the application id, so a different key publishes a different app.
 
-calimero-registry bundle push myapp-1.1.0.mpk --remote
+```bash
+cargo mero bundle --key my-key.json --app-version 1.1.0
+calimero-registry bundle push dist/com.yourorg.myapp.mpk --remote
 ```
 
 ## CI auto-publish
 
 Publish a new version automatically on every merge to the default branch that touches the contract:
-a `build-bundle.sh` that resolves the next version **from the registry itself** (latest published
-`appVersion` + patch bump), signs in CI from a `MERO_SIGN_KEY` secret, and a GitHub Actions workflow
-that pushes the `.mpk`. Users provide their own two secrets: `MERO_SIGN_KEY` (generate with
-`mero-sign generate-key`) and `CALIMERO_REGISTRY_API_KEY` (registry Organizations page). Full
-workflow template, version-resolution snippet, and gotchas (registry-cli needs Node ≥ 24; CI
-installs mero-sign from the core repo by git tag because the crates.io release lags core; queue —
-don't cancel — concurrent deploys): see `references/ci-auto-publish.md`.
+resolve the next version **from the registry itself** (latest published `appVersion` + patch bump),
+pass it to `cargo mero bundle --app-version`, and push the `.mpk`. Users provide their own two
+secrets: `CALIMERO_SIGNING_KEY` (generate with `cargo mero key generate`) and
+`CALIMERO_REGISTRY_API_KEY` (registry Organizations page). Full workflow template,
+version-resolution snippet, and gotchas (registry-cli needs Node ≥ 24; queue - don't cancel -
+concurrent deploys): see `references/ci-auto-publish.md`.
 
 ## Related skills
 

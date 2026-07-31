@@ -20,18 +20,22 @@ You are helping a developer build a **Calimero WASM application** in Rust using 
 
 ```toml
 [lib]
-crate-type = ["cdylib"]
+# cdylib for the node's wasm; rlib so `cargo test` can link the app for TestHost tests.
+crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 # Pin to the matching node release by GIT TAG. Calimero RC releases are cut as
 # git tags (and may land on crates.io a little later), so the tag form always
 # resolves and keeps the app in lockstep with the merod it runs on.
-calimero-sdk     = { git = "https://github.com/calimero-network/core", tag = "0.11.0-rc.18" }
-calimero-storage = { git = "https://github.com/calimero-network/core", tag = "0.11.0-rc.18" }
+calimero-sdk     = { git = "https://github.com/calimero-network/core", tag = "0.11.0-rc.19" }
+calimero-storage = { git = "https://github.com/calimero-network/core", tag = "0.11.0-rc.19" }
 
-[build-dependencies]
-calimero-wasm-abi = { git = "https://github.com/calimero-network/core", tag = "0.11.0-rc.18" }
-serde_json        = "1"
+# Bundle metadata read by `cargo mero bundle`. `package` is the reverse-DNS app id.
+[package.metadata.calimero]
+package     = "com.example.myapp"
+name        = "My App"
+description = "Does something useful"
+frontend    = "https://my-app.example.com"
 
 [profile.app-release]
 inherits         = "release"
@@ -42,15 +46,16 @@ debug            = false
 strip            = "symbols"
 panic            = "abort"
 overflow-checks  = true
+
+# Used by `cargo mero build --profiling`: keeps debug info, skips wasm-opt.
+[profile.app-profiling]
+inherits = "release"
+opt-level = 2
+debug     = true
+strip     = false
 ```
 
-For the build script, add `build.rs`:
-
-```rust
-fn main() {
-    calimero_wasm_abi::export().unwrap();
-}
-```
+An app needs **no** `build.rs`: `cargo mero build` emits the ABI from the crate's module tree.
 
 ## Minimal app skeleton (KV store)
 
@@ -104,26 +109,38 @@ impl KvStore {
 }
 ```
 
-## Building
+## Building with `cargo mero`
+
+`cargo mero` is the app toolchain: it scaffolds, builds, tests, and packages. Install it once as a
+cargo subcommand (or download the prebuilt `cargo-mero_<target>.tar.gz` from a core release):
 
 ```bash
-# Add WASM target (one-time)
-rustup target add wasm32-unknown-unknown
-
-# Build with the app-release profile
-cargo build --target wasm32-unknown-unknown --profile app-release
-
-# Output: target/wasm32-unknown-unknown/app-release/<crate_name>.wasm
+cargo install --git https://github.com/calimero-network/core cargo-mero
 ```
+
+```bash
+cargo mero new my-app     # scaffold state, events, logic, and tests
+cargo mero build          # emit ABI -> compile to wasm32 -> wasm-opt -Oz -> embed ABI
+cargo mero test           # node-free native tests (TestHost + convergence)
+cargo mero bundle --dev   # build all services, write + sign manifest.json, tar the .mpk
+cargo mero guide          # print the canonical end-to-end workflow
+```
+
+`cargo mero build` writes `res/<crate_underscored>.wasm` (with the ABI embedded as the
+`calimero_abi_v1` custom section), `res/abi.json`, and `res/state-schema.json`. It adds the
+`wasm32-unknown-unknown` target itself when `rustup` is present, and the `wasm-opt` size pass is
+built in, so there is nothing to install on `PATH`.
+
+`cargo mero bundle` produces `dist/<package>.mpk`. Signing is part of packaging: pass `--dev` for
+local installs or `--key <file>` to publish. See the `calimero-registry` skill.
 
 ## Installing and running on a node (dev workflow)
 
 ```bash
 # (Assumes: meroctl node add node1 ... && meroctl node use node1 already done)
 
-# 1. Install app from WASM file
-meroctl app install \
-  --path target/wasm32-unknown-unknown/app-release/myapp.wasm
+# 1. Install the app (a .mpk bundle, or a bare .wasm for quick local iteration)
+meroctl app install --path dist/com.example.myapp.mpk
 # Returns: application-id
 
 # 2. Create a namespace (root group) for the app
@@ -141,7 +158,7 @@ meroctl call set --context <context-id> --args '{"key":"hello","value":"world"}'
 meroctl call get --context <context-id> --args '{"key":"hello"}'
 
 # Dev mode: auto-reinstall when WASM changes (--group-id still required)
-meroctl context create --watch target/wasm32-unknown-unknown/app-release/myapp.wasm --group-id <namespace-id>
+meroctl context create --watch res/myapp.wasm --group-id <namespace-id>
 ```
 
 For `merod` setup and full `meroctl` reference, see `calimero-merod` and `calimero-meroctl` skills.

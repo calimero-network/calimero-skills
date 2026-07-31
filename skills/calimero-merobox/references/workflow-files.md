@@ -54,7 +54,7 @@ steps:
     name: Install bundle on node 1
     node: app-node-1
     dev: true
-    path: ./logic/res/myapp-0.1.0.mpk
+    path: ./dist/com.example.myapp.mpk
     outputs:
       app_id: applicationId
 
@@ -62,7 +62,7 @@ steps:
     name: Install bundle on node 2
     node: app-node-2
     dev: true
-    path: ./logic/res/myapp-0.1.0.mpk
+    path: ./dist/com.example.myapp.mpk
 
   - type: create_namespace
     name: Create namespace on node 1
