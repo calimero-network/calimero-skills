@@ -186,14 +186,14 @@ For `merod` setup and full `meroctl` reference, see `calimero-merod` and `calime
 container demands traits of its own type parameters. An `E0277` is one of those demands unmet - find
 the row, apply the remedy.
 
-| Container                                                     | Demands of its parameter                                       | Remedy                                                                                     |
-| ------------------------------------------------------------- | -------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| `UnorderedMap<K, V>`, `SortedMap<K, V>`, `Vector<V>`          | `V: Mergeable`                                                 | No primitive is `Mergeable` - wrap it: `UnorderedMap<String, LwwRegister<String>>`          |
-| `AuthoredMap<K, V>`, `AuthoredVector<V>`                      | `V: Mergeable` (`+ Clone` on the vector)                       | Same wrap, or `#[derive(Mergeable)]` on a struct value                                     |
-| `UserStorage<T>`                                              | `T: Mergeable`                                                 | `#[derive(Mergeable)]` on `T`                                                              |
-| `SharedStorage<T>` (`new`, `new_with_field_name`)             | `T: Mergeable + Default`                                       | Derive `Default` on `T`; `LwwRegister<T>` is `Default` only when `T: Default`               |
-| Keys of `UnorderedMap`/`UnorderedSet`/`SortedMap`/`SortedSet` | `AsRef<[u8]> + Clone + PartialEq` (`+ Ord` on the sorted pair) | Key by `String`, not `u64` or a struct                                                     |
-| Any hand-written `impl Mergeable for T`                       | `T: RekeyTarget` (`Mergeable`'s supertrait)                    | `#[derive(Mergeable)]` emits both impls; hand-rolling needs a matching `impl RekeyTarget`   |
+| Container                                                     | Demands of its parameter                                       | Remedy                                                                                    |
+| ------------------------------------------------------------- | -------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `UnorderedMap<K, V>`, `SortedMap<K, V>`, `Vector<V>`          | `V: Mergeable`                                                 | No primitive is `Mergeable` - wrap it: `UnorderedMap<String, LwwRegister<String>>`        |
+| `AuthoredMap<K, V>`, `AuthoredVector<V>`                      | `V: Mergeable` (`+ Clone` on the vector)                       | Same wrap, or `#[derive(Mergeable)]` on a struct value                                    |
+| `UserStorage<T>`                                              | `T: Mergeable`                                                 | `#[derive(Mergeable)]` on `T`                                                             |
+| `SharedStorage<T>` (`new`, `new_with_field_name`)             | `T: Mergeable + Default`                                       | Derive `Default` on `T`; `LwwRegister<T>` is `Default` only when `T: Default`             |
+| Keys of `UnorderedMap`/`UnorderedSet`/`SortedMap`/`SortedSet` | `AsRef<[u8]> + Clone + PartialEq` (`+ Ord` on the sorted pair) | Key by `String`, not `u64` or a struct                                                    |
+| Any hand-written `impl Mergeable for T`                       | `T: RekeyTarget` (`Mergeable`'s supertrait)                    | `#[derive(Mergeable)]` emits both impls; hand-rolling needs a matching `impl RekeyTarget` |
 
 ## Cross-context calls (xcall)
 
