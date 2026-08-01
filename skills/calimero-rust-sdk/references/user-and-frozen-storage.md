@@ -45,24 +45,18 @@ impl AppState {
 
 ### Nested example (map per user)
 
-When `T` is a collection, it must implement `Mergeable` manually (or via `#[derive(Mergeable)]`):
+When `T` is a collection, it must implement `Mergeable`. Derive it: every field here is a CRDT, and
+the derive also emits the `RekeyTarget` impl that `Mergeable` requires as its supertrait.
 
 ```rust
+use calimero_sdk::app::Mergeable;
 use calimero_sdk::borsh::{BorshDeserialize, BorshSerialize};
-use calimero_storage::collections::{LwwRegister, Mergeable, UnorderedMap, UserStorage};
+use calimero_storage::collections::{LwwRegister, UnorderedMap, UserStorage};
 
-#[derive(Debug, BorshSerialize, BorshDeserialize, Default)]
+#[derive(Debug, Mergeable, BorshSerialize, BorshDeserialize, Default)]
 #[borsh(crate = "calimero_sdk::borsh")]
 struct UserKvMap {
     map: UnorderedMap<String, LwwRegister<String>>,
-}
-
-impl Mergeable for UserKvMap {
-    fn merge(&mut self, other: &Self)
-        -> Result<(), calimero_storage::collections::crdt_meta::MergeError>
-    {
-        self.map.merge(&other.map)
-    }
 }
 
 #[app::state]
