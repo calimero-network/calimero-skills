@@ -22,7 +22,7 @@ state. New contexts (no prior state) call `#[app::init]` as normal.
 
 ```rust
 use calimero_sdk::app;
-use calimero_sdk::borsh::{BorshDeserialize, BorshSerialize};
+use calimero_sdk::borsh::BorshDeserialize;
 use calimero_sdk::state::read_raw;
 use calimero_storage::collections::{LwwRegister, UnorderedMap};
 
@@ -36,8 +36,6 @@ struct AppStateV1 {
 
 // --- V2 (new schema, adds a `notes` field) ---
 #[app::state(emits = for<'a> Event<'a>)]
-#[derive(Debug, BorshSerialize, BorshDeserialize)]
-#[borsh(crate = "calimero_sdk::borsh")]
 pub struct AppStateV2 {
     items:   UnorderedMap<String, LwwRegister<String>>,
     counter: LwwRegister<u64>,

@@ -6,13 +6,10 @@ Source: <https://github.com/calimero-network/kv-store>
 
 ```rust
 use calimero_sdk::app;
-use calimero_sdk::borsh::{BorshDeserialize, BorshSerialize};
 use calimero_sdk::serde::Serialize;
 use calimero_storage::collections::{LwwRegister, UnorderedMap};
 
 #[app::state(emits = for<'a> Event<'a>)]
-#[derive(Debug, BorshSerialize, BorshDeserialize)]
-#[borsh(crate = "calimero_sdk::borsh")]
 pub struct KvStore {
     items: UnorderedMap<String, LwwRegister<String>>,
 }

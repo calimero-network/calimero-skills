@@ -51,11 +51,12 @@ ID), then call an app method that stores the metadata and announces the blob:
 
 ```rust
 use calimero_sdk::{app, env};
-use calimero_storage::collections::UnorderedMap;
+use calimero_storage::collections::{LwwRegister, UnorderedMap};
 
 #[app::state]
 pub struct FileStore {
-    files: UnorderedMap<String, [u8; 32]>,  // name → blob_id
+    // The map value must be a CRDT; a bare `[u8; 32]` is not Mergeable.
+    files: UnorderedMap<String, LwwRegister<[u8; 32]>>,  // name → blob_id
 }
 
 #[app::logic]
@@ -70,12 +71,12 @@ impl FileStore {
         let ctx = env::context_id();
         env::blob_announce_to_context(&blob_id, &ctx);
 
-        self.files.insert(name, blob_id)?;
+        self.files.insert(name, blob_id.into())?;
         Ok(())
     }
 
     pub fn get_blob_id(&self, name: &str) -> app::Result<Option<[u8; 32]>> {
-        Ok(self.files.get(name)?)
+        Ok(self.files.get(name)?.map(|v| *v.get()))
     }
 }
 ```
