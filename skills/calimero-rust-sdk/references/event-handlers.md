@@ -35,12 +35,9 @@ The handler method must exist on the same `#[app::logic]` impl with matching arg
 
 ```rust
 use calimero_sdk::app;
-use calimero_sdk::borsh::{BorshDeserialize, BorshSerialize};
 use calimero_storage::collections::{Counter, LwwRegister, UnorderedMap};
 
 #[app::state(emits = for<'a> Event<'a>)]
-#[derive(Debug, BorshSerialize, BorshDeserialize)]
-#[borsh(crate = "calimero_sdk::borsh")]
 pub struct AppState {
     items:           UnorderedMap<String, LwwRegister<String>>,
     handler_counter: Counter,

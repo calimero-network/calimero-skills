@@ -49,7 +49,8 @@ impl AppState {
 
     pub fn get_secret(&self, key: &str) -> app::Result<Option<String>> {
         let priv_data = PrivateData::private_load_or_default()?;
-        Ok(priv_data.secrets.get(key)?.cloned())
+        // `get` yields a `ValueRef`, so clone through it to get an owned value
+        Ok(priv_data.secrets.get(key)?.map(|v| v.clone()))
     }
 }
 ```
@@ -73,7 +74,7 @@ impl Default for PrivateBoards {
 // Usage inside a method:
 let mut priv_boards = PrivateBoards::private_load_or_default()?;
 let mut priv_mut = priv_boards.as_mut();
-let mut pb = priv_mut.boards.get(&key)?.unwrap_or(PlayerBoard::new());
+let mut pb = priv_mut.boards.get(&key)?.map_or_else(PlayerBoard::new, |v| v.clone());
 pb.place_ships(ships)?;
 priv_mut.boards.insert(key, pb)?;
 ```

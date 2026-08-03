@@ -24,8 +24,9 @@ use calimero_sdk::app::Mergeable;
 use calimero_sdk::borsh::{BorshDeserialize, BorshSerialize};
 use calimero_storage::collections::{Counter, UnorderedMap};
 
-/// All fields are CRDTs — derive macro just calls merge() on each field
-#[derive(Debug, Mergeable, BorshSerialize, BorshDeserialize)]
+/// All fields are CRDTs — derive macro just calls merge() on each field.
+/// `Default` is what lets `entry(..).or_default()` create a missing entry.
+#[derive(Debug, Default, Mergeable, BorshSerialize, BorshDeserialize)]
 #[borsh(crate = "calimero_sdk::borsh")]
 pub struct TeamStats {
     pub wins:   Counter,
@@ -34,8 +35,6 @@ pub struct TeamStats {
 }
 
 #[app::state(emits = MetricsEvent)]
-#[derive(Debug, BorshSerialize, BorshDeserialize)]
-#[borsh(crate = "calimero_sdk::borsh")]
 pub struct AppState {
     teams: UnorderedMap<String, TeamStats>,
 }
@@ -43,15 +42,11 @@ pub struct AppState {
 #[app::logic]
 impl AppState {
     pub fn record_win(&mut self, team: String) -> app::Result<u64> {
-        let mut stats = self.teams.get(&team)?.unwrap_or_else(|| TeamStats {
-            wins:   Counter::new(),
-            losses: Counter::new(),
-            draws:  Counter::new(),
-        });
+        // `get` hands back a `ValueRef`, not an owned `TeamStats`; the entry API
+        // gives a guard that writes back on drop.
+        let mut stats = self.teams.entry(team)?.or_default()?;
         stats.wins.increment()?;
-        let total = stats.wins.value()?;
-        self.teams.insert(team, stats)?;
-        Ok(total)
+        Ok(stats.wins.value()?)
     }
 }
 ```

@@ -12,7 +12,7 @@ imported from `calimero_storage::collections`.
 | ------------------------- | --------------------------------------- | ---------------------------------------------------------- |
 | `UnorderedMap<K, V>`      | Key-value mapping                       | Most collection ops return `Result<>` — use `?`            |
 | `UnorderedSet<T>`         | Unique value set                        |                                                            |
-| `Vector<T>`               | Ordered list (append-only)              |                                                            |
+| `Vector<T>`               | Ordered list (append-only)              | `T` must be a CRDT: `Vector<LwwRegister<V>>`               |
 | `LwwRegister<T>`          | Single last-write-wins value            | Wrap map values: `UnorderedMap<K, LwwRegister<V>>`         |
 | `Counter`                 | Grow-only counter (GCounter by default) | `.increment()`, `.value()`                                 |
 | `Counter<true>`           | PN-Counter (supports decrement)         | Same API + `.decrement()`                                  |
@@ -48,16 +48,13 @@ use calimero_storage::collections::{
 
 ```rust
 use calimero_sdk::app;
-use calimero_sdk::borsh::{BorshDeserialize, BorshSerialize};
 use calimero_storage::collections::{LwwRegister, UnorderedMap, Vector, Counter};
 
 #[app::state]
-#[derive(Debug, BorshSerialize, BorshDeserialize)]
-#[borsh(crate = "calimero_sdk::borsh")]
 pub struct AppState {
-    // Map values wrapped in LwwRegister for CRDT merge
+    // Map and vector values are wrapped in LwwRegister for CRDT merge
     items:   UnorderedMap<String, LwwRegister<String>>,
-    log:     Vector<String>,
+    log:     Vector<LwwRegister<String>>,
     counter: Counter,
 }
 
@@ -73,7 +70,7 @@ impl AppState {
     }
 
     pub fn append(&mut self, entry: String) -> app::Result<()> {
-        self.log.push(entry)?;
+        self.log.push(entry.into())?;
         Ok(())
     }
 
@@ -190,8 +187,11 @@ pub fn init() -> AppState {
 ## Keys and values must implement
 
 - `BorshSerialize + BorshDeserialize`
-- Values in UnorderedMap are typically wrapped in `LwwRegister<V>` — this handles conflict
-  resolution automatically
+- Map and vector **values** must also be `Mergeable`, and no primitive is. In replicated state
+  `Vector<String>` and `UnorderedMap<String, [u8; 32]>` are compile errors ("cannot be stored in
+  replicated state - it is not a CRDT"); wrap the value in `LwwRegister<V>`. See the
+  trait-obligation table in `SKILL.md`.
+- Set **elements** and map **keys** carry no such bound - `UnorderedSet<String>` is fine as written.
 
 ## Important
 
