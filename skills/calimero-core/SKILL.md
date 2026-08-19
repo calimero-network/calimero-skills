@@ -109,19 +109,19 @@ All shared application state uses conflict-free replicated data types from
 `calimero_storage::collections`. Plain `HashMap`, `Vec`, or `HashSet` must never be used for shared
 state.
 
-| Type                             | Use for                                    |
-| -------------------------------- | ------------------------------------------ |
-| `UnorderedMap<K, V>`             | Key-value store (most common)              |
-| `Vector<T>`                      | Append-only ordered log                    |
-| `UnorderedSet<T>`                | Unique value set                           |
-| `LwwRegister<T>`                 | Single last-write-wins scalar              |
-| `Counter` / `Counter<true>`      | Grow-only / PN counter                     |
-| `FrozenStorage<T>`               | Immutable content-addressed blobs          |
-| `UserStorage<T>`                 | Per-member private storage (not synced)    |
-| `ReplicatedGrowableArray`        | Collaborative text / ordered sequence      |
-| `SortedMap` / `SortedSet`        | Ordered map/set — range/prefix/page (0.11) |
-| `AuthoredMap` / `AuthoredVector` | Per-entry/slot author ownership (0.11)     |
-| `SharedStorage<T>`               | Group-writable value, writer set (0.11)    |
+| Type                             | Use for                                     |
+| -------------------------------- | ------------------------------------------- |
+| `UnorderedMap<K, V>`             | Key-value store (most common)               |
+| `Vector<T>`                      | Append-only ordered log                     |
+| `UnorderedSet<T>`                | Unique value set                            |
+| `LwwRegister<T>`                 | Single last-write-wins scalar               |
+| `Counter` / `Counter<true>`      | Grow-only / PN counter                      |
+| `FrozenStorage<T>`               | Immutable content-addressed blobs           |
+| `UserStorage<T>`                 | One synced slot per account, owner-writable |
+| `ReplicatedGrowableArray`        | Collaborative text / ordered sequence       |
+| `SortedMap` / `SortedSet`        | Ordered map/set — range/prefix/page (0.11)  |
+| `AuthoredMap` / `AuthoredVector` | Per-entry/slot author ownership (0.11)      |
+| `SharedStorage<T>`               | Group-writable value, writer set (0.11)     |
 
 ## Authentication
 

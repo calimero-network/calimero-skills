@@ -13,20 +13,22 @@ Add `calimero-storage-macros` to your dependencies:
 
 ```toml
 [dependencies]
-calimero-sdk             = { git = "https://github.com/calimero-network/core", tag = "0.11.0-rc.19" }
-calimero-storage         = { git = "https://github.com/calimero-network/core", tag = "0.11.0-rc.19" }
-calimero-storage-macros  = { git = "https://github.com/calimero-network/core", tag = "0.11.0-rc.19" }
+calimero-sdk             = { git = "https://github.com/calimero-network/core", tag = "0.11.0-rc.24" }
+calimero-storage         = { git = "https://github.com/calimero-network/core", tag = "0.11.0-rc.24" }
+calimero-storage-macros  = { git = "https://github.com/calimero-network/core", tag = "0.11.0-rc.24" }
 ```
 
 ```rust
+use calimero_sdk::abi::AbiType;
 use calimero_sdk::app;
 use calimero_sdk::app::Mergeable;
 use calimero_sdk::borsh::{BorshDeserialize, BorshSerialize};
 use calimero_storage::collections::{Counter, UnorderedMap};
 
 /// All fields are CRDTs — derive macro just calls merge() on each field.
-/// `Default` is what lets `entry(..).or_default()` create a missing entry.
-#[derive(Debug, Default, Mergeable, BorshSerialize, BorshDeserialize)]
+/// `Default` is what lets `entry(..).or_default()` create a missing entry, and
+/// `AbiType` is what lets the value type appear in the generated ABI.
+#[derive(Debug, Default, Mergeable, BorshSerialize, BorshDeserialize, AbiType)]
 #[borsh(crate = "calimero_sdk::borsh")]
 pub struct TeamStats {
     pub wins:   Counter,
@@ -34,13 +36,18 @@ pub struct TeamStats {
     pub draws:  Counter,
 }
 
-#[app::state(emits = MetricsEvent)]
+#[app::state]
 pub struct AppState {
     teams: UnorderedMap<String, TeamStats>,
 }
 
 #[app::logic]
 impl AppState {
+    #[app::init]
+    pub fn init() -> AppState {
+        AppState { teams: UnorderedMap::new() }
+    }
+
     pub fn record_win(&mut self, team: String) -> app::Result<u64> {
         // `get` hands back a `ValueRef`, not an owned `TeamStats`; the entry API
         // gives a guard that writes back on drop.
@@ -103,7 +110,7 @@ impl RekeyTarget for UserProfile {
 For structs with non-CRDT primitive fields (e.g. `u64` timestamps), pick a merge strategy explicitly
 — typically last-write-wins based on a timestamp field:
 
-```rust
+```rust,ignore
 impl Mergeable for FileRecord {
     fn merge(&mut self, other: &Self) -> Result<(), MergeError> {
         // LWW: take the version with the later timestamp

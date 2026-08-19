@@ -34,7 +34,7 @@ impl Default for PrivateData {
 
 ## Reading and writing private storage
 
-```rust
+```rust,ignore
 #[app::logic]
 impl AppState {
     pub fn set_secret(&mut self, key: String, value: String) -> app::Result<()> {
@@ -57,7 +57,7 @@ impl AppState {
 
 ## Real example from battleships — private board storage
 
-```rust
+```rust,ignore
 #[derive(BorshSerialize, BorshDeserialize, Debug)]
 #[borsh(crate = "calimero_sdk::borsh")]
 #[app::private]

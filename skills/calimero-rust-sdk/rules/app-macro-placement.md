@@ -2,7 +2,14 @@
 
 **WRONG** — `#[app::state]` placed on an `impl` (the pre-0.11 mistake); it belongs on the struct:
 
-```rust
+```rust,compile_fail
+use calimero_sdk::app;
+use calimero_storage::collections::{LwwRegister, UnorderedMap};
+
+pub struct AppState {
+    data: UnorderedMap<String, LwwRegister<String>>,
+}
+
 #[app::state]   // ✗ this is on an impl — WRONG; #[app::state] must go on the struct
 impl AppState {}
 
@@ -13,7 +20,10 @@ impl AppState {}
 **CORRECT:**
 
 ```rust
-#[app::state(emits = for<'a> Event<'a>)]   // ✓ on the struct (carries emits = ...)
+use calimero_sdk::app;
+use calimero_storage::collections::{LwwRegister, UnorderedMap};
+
+#[app::state]   // ✓ on the struct (this is also where `emits = ...` goes)
 pub struct AppState {
     data: UnorderedMap<String, LwwRegister<String>>,
 }

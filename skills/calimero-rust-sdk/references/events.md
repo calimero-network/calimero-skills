@@ -27,7 +27,7 @@ Borrowed fields (`&'a str`) are common and let you emit without cloning.
 
 The state struct names its event type via the `emits = ...` argument to `#[app::state]`:
 
-```rust
+```rust,ignore
 #[app::state(emits = for<'a> Event<'a>)]
 pub struct AppState {
     items: UnorderedMap<String, LwwRegister<String>>,
@@ -38,7 +38,7 @@ pub struct AppState {
 
 Use `app::emit!(...)`. Public methods return `app::Result<T>`; fallible collection ops use `?`.
 
-```rust
+```rust,ignore
 #[app::logic]
 impl AppState {
     pub fn add_item(&mut self, key: String, value: String) -> app::Result<()> {

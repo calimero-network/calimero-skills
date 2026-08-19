@@ -19,7 +19,7 @@ every node without requiring explicit RPC calls.
 
 Pass a string method name as the second element of a tuple in `app::emit!`:
 
-```rust
+```rust,ignore
 // Without handler (normal event, subscribers only):
 app::emit!(Event::Updated { key: &key, value: &value });
 

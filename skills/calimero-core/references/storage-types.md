@@ -23,7 +23,7 @@ members.
 | `Counter`                 | Grow-only integer counter             | `.increment()`, `.value()`                           |
 | `Counter<true>`           | PN counter (supports decrement)       | `.increment()`, `.decrement()`, `.value()`           |
 | `FrozenStorage<T>`        | Immutable content-addressed entries   | Write once; identified by hash                       |
-| `UserStorage<T>`          | Per-member private storage            | NOT synced to other members                          |
+| `UserStorage<T>`          | One slot per ACCOUNT                  | Synced; only the owning account may write its slot   |
 | `ReplicatedGrowableArray` | Collaborative text / ordered sequence | For collaborative editing                            |
 | `SortedMap<K, V>`         | Key-ordered map                       | `range`/`prefix`/`page`/`first`/`last` (0.11)        |
 | `SortedSet<T>`            | Ordered unique set                    | Ordered `range`/`prefix`/`page` (0.11)               |
@@ -55,7 +55,7 @@ use calimero_storage::collections::{
 
 ### Key-value store
 
-```rust
+```rust,ignore
 items: UnorderedMap<String, LwwRegister<String>>,
 
 // Write
@@ -79,7 +79,7 @@ let val = self.items.get(&key)?.map(|v| v.get().clone());
 
 ### Append-only log
 
-```rust
+```rust,ignore
 log: Vector<String>,
 
 self.log.push(entry)?;
@@ -88,20 +88,21 @@ let all: Vec<String> = self.log.iter()?.collect();
 
 ### Counter
 
-```rust
+```rust,ignore
 counter: Counter,
 
 self.counter.increment()?;
 let n = self.counter.value()?;
 ```
 
-### Per-member private data (not synced)
+### Per-account data (synced, but only its owner may write it)
 
-```rust
-notes: UserStorage<String>,
+```rust,ignore
+notes: UserStorage<LwwRegister<String>>,
 
-self.notes.set("my private note".to_string())?;
-let note = self.notes.get()?;
+self.notes.insert("my note".to_string().into())?;   // writes the calling account's slot
+let mine = self.notes.get()?;                       // reads the calling account's slot
+let theirs = self.notes.get_for_user(&account)?;    // reads someone else's
 ```
 
 ---
@@ -132,4 +133,6 @@ JS state fields must also be CRDT types — no plain `Map`, `Set`, or `Array`.
 2. **All collection operations are fallible in Rust.** Always use `?` to propagate errors.
 3. **`FrozenStorage` is write-once.** Use it for immutable content (images, blobs) that are
    identified by hash.
-4. **`UserStorage` is per-member.** Only the local member can read/write it — it is never synced.
+4. **`UserStorage` is per-account, not private.** Its entries sync like any other CRDT collection
+   and any member can read another account's slot; what is restricted is WRITING, which only the
+   owning account may do. For data other members must not see at all, use `#[app::private]`.

@@ -60,6 +60,15 @@ pub struct AppState {
 
 #[app::logic]
 impl AppState {
+    #[app::init]
+    pub fn init() -> AppState {
+        AppState {
+            items:   UnorderedMap::new(),
+            log:     Vector::new(),
+            counter: Counter::new(),
+        }
+    }
+
     pub fn set(&mut self, key: String, value: String) -> app::Result<()> {
         self.items.insert(key, value.into())?;
         Ok(())
@@ -83,7 +92,7 @@ impl AppState {
 
 ## UnorderedMap patterns
 
-```rust
+```rust,ignore
 // Insert
 self.items.insert(key, value.into())?;
 
@@ -113,7 +122,7 @@ and holds a mutable borrow of the entire collection until then.** Use it only fo
 if present, nothing else touches this collection" case - the guard must not overlap ANY other use of
 the same collection (a `get`, an `insert`, an `entries`, etc.).
 
-```rust
+```rust,ignore
 // OK: `guard` is the only thing touching `self.items` in its scope.
 if let Some(mut guard) = self.items.get_mut(&key)? {
     guard.set(new_value); // written back to storage when `guard` drops
@@ -133,7 +142,7 @@ For "mutate if present, otherwise insert a default", do NOT hold a `get_mut` gua
 **Preferred - Entry API.** One borrow, inserts the default only when absent, then hands back a guard
 to mutate:
 
-```rust
+```rust,ignore
 use calimero_storage::collections::unordered_map::Entry;
 let mut guard = self.items.entry(key)?.or_insert(LwwRegister::new(default_value))?;
 guard.set(new_value); // value is now guaranteed present; written back on drop
@@ -142,7 +151,7 @@ guard.set(new_value); // value is now guaranteed present; written back on drop
 **Alternative - get, mutate, insert (disjoint borrows).** `get` returns an owned copy that holds no
 borrow, so the branches never overlap:
 
-```rust
+```rust,ignore
 let next = match self.items.get(&key)? {
     Some(v) => { let mut t = v.get().clone(); /* mutate t */ t }
     None    => default_value,
@@ -152,7 +161,7 @@ self.items.insert(key, LwwRegister::new(next))?;
 
 **Anti-patterns (both fail to compile with `E0499`):**
 
-```rust
+```rust,ignore
 // WRONG: the guard's mutable borrow of `self.items` is still live in `else`.
 if let Some(mut guard) = self.items.get_mut(&key)? {
     guard.set(new_value);
@@ -173,7 +182,7 @@ match existing {
 
 Collections must be initialized with `::new()` — there is no Default impl:
 
-```rust
+```rust,ignore
 #[app::init]
 pub fn init() -> AppState {
     AppState {
