@@ -75,7 +75,7 @@ Views (read-only):
 Two separate WASM crates — a Lobby context and a Game context. The Game context calls back into the
 Lobby via `env::xcall()` when a match ends.
 
-```rust
+```rust,ignore
 // In game crate — notify lobby when match finishes
 let params = calimero_sdk::serde_json::json!({
     "match_id": mid,
@@ -88,7 +88,7 @@ calimero_sdk::env::xcall(&lobby_ctx_bytes, "on_match_finished", &params_bytes);
 
 ## Error handling pattern
 
-```rust
+```rust,ignore
 use thiserror::Error;
 use calimero_sdk::serde::Serialize;
 

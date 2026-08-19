@@ -89,7 +89,7 @@ impl AppStateV2 {
 
 ## `read_raw()`
 
-```rust
+```rust,ignore
 use calimero_sdk::state::read_raw;
 
 let bytes: Option<Vec<u8>> = read_raw();

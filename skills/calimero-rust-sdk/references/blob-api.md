@@ -10,7 +10,7 @@ the metadata + announce** (inside the app method).
 
 ## Streaming write (create a blob from inside the app)
 
-```rust
+```rust,ignore
 use calimero_sdk::env;
 
 // Write arbitrary bytes to a new blob
@@ -26,7 +26,7 @@ env::blob_announce_to_context(&blob_id, &ctx);
 
 ## Streaming read (read a blob from inside the app)
 
-```rust
+```rust,ignore
 let fd = env::blob_open(&blob_id);  // returns 0 if blob not found
 if fd == 0 {
     app::bail!(/* not found error */);
@@ -61,6 +61,11 @@ pub struct FileStore {
 
 #[app::logic]
 impl FileStore {
+    #[app::init]
+    pub fn init() -> FileStore {
+        FileStore { files: UnorderedMap::new() }
+    }
+
     /// Called after client uploads the blob and gets back blob_id_bytes
     pub fn store_file(
         &mut self,
@@ -100,7 +105,7 @@ impl FileStore {
 
 Blob IDs are `[u8; 32]`. For JSON-friendly responses, encode as hex or base58:
 
-```rust
+```rust,ignore
 // hex (add hex = "0.4" to Cargo.toml)
 let hex_id: String = hex::encode(&blob_id);
 let blob_id: [u8; 32] = hex::decode(&hex_str).unwrap().try_into().unwrap();

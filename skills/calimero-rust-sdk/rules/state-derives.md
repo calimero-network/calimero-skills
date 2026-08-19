@@ -8,24 +8,47 @@ leftover derive (or a manual `#[borsh(crate = ...)]`) and rejects it with _"remo
 
 ## WRONG — hand-written borsh derives collide with the injected ones:
 
-```rust
+```rust,compile_fail
+use calimero_sdk::app;
+use calimero_sdk::borsh::{BorshDeserialize, BorshSerialize};
+use calimero_storage::collections::{LwwRegister, UnorderedMap};
+
 // ✗ Compile error: macro already injects BorshSerialize / BorshDeserialize
-#[app::state(emits = for<'a> Event<'a>)]
+#[app::state]
 #[derive(BorshSerialize, BorshDeserialize)]
 #[borsh(crate = "calimero_sdk::borsh")]
 pub struct AppState {
     items: UnorderedMap<String, LwwRegister<String>>,
+}
+
+#[app::logic]
+impl AppState {
+    #[app::init]
+    pub fn init() -> AppState {
+        AppState { items: UnorderedMap::new() }
+    }
 }
 ```
 
 ## CORRECT:
 
 ```rust
+use calimero_sdk::app;
+use calimero_storage::collections::{LwwRegister, UnorderedMap};
+
 // `#[app::state]` injects the borsh derives + `#[borsh(crate = ...)]` itself;
 // a manual derive here would collide.
-#[app::state(emits = for<'a> Event<'a>)]
+#[app::state]
 pub struct AppState {
     items: UnorderedMap<String, LwwRegister<String>>,
+}
+
+#[app::logic]
+impl AppState {
+    #[app::init]
+    pub fn init() -> AppState {
+        AppState { items: UnorderedMap::new() }
+    }
 }
 ```
 
@@ -49,6 +72,9 @@ collections, and `#[app::private]` types, **do** hand-write their derives (and `
 types additionally need `Default`):
 
 ```rust
+use calimero_sdk::borsh::{BorshDeserialize, BorshSerialize};
+use calimero_sdk::serde::{Deserialize, Serialize};
+
 #[derive(Debug, Clone, BorshSerialize, BorshDeserialize, Serialize, Deserialize)]
 #[borsh(crate = "calimero_sdk::borsh")]
 #[serde(crate = "calimero_sdk::serde")]

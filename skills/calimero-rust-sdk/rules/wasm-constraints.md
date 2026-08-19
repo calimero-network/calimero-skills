@@ -19,7 +19,7 @@ same set is also re-exported from `calimero_storage::env` for use inside storage
 
 ## Logging
 
-```rust
+```rust,ignore
 use calimero_sdk::app;
 
 app::log!("my message");
@@ -31,7 +31,7 @@ also call directly with a `&str`.
 
 ## Timestamps
 
-```rust
+```rust,ignore
 use calimero_sdk::env;
 
 let ts = env::time_now(); // u64 — nanosecond timestamp
@@ -39,7 +39,7 @@ let ts = env::time_now(); // u64 — nanosecond timestamp
 
 ## Randomness
 
-```rust
+```rust,ignore
 use calimero_sdk::env;
 
 let mut buf = [0u8; 32];

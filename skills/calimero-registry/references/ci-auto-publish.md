@@ -118,7 +118,7 @@ concurrency:
 
 env:
   # Keep in sync with the calimero-sdk tag in logic/Cargo.toml
-  CARGO_MERO_VERSION: 0.11.0-rc.19
+  CARGO_MERO_VERSION: 0.11.0-rc.24
   PACKAGE: com.yourorg.myapp
 
 jobs:

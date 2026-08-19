@@ -27,8 +27,8 @@ crate-type = ["cdylib", "rlib"]
 # Pin to the matching node release by GIT TAG. Calimero RC releases are cut as
 # git tags (and may land on crates.io a little later), so the tag form always
 # resolves and keeps the app in lockstep with the merod it runs on.
-calimero-sdk     = { git = "https://github.com/calimero-network/core", tag = "0.11.0-rc.19" }
-calimero-storage = { git = "https://github.com/calimero-network/core", tag = "0.11.0-rc.19" }
+calimero-sdk     = { git = "https://github.com/calimero-network/core", tag = "0.11.0-rc.24" }
+calimero-storage = { git = "https://github.com/calimero-network/core", tag = "0.11.0-rc.24" }
 
 # Bundle metadata read by `cargo mero bundle`. `package` is the reverse-DNS app id.
 [package.metadata.calimero]
@@ -197,7 +197,7 @@ the row, apply the remedy.
 
 ## Cross-context calls (xcall)
 
-```rust
+```rust,ignore
 use calimero_sdk::env;
 use calimero_sdk::serde_json;
 
@@ -210,10 +210,17 @@ env::xcall(&ctx_bytes, "on_match_finished", &params_bytes);
 
 ## Environment functions
 
-```rust
+```rust,ignore
 use calimero_sdk::env;
 
-env::executor_id()                                // [u8; 32] — caller's public key bytes
+// Identity comes in two halves. Picking the wrong one is silent: it type-checks
+// and only shows up as a second device that cannot see its own data.
+env::account_id()                                 // [u8; 32] - the PERSON. Gates, permissions,
+                                                  //   ownership, admin and writer sets, per-person
+                                                  //   maps. Stable across their devices.
+env::device_id()                                  // [u8; 32] - the REPLICA. CRDT actor slots, LWW
+                                                  //   tiebreaks, HLC seeds, and anything the
+                                                  //   frontend matches against a context identity.
 env::context_id()                                 // [u8; 32] — current context ID
 env::time_now()                                   // u64 — strictly-increasing NANOSECOND timestamp
                                                   //   (divide by 1_000_000 for ms vs JS Date.now())
@@ -259,7 +266,7 @@ env::xcall(context_id: &[u8; 32], method: &str, params: &[u8]);
 
 ## Additional features
 
-- **UserStorage** — per-member isolated storage (not synced to others): see
+- **UserStorage** — one synced slot per account, writable only by that account: see
   `references/user-and-frozen-storage.md`
 - **FrozenStorage** — immutable content-addressed entries: see
   `references/user-and-frozen-storage.md`

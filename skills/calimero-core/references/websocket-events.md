@@ -120,7 +120,7 @@ any member, including the local node's own mutations.
 
 ## Emitting events from Rust
 
-```rust
+```rust,ignore
 #[app::event]
 pub enum Event<'a> {
     PostCreated { title: &'a str },
