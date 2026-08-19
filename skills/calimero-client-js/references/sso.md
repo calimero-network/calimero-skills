@@ -74,10 +74,7 @@ import { useMero } from '@calimero-network/mero-react';
 const { mero, applicationId } = useMero();
 
 // 1. Namespace (root group) bound to the app
-const { namespaceId } = await mero.admin.createNamespace({
-  applicationId,
-  upgradePolicy: 'Automatic', // or 'LazyOnAccess'
-});
+const { namespaceId } = await mero.admin.createNamespace({ applicationId });
 
 // 2. (Optional) a subgroup for narrower access — otherwise use namespaceId as the group
 const { groupId } = await mero.admin.createGroupInNamespace(namespaceId, { name: 'team' });
