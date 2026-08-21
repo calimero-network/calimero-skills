@@ -39,6 +39,24 @@ which still forwards it as the `executorPublicKey` arg on `rpc.execute()`. Note 
 is `@deprecated` and **ignored by the server** now (see `rpc-calls.md`), so a wrong/foreign value no
 longer makes `execute()` fail — but you still want your real owned key for sender/identity logic.
 
+### "Did I write this" and "which member am I" have different answers
+
+Two identifier spaces, and comparing across them silently never matches:
+
+| Question                        | Call                                   | Value                  |
+| ------------------------------- | -------------------------------------- | ---------------------- |
+| Did I write this record?        | `getContextIdentitiesOwned(contextId)` | context identity, bs58 |
+| Which member of the group am I? | `getNodeIdentity()` → `accountId`      | account, 64 hex        |
+
+Records are attributed by the context identity, which is per device. `listGroupMembers` rows, roles,
+capabilities and metadata are keyed by the account, which is per person and the same across all
+their devices. Both are 32-byte strings, so passing one where the other belongs raises nothing and
+names a principal that exists nowhere.
+
+`addGroupMembers` is the one member call that takes a bs58 KEY rather than an account, because
+someone being added may hold no account here yet. Add and remove look symmetric and are not: a value
+round-tripped from an add is the wrong one to remove with.
+
 ## Gotchas
 
 - `generateContextIdentity` creates the keypair on the node but does **not** add it to a context —

@@ -72,7 +72,9 @@ const namespaceId = Array.isArray(rawId)
   : String(rawId);
 
 const joined = await admin.joinNamespace(namespaceId, { invitation: signed });
-// → { groupId, memberIdentity, governanceOp }
+// → { groupId, memberIdentity, memberAccount }
+// memberIdentity is the key this node signs with, bs58. memberAccount is the
+// ACCOUNT it joined as, 64 hex - the id every member-addressing endpoint takes.
 
 // Pull the latest state, then join the contexts inside the namespace
 await admin.syncGroup?.(joined.groupId).catch(() => {});
