@@ -47,8 +47,8 @@ await mero.events.subscribe([contextId]);
 // later: mero.events.off('event', handler); await mero.events.unsubscribe([contextId]);
 ```
 
-See the `calimero-client-js` skill's `references/websocket-events.md` for the full event shape,
-reconnection behaviour, and the `mero.ws` (experimental) alternative.
+See the `calimero-client-js` skill's `references/events.md` for the full event shape, reconnection
+behaviour, and the `mero.ws` (experimental) alternative.
 
 ## Event typing (recommended)
 

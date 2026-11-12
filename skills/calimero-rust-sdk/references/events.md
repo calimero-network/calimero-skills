@@ -1,73 +1,59 @@
 # Events
 
-Events are emitted from app logic and pushed in real-time to all context members subscribed via
-WebSocket.
-
-## Define an event type
-
-Annotate the enum with `#[app::event]`. The macro injects `#[derive(Serialize)]` and the
-`#[serde(crate = "...")]` / tagged-union attributes and implements the `AppEvent` trait — do **not**
-hand-write a `Serialize`/`Deserialize` derive yourself.
+An app declares one `#[app::event]` enum in its `#[app::logic]` module and emits its variants with
+`env::emit`. Events are delivered once the call **commits**: a failed call emits nothing.
 
 ```rust
-use calimero_sdk::app;
+use calimero_sdk::prelude::*;
+
+#[app::state(version = 1)]
+pub struct Rooms {
+    bookings: UnorderedMap<String, String>,
+}
 
 #[app::event]
-pub enum Event<'a> {
-    ItemAdded { key: &'a str, value: &'a str },
-    ItemRemoved { key: &'a str },
-    MemberJoined { identity: &'a str },
+pub enum Event {
+    Booked { id: String, room_id: String, start: u64 },
+    Cancelled { id: String },
 }
-```
 
-`#[app::event]` must be applied to a **public enum** (a struct is rejected at compile time).
-Borrowed fields (`&'a str`) are common and let you emit without cloning.
-
-## Declare the event type on state
-
-The state struct names its event type via the `emits = ...` argument to `#[app::state]`:
-
-```rust
-#[app::state(emits = for<'a> Event<'a>)]
-pub struct AppState {
-    items: UnorderedMap<String, LwwRegister<String>>,
-}
-```
-
-## Emit an event
-
-Use `app::emit!(...)`. Public methods return `app::Result<T>`; fallible collection ops use `?`.
-
-```rust
 #[app::logic]
-impl AppState {
-    pub fn add_item(&mut self, key: String, value: String) -> app::Result<()> {
-        self.items.insert(key.clone(), LwwRegister::new(value.clone()))?;
+impl Rooms {
+    #[app::init]
+    pub fn init() -> app::Result<Self> {
+        Ok(Self::load())
+    }
 
-        app::emit!(Event::ItemAdded {
-            key: &key,
-            value: &value,
-        });
-
-        Ok(())
+    pub fn book(&mut self, room_id: String, start: u64) -> app::Result<String> {
+        let me = guards::require_member()?;
+        let id = env::unique_id();
+        let _old = self.bookings.insert(&id, &me)?;
+        env::emit(Event::Booked { id: id.clone(), room_id, start }, Audience::All)?;
+        Ok(id)
     }
 }
 ```
 
-## Rules
+- Variant name = event name (`Booked`); fields are camelCase on the wire, and `u64`/`i64` travel as
+  decimal strings.
+- Every field is **named** and **owned** (`String`, not `&str`). Tuple variants are a compile error.
+- `env::emit_raw(name, &data, audience)` emits any serde value under a name.
 
-- Events are **fire-and-forget** — they are not persisted in state
-- Events are sent to all members currently subscribed to the context WebSocket
-- The event enum must be annotated with `#[app::event]` (this provides serialization + `AppEvent`)
-- Emit after state mutation, not before
-- Multiple events can be emitted in one method call
-- For a callback handler, emit a tuple: `app::emit!((Event::ItemAdded { .. }, "handler_name"))`
+## Audiences
 
-## Subscribing from a client
+| `Audience`               | Who receives it                     |
+| ------------------------ | ----------------------------------- |
+| `Audience::All`          | everyone who can read the app       |
+| `Audience::Caller`       | the caller only                     |
+| `Audience::Accounts(..)` | the listed account ids              |
+| `Audience::Team(id)`     | the members of one team             |
+| `Audience::Org`          | the app's organization              |
+| `Audience::OrgAdmins`    | the organization's admins and owner |
 
-```typescript
-// calimero-client-js
-client.subscribe(contextId, (event) => {
-  console.log(event);
-});
-```
+## Receiving them
+
+Clients follow an instance's events as a stream of `{ id, kind, data }` (`kind` the variant name).
+With mero-js: `client.events(appId, from?, signal?)`, or the generated client's `svc.events()` (see
+the `calimero-client-js` and `calimero-abi-codegen` skills). There are no event handlers that run
+app code on other nodes: every replica applies the leader's changes, so there is nothing to react to
+inside the app.

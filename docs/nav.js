@@ -20,7 +20,6 @@
     { label: 'Node', href: 'skill-node.html', dot: '#22d3ee' },
     { label: 'merod', href: 'skill-merod.html', dot: '#60a5fa' },
     { label: 'meroctl', href: 'skill-meroctl.html', dot: '#38bdf8' },
-    { label: 'Merobox', href: 'skill-merobox.html', dot: '#34d399' },
     { label: 'Registry', href: 'skill-registry.html', dot: '#fb7185' },
     { label: 'ABI Codegen', href: 'skill-abi-codegen.html', dot: '#fb923c' },
   ];

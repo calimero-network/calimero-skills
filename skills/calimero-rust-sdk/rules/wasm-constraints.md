@@ -1,53 +1,21 @@
-# Rule: WASM runtime constraints
+# Rule: runtime constraints in a component
 
-Calimero apps run in a sandboxed WASM environment. The following are **not available**:
+An app is a `calimero:app` component (`wasm32-wasip2`) run by the node's wasmtime engine on the
+cluster's leader. Every logged run must be deterministic: the leader runs a call once, the replicas
+apply its diff, and the test harness replays it with the same seed.
 
-| Forbidden                                     | Use instead                                          |
-| --------------------------------------------- | ---------------------------------------------------- |
-| `std::thread::spawn`                          | Not supported — WASM is single-threaded              |
-| `tokio`, `async-std`, `async fn` in app logic | Not supported — all app methods are synchronous      |
-| `std::fs`, file I/O                           | `#[app::private]` storage, or the `env::blob_*` API  |
-| `std::net`, HTTP calls outbound               | Not supported in WASM runtime                        |
-| `println!`, `eprintln!`                       | `app::log!(...)` (or `calimero_sdk::env::log(&str)`) |
-| System time (`std::time::SystemTime`)         | `calimero_sdk::env::time_now()`                      |
-| Environment variables                         | Not accessible from WASM                             |
-| Random number generation via `rand`           | `calimero_sdk::env::random_bytes(&mut buf)`          |
+| Reaching for                                                                         | What happens                                      | Use instead                                                           |
+| ------------------------------------------------------------------------------------ | ------------------------------------------------- | --------------------------------------------------------------------- |
+| `std::time::SystemTime::now()` / `Instant`                                           | not the log's time: replicas and replays disagree | `env::time_now()` (**milliseconds**, the log entry's timestamp)       |
+| `rand::thread_rng()`, `getrandom`                                                    | not reproducible                                  | `env::random_bytes(n)`                                                |
+| an id from a counter or the clock                                                    | collisions, extra reads and writes                | `env::unique_id()`                                                    |
+| `std::thread::spawn`, `async`, a runtime                                             | no threads, no executor in a run                  | sequential code; long work in an `#[app::action]`                     |
+| `std::fs`, sockets, `reqwest`                                                        | no filesystem or network in a run                 | `calimero_sdk::files` (sealed blobs), `env::fetch` for approved HTTP  |
+| `println!` / `eprintln!`                                                             | goes nowhere useful                               | `env::log(&format!(..))` (64 KiB per run)                             |
+| `panic!`, `.unwrap()` on user input, `&s[..n]` on UTF-8                              | a trap: the call fails as `422 TRAP`              | return an `#[app::error]` variant; `s.chars().take(n).collect()`      |
+| `std::collections::HashMap` as a state field                                         | not a collection handle                           | `UnorderedMap`, `Set`, `Vector`, `Table`, `Cell<T>` for a small value |
+| `calimero_storage::*`, `LwwRegister`, `UserStorage`, `#[app::private]`, `app::emit!` | does not exist: SDK 0.12 is gone                  | the component SDK's collections, `PerUser<T>`, `env::emit`            |
+| a `wasm32-unknown-unknown` build, `cargo mero build`                                 | an SDK 0.12 module: nodes refuse it               | `mero-app-build` (`wasm32-wasip2` component)                          |
 
-All of the `env::*` replacements above are real functions exported from `calimero_sdk::env`. The
-same set is also re-exported from `calimero_storage::env` for use inside storage/collection code
-(e.g. `storage_env::time_now()`).
-
-## Logging
-
-```rust
-use calimero_sdk::app;
-
-app::log!("my message");
-app::log!("value: {}", my_value);   // format args, like println!
-```
-
-`app::log!` is the idiomatic macro; it forwards to `calimero_sdk::env::log(&str)`, which you may
-also call directly with a `&str`.
-
-## Timestamps
-
-```rust
-use calimero_sdk::env;
-
-let ts = env::time_now(); // u64 — nanosecond timestamp
-```
-
-## Randomness
-
-```rust
-use calimero_sdk::env;
-
-let mut buf = [0u8; 32];
-env::random_bytes(&mut buf); // fills the buffer with random bytes
-```
-
-## Why
-
-The `merod` WASM runtime is deterministic by design. Non-deterministic operations (threads, I/O,
-time, random) are routed through host functions so the node controls them — every node must reach
-the same state given the same sequence of operations.
+A run's log entry is capped at 1 MiB, and a key over 1 KiB is refused (`KeyTooLong`). A failed call
+writes nothing and emits nothing.

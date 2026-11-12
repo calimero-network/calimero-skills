@@ -11,17 +11,16 @@ hallucinating APIs that don't exist.
 | Skill                                           | When to use                                               |
 | ----------------------------------------------- | --------------------------------------------------------- |
 | [`calimero-core`](#calimero-core)               | Understanding the runtime model, protocol, and CRDT types |
-| [`calimero-rust-sdk`](#calimero-rust-sdk)       | Building Rust WASM applications                           |
+| [`calimero-rust-sdk`](#calimero-rust-sdk)       | Building Rust apps (core 1.0 component SDK)               |
 | [`calimero-sdk-js`](#calimero-sdk-js)           | Building TypeScript WASM applications                     |
-| [`calimero-client-js`](#calimero-client-js)     | Frontend / Node.js clients connecting to a node           |
+| [`calimero-client-js`](#calimero-client-js)     | Frontends on mero-js `CalimeroClient` (Calimero 1.0)      |
 | [`calimero-client-py`](#calimero-client-py)     | Python client for node automation and backend services    |
 | [`calimero-desktop`](#calimero-desktop)         | Integrating apps with Calimero Desktop SSO                |
 | [`calimero-node`](#calimero-node)               | Node operator quick-start (merod + meroctl overview)      |
 | [`calimero-merod`](#calimero-merod)             | merod daemon deep-dive — init, config, health             |
 | [`calimero-meroctl`](#calimero-meroctl)         | Complete meroctl CLI reference and scripting              |
-| [`calimero-merobox`](#calimero-merobox)         | Local multi-node dev environments and CI                  |
 | [`calimero-registry`](#calimero-registry)       | Signing and publishing apps to the registry               |
-| [`calimero-abi-codegen`](#calimero-abi-codegen) | Generate TypeScript clients from WASM ABI manifests       |
+| [`calimero-abi-codegen`](#calimero-abi-codegen) | Typed app clients with `mero-app-build codegen`           |
 
 ## Install
 
@@ -78,23 +77,25 @@ npx @calimero-network/agent-skills calimero-core
 
 ### calimero-rust-sdk
 
-For developers building **Calimero WASM applications** in Rust.
+For developers building **Calimero apps in Rust** with core 1.0's component SDK (`calimero-sdk`).
 
 Covers:
 
-- App skeleton with `#[app]` macros
-- The `cargo mero` toolchain (`new` / `build` / `test` / `bundle`)
-- CRDT state collections (`UnorderedMap`, `Vector`, `Set`)
-- Event emission with `app::emit!()`
-- Private vs shared storage
-- WASM runtime constraints (no threads, no `async`, no std I/O)
-- Reference examples (kv-store, collaborative-editor)
+- The app skeleton: `#[app::state(version = N)]`, `#[app::logic]`, `#[app::init]`, `#[app::view]`,
+  `#[app::error]`, `#[app::event]`, `#[app::confirm]` and the other method attributes
+- Tables (`#[derive(Record)]`, indexes, counts, pages) and collections (`UnorderedMap`, `Set`,
+  `Vector`, `Cell`, `Counter`, `PerUser`, `Frozen`, `Text`)
+- `env` and `guards`: the caller, organization roles, time, ids, events with audiences, cross-app
+  calls
+- Blobs (`BlobRef`, `calimero_sdk::files`), testing with `TestApp` and scenarios, upgrades
+- Building with `mero-app-build` (`wasm32-wasip2` component), `merod local` for development
 
 Key rules included:
 
-- Never use `std::collections` for state — CRDT collections only
-- `#[app]` macro goes on the `impl` block, not the struct
-- No `println!` — use `env::log()`
+- Attribute placement; `#[app::error]` / `#[app::event]` in the logic module, named fields only
+- `Record` or `AbiType` on every type a method exchanges
+- Deterministic runs: `env::time_now()`, `env::random_bytes()`, `env::unique_id()`; SDK 0.12 APIs
+  (`calimero-storage`, `app::emit!`, `#[app::private]`, `cargo mero`) do not exist
 
 ```bash
 npx @calimero-network/agent-skills calimero-rust-sdk
@@ -129,19 +130,24 @@ npx @calimero-network/agent-skills calimero-sdk-js
 
 ### calimero-client-js
 
-For developers building **frontends or Node.js services** that connect to a Calimero node.
+For developers building **frontends or Node.js services** on Calimero 1.0 with mero-js's
+`CalimeroClient`.
 
 Covers:
 
-- Authentication and token storage
-- JSON-RPC calls (mutations and views)
-- WebSocket event subscriptions
-- SSO token reading from URL hash
+- Connecting (`CalimeroClient.connect({ cluster, policy })`, fixed nodes, `merod local`) and what
+  the client attests
+- Passkey sign-up and sign-in, sessions, API keys
+- `client.apps.call` / `client.apps.view`, typed errors, passkey step-ups, the generated typed
+  client
+- Organizations, invites, roles and teams; creating and upgrading app instances
+- Following events (`client.events`) and blobs
 
 Key rules included:
 
-- `mero-js` v2 uses camelCase (`contextId`, not `context_id`)
-- Always handle 401 with token refresh before surfacing errors
+- Use `CalimeroClient`, never the v1 `MeroJs` / JSON-RPC / contexts client
+- camelCase methods and arguments; one object per generated route method
+- Let mero-js refresh the session and store the refreshed one
 
 ```bash
 npx @calimero-network/agent-skills calimero-client-js
@@ -262,27 +268,6 @@ npx @calimero-network/agent-skills calimero-meroctl
 
 ---
 
-### calimero-merobox
-
-For developers setting up **local multi-node environments** or CI pipelines.
-
-Covers:
-
-- Merobox installation
-- Workflow YAML format
-- Multi-node setup with app deployment and context creation
-- GitHub Actions integration template
-
-Key rules included:
-
-- Docker must be running before any merobox command
-
-```bash
-npx @calimero-network/agent-skills calimero-merobox
-```
-
----
-
 ### calimero-client-py
 
 For developers using the **Python client** to automate or script against a Calimero node.
@@ -306,20 +291,20 @@ npx @calimero-network/agent-skills calimero-client-py
 
 ### calimero-abi-codegen
 
-For developers **generating typed TypeScript clients** from a Calimero app's ABI manifest.
+For generating a **typed client** for a Calimero app from its ABI with core's
+`mero-app-build codegen` (TypeScript, Python, Swift, Kotlin or OpenAPI).
 
 Covers:
 
-- CLI usage (`npx calimero-abi-codegen -i abi.json -o src/generated`)
-- ABI manifest format (`wasm-abi/1` schema, types, methods, events)
-- Generated output shape (`types.ts` + `{ClientName}.ts`)
-- Programmatic API for custom codegen pipelines
-- Integrating codegen into your build script
+- Running `codegen` on a component, `.mpk` or ABI JSON, and how the client class is named
+- Everything the TypeScript `client.ts` exports: `<Name>Client`, `<Name>Api`, `raw`, `events`,
+  `InitArgs`, error and event types, the `{ after }` option
+- The component ABI format, installing `mero-app-build`, and `abi-diff` for breaking changes
 
 Key rules included:
 
-- ABI must have `"schema_version": "wasm-abi/1"` — other values are rejected
-- Method, event, and type names must all be unique; map keys must be string
+- Regenerate the client; never edit it
+- Derive `Record` or `AbiType` on every exchanged type, or the client types it `unknown`
 
 ```bash
 npx @calimero-network/agent-skills calimero-abi-codegen
@@ -351,7 +336,7 @@ CI (and `npm test`) runs these checks; run them locally before opening a PR:
 | `npm run lint:md`                  | Markdown structure (markdownlint)                                                                                                                                                              |
 | `npm test` → `test.js`             | Every skill has `SKILL.md` + non-empty `references/` and `rules/`                                                                                                                              |
 | `npm test` → `validate-content.js` | **Content rules** in fenced code blocks — no `meroctl call --as`/`--view`, `context create` carries `--group-id`, no `SharedStorage`, no deprecated `@calimero-network/calimero-client` import |
-| `npm test` → `check-versions.js`   | Core version pins agree (`0.11.0-rc.N` consistent across skills)                                                                                                                               |
+| `npm test` → `check-versions.js`   | Core version pins agree (`1.0.0-rc.N` consistent across skills)                                                                                                                                |
 
 The content linter scans only fenced code blocks (never prose) and strips comments. A deliberate
 counter-example (a "Don't do this" block) opts out with an HTML comment on the line before the

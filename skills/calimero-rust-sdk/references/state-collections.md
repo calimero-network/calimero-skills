@@ -1,203 +1,138 @@
-# CRDT State Collections
+# State: tables and collections
 
-Calimero provides conflict-free replicated data types for application state. All collections are
-imported from `calimero_storage::collections`.
+An app's state is the fields of its `#[app::state]` struct. Each field is a **table** or a
+**collection**: a handle over the app's ordered key-value store, named by the field. Loading the
+state (`Self::load()`) reads nothing; every operation reads or writes only the keys it needs.
 
-> **Critical:** Do NOT use `calimero_sdk::state::*` — that path no longer exists. The correct import
-> is `calimero_storage::collections::*`.
+One leader applies every write in log order, so these are plain data structures, not CRDTs: there is
+nothing to merge. `Text` and `RichText` are the exception, so edits typed against a stale view still
+land where they were meant.
 
-## Available Collections
+## Collections
 
-| Type                      | Use for                                 | Notes                                                      |
-| ------------------------- | --------------------------------------- | ---------------------------------------------------------- |
-| `UnorderedMap<K, V>`      | Key-value mapping                       | Most collection ops return `Result<>` — use `?`            |
-| `UnorderedSet<T>`         | Unique value set                        |                                                            |
-| `Vector<T>`               | Ordered list (append-only)              | `T` must be a CRDT: `Vector<LwwRegister<V>>`               |
-| `LwwRegister<T>`          | Single last-write-wins value            | Wrap map values: `UnorderedMap<K, LwwRegister<V>>`         |
-| `Counter`                 | Grow-only counter (GCounter by default) | `.increment()`, `.value()`                                 |
-| `Counter<true>`           | PN-Counter (supports decrement)         | Same API + `.decrement()`                                  |
-| `FrozenStorage<T>`        | Immutable content-addressed entries     |                                                            |
-| `UserStorage<T>`          | Per-member isolated storage             | Not synced to other members                                |
-| `ReplicatedGrowableArray` | CRDT text / ordered sequence            | Collaborative editing                                      |
-| `SortedMap<K, V>`         | Key-value mapping with ordered keys     | Supports range / prefix / paged queries                    |
-| `SortedSet<T>`            | Ordered unique value set                | Range / prefix / paged iteration                           |
-| `AuthoredMap<K, V>`       | Per-entry ownership                     | Only an entry's author can modify it (no spoofing)         |
-| `AuthoredVector<T>`       | Per-slot ownership                      | Only a slot's author can modify it                         |
-| `SharedStorage<T>`        | Group-writable value (writer set)       | Explicit writer set; prefer over `UnorderedMap` + max-wins |
+| Type                        | Operations                                                                                                                                                                |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Cell<T>`                   | `get` (`Option<T>`), `set(&v)`, `clear`                                                                                                                                   |
+| `UnorderedMap<K, V>`        | `get`, `contains`, `insert(&k, &v)` / `remove(&k)` (return the old value), `len`, `is_empty`, `clear`; ordered: `page`, `range`, `prefix`, `starts_with`, `first`, `last` |
+| `Set<T>`                    | `insert` / `remove` (bool), `contains`, `len`, `is_empty`, `clear`, `page`, `range`, `prefix`, `starts_with`, `first`, `last`                                             |
+| `Vector<T>`                 | `push` (returns the position), `get`, `set` (`OutOfBounds` past the end), `pop`, `len`, `is_empty`, `page`, `clear`                                                       |
+| `Counter`                   | `get`, `add(i64)`, `increment`                                                                                                                                            |
+| `PerUser<T>`                | `get` / `set` / `remove` on the **caller's** own value; `get_for(account)` reads another's                                                                                |
+| `Frozen<T, H = CborSha256>` | content-addressed, write-once: `insert` returns `(hex hash, new?)`, `get(hex)`, `contains(hex)`, `hash_of`                                                                |
+| `Text`                      | `insert_after(id, str)`, `delete_ids`, `insert(index, str)`, `delete(index, n)`, `read`, `chars`, `id_at`, `index_of`, `len`, `clear`                                     |
+| `RichText`                  | `text()` / `text_mut()` (a `Text`), `mark(start, end, key, value, expand)`, `mark_ids`, `marks`, `spans`, `clear`                                                         |
 
-> **0.11 additions:** the ordered collections `SortedMap` and `SortedSet` (range/prefix/paged
-> queries); the authored collections `AuthoredMap` and `AuthoredVector` (per-entry/slot author
-> ownership — prefer these over `UnorderedMap` + a hand-rolled max-wins `Mergeable` when "only the
-> author may edit their own data"); and `SharedStorage<T>` (a group-writable value gated by a writer
-> set — `SharedStorage::new(writers, frozen)`, alias of `PermissionedStorage<T, WriterSetAcl>`).
-> Canonical usage lives in `core/apps/`: `sorted-kv-store`, `sorted-set-store`,
-> `kv-store-with-shared-storage`, and `scaffolding-e2e` (exercises all of them).
-
-## Import
+Despite its name, `UnorderedMap` reads in key order, so it also serves as a sorted map. Tuple keys
+make nested maps (`UnorderedMap<(String, String), V>`; read one outer key with
+`prefix(&[KeyPart::Str(outer)], opts)`). Values are any serde type; they are stored as deterministic
+CBOR.
 
 ```rust
-use calimero_storage::collections::{
-    Counter, FrozenStorage, LwwRegister, ReplicatedGrowableArray,
-    UnorderedMap, UnorderedSet, UserStorage, Vector,
-    // 0.11 additions:
-    SortedMap, SortedSet, AuthoredMap, AuthoredVector, SharedStorage,
-};
-```
+use calimero_sdk::prelude::*;
 
-## Usage
-
-```rust
-use calimero_sdk::app;
-use calimero_storage::collections::{LwwRegister, UnorderedMap, Vector, Counter};
-
-#[app::state]
-pub struct AppState {
-    // Map and vector values are wrapped in LwwRegister for CRDT merge
-    items:   UnorderedMap<String, LwwRegister<String>>,
-    log:     Vector<LwwRegister<String>>,
-    counter: Counter,
+#[app::state(version = 1)]
+pub struct Store {
+    items: UnorderedMap<String, String>,
+    tags: Set<String>,
+    history: Vector<String>,
+    visits: Counter,
+    title: Cell<String>,
+    profile: PerUser<String>,
 }
 
 #[app::logic]
-impl AppState {
-    pub fn set(&mut self, key: String, value: String) -> app::Result<()> {
-        self.items.insert(key, value.into())?;
+impl Store {
+    #[app::init]
+    pub fn init() -> app::Result<Self> {
+        Ok(Self::load())
+    }
+
+    pub fn set(&mut self, key: String, value: String) -> app::Result<Option<String>> {
+        guards::require_member()?;
+        let _at = self.history.push(&format!("set {key}"))?;
+        Ok(self.items.insert(&key, &value)?)
+    }
+
+    pub fn set_profile(&mut self, bio: String) -> app::Result<()> {
+        guards::require_member()?;
+        self.profile.set(&bio)?; // the caller's own value
         Ok(())
     }
 
-    pub fn get(&self, key: &str) -> app::Result<Option<String>> {
-        Ok(self.items.get(key)?.map(|v| v.get().clone()))
+    pub fn visit(&mut self) -> app::Result<u64> {
+        Ok(self.visits.increment()?)
     }
 
-    pub fn append(&mut self, entry: String) -> app::Result<()> {
-        self.log.push(entry.into())?;
-        Ok(())
-    }
-
-    pub fn increment(&mut self) -> app::Result<()> {
-        self.counter.increment()?;
-        Ok(())
+    #[app::view]
+    pub fn title(&self) -> app::Result<String> {
+        Ok(self.title.get()?.unwrap_or_else(|| "Untitled".into()))
     }
 }
 ```
 
-## UnorderedMap patterns
+## Tables
+
+A `Table<R>` holds records: rows with a primary key, unique constraints, indexes, maintained counts
+and, optionally, full-text search.
 
 ```rust
-// Insert
-self.items.insert(key, value.into())?;
+use calimero_sdk::prelude::*;
 
-// Get (returns Option<LwwRegister<V>>)
-let val = self.items.get(&key)?.map(|v| v.get().clone());
-
-// Contains
-let exists = self.items.contains(&key)?;
-
-// Remove
-let old = self.items.remove(&key)?;
-
-// All entries
-let all: Vec<(K, V)> = self.items.entries()?.collect();
-
-// Length
-let n = self.items.len()?;
-
-// Clear
-self.items.clear()?;
-```
-
-## Mutating a value in place
-
-`get_mut` returns a `ValueMut` guard. **The guard writes the value back to storage when it drops,
-and holds a mutable borrow of the entire collection until then.** Use it only for the pure "mutate
-if present, nothing else touches this collection" case - the guard must not overlap ANY other use of
-the same collection (a `get`, an `insert`, an `entries`, etc.).
-
-```rust
-// OK: `guard` is the only thing touching `self.items` in its scope.
-if let Some(mut guard) = self.items.get_mut(&key)? {
-    guard.set(new_value); // written back to storage when `guard` drops
+#[derive(Record, Clone, Debug)]
+#[table(
+    key = "id",
+    unique(slot = ["room_id", "start"]),
+    index(by_start = ["checked_in", "start"]),
+    count(by_room = ["room_id"]),
+)]
+pub struct Booking {
+    pub id: String,
+    pub room_id: String,
+    pub start: u64,
+    pub title: String,
+    pub checked_in: bool,
 }
 ```
 
-The write-back is the same Update action as `insert`, so it does **not** bypass CRDT merge -
-`insert` on an existing key runs this exact `get_mut` + write-back path internally. The only hazard
-is borrow scope, never merge semantics.
+| Method                         | Does                                                                                                    |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------- |
+| `insert(record)`               | Inserts; an existing key is `Duplicate { index: "key" }`, a unique clash `Duplicate { index: <name> }`. |
+| `upsert(record)`               | Inserts or replaces; unique constraints still apply.                                                    |
+| `get(&key)` / `contains(&key)` | The record with this key / whether it exists.                                                           |
+| `update(&key, \|r\| ..)`       | Changes the record and re-indexes what changed; `false` when absent.                                    |
+| `remove(&key)`                 | Removes the record and its index, unique and count entries; `false` when absent.                        |
+| `find(index, &prefix, opts)`   | Records whose index fields start with `prefix`, in index order, one page at a time.                     |
+| `scan(opts)`                   | All records in key order, one page at a time.                                                           |
+| `count(name, &prefix)`         | A maintained count: one read when `prefix` names every field of the count.                              |
+| `search(query, ..)`            | Full-text search over `#[table(search = [..])]` fields, best match first (views only).                  |
 
-## Update-or-insert
+Index and count names are camelCase (`by_start` → `"byStart"`). Prefixes and bounds are `KeyPart`s:
+`Str`, `Int`, `Bool`, `Bytes`. A record's fields are key parts (`String`, integers, `bool`, bytes,
+`Option` of those): a list, a nested struct or a `BlobRef` goes in a map or table beside it, keyed
+by the record's id.
 
-For "mutate if present, otherwise insert a default", do NOT hold a `get_mut` guard across the
-`insert` - the guard keeps `self.items` mutably borrowed, so the `insert` in the other branch is
-`E0499`.
-
-**Preferred - Entry API.** One borrow, inserts the default only when absent, then hands back a guard
-to mutate:
-
-```rust
-use calimero_storage::collections::unordered_map::Entry;
-let mut guard = self.items.entry(key)?.or_insert(LwwRegister::new(default_value))?;
-guard.set(new_value); // value is now guaranteed present; written back on drop
-```
-
-**Alternative - get, mutate, insert (disjoint borrows).** `get` returns an owned copy that holds no
-borrow, so the branches never overlap:
-
-```rust
-let next = match self.items.get(&key)? {
-    Some(v) => { let mut t = v.get().clone(); /* mutate t */ t }
-    None    => default_value,
-};
-self.items.insert(key, LwwRegister::new(next))?;
-```
-
-**Anti-patterns (both fail to compile with `E0499`):**
-
-```rust
-// WRONG: the guard's mutable borrow of `self.items` is still live in `else`.
-if let Some(mut guard) = self.items.get_mut(&key)? {
-    guard.set(new_value);
-} else {
-    self.items.insert(key, LwwRegister::new(default_value))?; // E0499
-}
-
-// WRONG: binding the guard to a local first does NOT fix it. `ValueMut` has a
-// Drop impl, so its borrow lives to the end of the scope, not the match arm.
-let existing = self.items.get_mut(&key)?;
-match existing {
-    Some(mut guard) => guard.set(new_value),
-    None => self.items.insert(key, LwwRegister::new(default_value))?, // E0499
+```rust,ignore
+let page = self.bookings.find(
+    "byStart",
+    &[KeyPart::Bool(false)],
+    FindOpts::default().limit(50),
+)?;
+for b in page.items {
+    env::log(&format!("{} at {}", b.title, b.start));
 }
 ```
 
-## Constructor
+### Pages
 
-Collections must be initialized with `::new()` — there is no Default impl:
+Every multi-row read returns `Page { items, next }`. `FindOpts` sets `limit` (100 when unset, at
+most 1,000), `cursor` (the previous page's `next`), `reverse`, and `from` (inclusive) / `to`
+(exclusive) bounds after the prefix.
 
-```rust
-#[app::init]
-pub fn init() -> AppState {
-    AppState {
-        items:   UnorderedMap::new(),
-        log:     Vector::new(),
-        counter: Counter::new(),
-    }
-}
-```
+## Costs and limits
 
-## Keys and values must implement
-
-- `BorshSerialize + BorshDeserialize`
-- Map and vector **values** must also be `Mergeable`, and no primitive is. In replicated state
-  `Vector<String>` and `UnorderedMap<String, [u8; 32]>` are compile errors ("cannot be stored in
-  replicated state - it is not a CRDT"); wrap the value in `LwwRegister<V>`. See the
-  trait-obligation table in `SKILL.md`.
-- Set **elements** and map **keys** carry no such bound - `UnorderedSet<String>` is fine as written.
-
-## Important
-
-CRDT collections handle concurrent writes from different context members automatically — you never
-need to manually resolve conflicts. Writes from different members are merged deterministically using
-the DAG-based sync engine.
-
-Collection operations are **fallible** — always propagate errors with `?`. Panicking inside a WASM
-method aborts the execution and rolls back state.
+- Lengths and counts are stored, so `len` and `count` are one read, never a scan.
+- `clear` deletes in batches of at most 1,000 until nothing is left.
+- A key over 1 KiB is refused (`KeyTooLong`).
+- A run's log entry is capped at 1 MiB: keep large bytes in blobs (`references/blob-api.md`) and
+  only the `BlobRef` in state.
+- Prefer `env::unique_id()` to a `Counter` for ids: it needs no read and no write.

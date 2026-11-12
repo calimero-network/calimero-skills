@@ -12,23 +12,23 @@
 <div class="breadcrumb"><a href="index.html">Home</a><span class="sep">/</span><span>ABI Codegen</span></div>
 
 <h1>ABI Codegen Skill</h1>
-<p class="page-subtitle">Context for generating typed TypeScript clients from a Calimero WASM application's ABI manifest</p>
+<p class="page-subtitle">Context for generating a typed client for a Calimero 1.0 app from its ABI with core's <span class="code">mero-app-build codegen</span></p>
 
 <div class="card ga">
 <h2>What This Skill Covers</h2>
-<p style="margin-bottom:12px;">The <span class="code">calimero-abi-codegen</span> skill gives your AI assistant knowledge of the codegen CLI so it can generate correct TypeScript clients from ABI JSON files and integrate codegen into build scripts.</p>
+<p style="margin-bottom:12px;">The <span class="code">calimero-abi-codegen</span> skill teaches your AI assistant to generate and use the typed client core writes from the ABI embedded in an app's component. The npm <span class="code">abi-codegen</span> package read SDK 0.12 ABIs only and is not used with core 1.0.</p>
 <div class="g2">
   <div class="cb"><h4>Covered Topics</h4>
     <ul style="margin:8px 0 0 16px;color:#c9d1d9;font-size:13px;">
-      <li style="margin-bottom:6px;">CLI flags (<span class="code">-i</span>, <span class="code">-o</span>, <span class="code">--client-name</span>, <span class="code">--validate</span>)</li>
-      <li style="margin-bottom:6px;">ABI manifest format (<span class="code">wasm-abi/1</span> schema)</li>
-      <li style="margin-bottom:6px;">Generated output shape (<span class="code">types.ts</span> + client class)</li>
-      <li style="margin-bottom:6px;">Programmatic API for custom pipelines</li>
-      <li>Build script integration</li>
+      <li style="margin-bottom:6px;"><span class="code">mero-app-build codegen --abi &lt;app.wasm | .mpk | abi.json&gt; --lang ts</span></li>
+      <li style="margin-bottom:6px;">What <span class="code">client.ts</span> exports: <span class="code">&lt;Name&gt;Client</span>, <span class="code">&lt;Name&gt;Api</span>, <span class="code">raw</span>, <span class="code">events</span>, <span class="code">InitArgs</span></li>
+      <li style="margin-bottom:6px;">The component ABI (<span class="code">calimero:abi</span> section)</li>
+      <li style="margin-bottom:6px;">Installing <span class="code">mero-app-build</span> in CI</li>
+      <li><span class="code">abi-diff</span> for breaking changes</li>
     </ul>
   </div>
   <div class="cb"><h4>Install</h4>
-    <div class="typedef" style="margin-top:6px;"><span class="field">npx @calimero-network/agent-skills calimero-abi-codegen</span><br><br><span class="comment"># Recommended with Rust SDK:</span><br><span class="field">npx @calimero-network/agent-skills calimero-rust-sdk calimero-abi-codegen</span></div>
+    <div class="typedef" style="margin-top:6px;"><span class="field">npx @calimero-network/agent-skills calimero-abi-codegen</span><br><br><span class="comment"># Recommended with the Rust SDK and the JS client:</span><br><span class="field">npx @calimero-network/agent-skills calimero-rust-sdk</span><br><span class="field">npx @calimero-network/agent-skills calimero-client-js</span></div>
   </div>
 </div>
 </div>
@@ -36,30 +36,28 @@
 <div class="card gb">
 <h2>CLI Usage</h2>
 <div class="typedef">
-<span class="comment"># One-off (no install needed)</span><br>
-<span class="field">npx calimero-abi-codegen -i abi.json -o src/generated</span><br><br>
-<span class="comment"># With custom class name</span><br>
-<span class="field">npx calimero-abi-codegen -i abi.json -o src/generated --client-name PostsClient</span><br><br>
-<span class="comment"># Derive class name from WASM filename</span><br>
-<span class="field">npx calimero-abi-codegen -i abi.json -o src/generated --name-from app.wasm</span><br><br>
-<span class="comment"># Validate ABI only — no code generation</span><br>
-<span class="field">npx calimero-abi-codegen --validate -i abi.json</span>
+<span class="comment"># Build the component, then generate openapi.json + client.ts</span><br>
+<span class="field">mero-app-build . --out kv-store.wasm</span><br>
+<span class="field">mero-app-build codegen --abi kv-store.wasm --lang ts -o src/generated</span><br><br>
+<span class="comment"># From an ABI file, naming the client, without the OpenAPI document</span><br>
+<span class="field">mero-app-build codegen --abi res/abi.json --lang ts --name kv-store --no-openapi -o src/api/kv-store</span><br><br>
+<span class="comment"># Breaking changes against the last release</span><br>
+<span class="field">mero-app-build abi-diff dist/kv-store-1.0.0.mpk kv-store.wasm</span>
 </div>
 </div>
 
 <div class="card gc">
 <h2>Generated Output</h2>
-<div class="fr"><div class="fp">types.ts</div><div class="fd">TypeScript interfaces and enums for all Rust types defined in the ABI. Structs become interfaces, enums become TypeScript enums.</div></div>
-<div class="fr"><div class="fp">{ClientName}.ts</div><div class="fd">Typed client class with one method per app function. Imports from <span class="code">@calimero-network/mero-react</span> by default (overridable with <span class="code">--import-path</span>).</div></div>
-<div class="fr"><div class="fp">AbiEvent type</div><div class="fd">Union type listing all event variants emitted by the app.</div></div>
-<div class="fr"><div class="fp">CalimeroBytes class</div><div class="fd">Helper for <span class="code">Vec&lt;u8&gt;</span> / byte array types from Rust.</div></div>
+<div class="fr"><div class="fp">&lt;Name&gt;Client</div><div class="fd"><span class="code">new KvStoreClient(client, appId, { after })</span> over mero-js's <span class="code">CalimeroClient</span>: one method per app method, each taking one args object and an options object.</div></div>
+<div class="fr"><div class="fp">&lt;Name&gt;Api</div><div class="fd">The methods alone, for code and tests that take a double.</div></div>
+<div class="fr"><div class="fp">raw / events</div><div class="fd"><span class="code">raw</span> answers <span class="code">{ result, index, events }</span>; <span class="code">events()</span> yields the app's typed <span class="code">AppEvent</span> union.</div></div>
+<div class="fr"><div class="fp">Types</div><div class="fd"><span class="code">&lt;Method&gt;Args</span>, <span class="code">InitArgs</span>, error and event types, and every <span class="code">Record</span>/<span class="code">AbiType</span> type in the ABI.</div></div>
 </div>
 
 <div class="card gd">
 <h2>Key Rules</h2>
-<div class="fr"><div class="fp">schema_version required</div><div class="fd">ABI file must have <span class="code">"schema_version": "wasm-abi/1"</span> — other values are rejected by the CLI.</div></div>
-<div class="fr"><div class="fp">Unique names required</div><div class="fd">Method names, event names, and type names must all be unique within the ABI. Map key types must be <span class="code">string</span>.</div></div>
-<div class="fr"><div class="fp">ABI is auto-generated</div><div class="fd">The <span class="code">abi.json</span> file is produced by <span class="code">calimero-wasm-abi</span> during the Rust build step. Do not write it by hand.</div></div>
+<div class="fr"><div class="fp">Regenerate, never edit</div><div class="fd">Fix the Rust, rebuild the component, regenerate the client.</div></div>
+<div class="fr"><div class="fp">Derive exchanged types</div><div class="fd">Every type a method exchanges derives <span class="code">Record</span> or <span class="code">AbiType</span>; otherwise the client types it <span class="code">unknown</span>.</div></div>
 </div>
 
 </div>

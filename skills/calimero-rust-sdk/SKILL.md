@@ -1,283 +1,196 @@
 # calimero-rust-sdk — Agent Instructions
 
-You are helping a developer build a **Calimero WASM application** in Rust using the Calimero SDK.
+You are helping a developer build a **Calimero app** in Rust with core 1.0's component SDK
+(`calimero-sdk`).
 
 ## What you need to know immediately
 
-- Apps compile to WASM and run inside the `merod` node runtime
-- `#[app::state]` goes on the **struct**, `#[app::logic]` goes on the **impl block**
-- All CRDT collections are from `calimero_storage::collections::*` — NOT `calimero_sdk::state::*`
-- Most collection operations return `Result<>` — always use `?`
-- `app::Result<T>` is the correct return type for public methods (not `Result<T, String>`)
-- Use `app::bail!(err)` to early-return errors
-- Use `app::log!()` not `env::log!()` or `println!()`
-- Events are declared with `#[app::event]` on an enum and declared on state with
-  `emits = for<'a> Event<'a>`
-- Private storage uses `#[app::private]` struct + `StructName::private_load_or_default()?`
-- There is no `main()` — the SDK provides the entry point
+- An app is a Rust library built into a **`calimero:app` WebAssembly component** (`wasm32-wasip2`)
+  by `mero-app-build`. Each app instance runs on its own replicated log: the cluster's leader runs a
+  call once and the replicas apply its changes.
+- Because one leader applies every write in log order, state is **plain collections, not CRDTs**:
+  `Table`, `UnorderedMap`, `Set`, `Vector`, `Cell`, `Counter`, `PerUser`, `Frozen` (plus `Text` /
+  `RichText`, the only CRDTs left). A later write replaces an earlier one.
+- One import brings every attribute, collection, `env` and `guards` into scope:
+  `use calimero_sdk::prelude::*;`
+- `#[app::state(version = N)]` goes on the **struct**, `#[app::logic]` on its **impl block**;
+  `#[app::init] pub fn init() -> app::Result<Self> { Ok(Self::load()) }`.
+- Every method returns `app::Result<T>`; collection operations return `Result` too, so use `?`.
+  `app::bail!(Error::X { .. })` returns an `#[app::error]` variant.
+- Calls are `&mut self`; reads are `&self` with `#[app::view]`. Method and argument names are
+  camelCase on the wire (`add_note` → `addNote`).
+- The caller comes from `env::caller()`, `guards::require_member()` or `guards::require_admin()`,
+  never from an argument. There are no executor keys and no contexts: a person is an **account**,
+  and the instance lives in an **organization**.
+- Events: `env::emit(Event::X { .. }, Audience::All)?`, delivered once the call commits.
+- Time, randomness and ids come from `env::time_now()` (milliseconds), `env::random_bytes(n)` and
+  `env::unique_id()`: every logged run must be deterministic.
+- **SDK 0.12 is gone** (core 1.0.0-rc.9 removed it, and nodes refuse its WASM modules):
+  `calimero-storage`, `calimero_storage::collections`, `LwwRegister`, `UserStorage`,
+  `#[app::state(emits = ..)]`, `app::emit!`, `app::log!`, `#[app::private]`, `env::context_id()`,
+  `env::executor_id()`, borsh-serialized state, `cargo mero` and merobox do not exist in 1.0.
 
 ## Cargo.toml setup
 
 ```toml
+[package]
+name = "my-app"
+version = "0.1.0"
+edition = "2021"
+
 [lib]
-# cdylib for the node's wasm; rlib so `cargo test` can link the app for TestHost tests.
-crate-type = ["cdylib", "rlib"]
+# A calimero:app component. No rlib: tests run the BUILT component on core's engine.
+crate-type = ["cdylib"]
 
 [dependencies]
-# Pin to the matching node release by GIT TAG. Calimero RC releases are cut as
-# git tags (and may land on crates.io a little later), so the tag form always
-# resolves and keeps the app in lockstep with the merod it runs on.
-calimero-sdk     = { git = "https://github.com/calimero-network/core", tag = "0.11.0-rc.19" }
-calimero-storage = { git = "https://github.com/calimero-network/core", tag = "0.11.0-rc.19" }
+# Pin by git tag to the core release your cluster runs.
+calimero-sdk = { git = "https://github.com/calimero-network/core", tag = "1.0.0-rc.19" }
+serde = { version = "1", features = ["derive"] }
 
-# Bundle metadata read by `cargo mero bundle`. `package` is the reverse-DNS app id.
-[package.metadata.calimero]
-package     = "com.example.myapp"
-name        = "My App"
-description = "Does something useful"
-frontend    = "https://my-app.example.com"
+# The TestApp harness and the builder it builds the crate with (host only).
+[target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
+calimero-sdk = { git = "https://github.com/calimero-network/core", tag = "1.0.0-rc.19", features = ["testing"] }
+calimero-app-build = { git = "https://github.com/calimero-network/core", tag = "1.0.0-rc.19" }
+serde_json = "1"
 
-[profile.app-release]
-inherits         = "release"
-codegen-units    = 1
-opt-level        = "z"
-lto              = true
-debug            = false
-strip            = "symbols"
-panic            = "abort"
-overflow-checks  = true
-
-# Used by `cargo mero build --profiling`: keeps debug info, skips wasm-opt.
-[profile.app-profiling]
-inherits = "release"
-opt-level = 2
-debug     = true
-strip     = false
+[profile.release]
+codegen-units = 1
+opt-level = "z"
+lto = true
+panic = "abort"
+overflow-checks = true
 ```
 
-An app needs **no** `build.rs`: `cargo mero build` emits the ABI from the crate's module tree.
-
-## Minimal app skeleton (KV store)
+## A complete app
 
 ```rust
-use calimero_sdk::app;
-use calimero_storage::collections::{LwwRegister, UnorderedMap};
+use calimero_sdk::prelude::*;
 
-// `#[app::state]` injects the borsh derives + `#[borsh(crate = ...)]` itself
-// (SDK 0.11+); a manual `#[derive(BorshSerialize, BorshDeserialize)]` here
-// would collide and fail to compile.
-#[app::state(emits = for<'a> Event<'a>)]
-pub struct KvStore {
-    items: UnorderedMap<String, LwwRegister<String>>,
+/// A row of the `notes` table: key `id`, newest-first through `by_created`.
+#[derive(Record, Clone, Debug)]
+#[table(key = "id", index(by_created = ["created_ms", "id"]))]
+pub struct Note {
+    pub id: String,
+    pub author: String,
+    pub text: String,
+    pub created_ms: u64,
+}
+
+#[app::state(version = 1)]
+pub struct Notes {
+    notes: Table<Note>,
+    pinned: Cell<String>,
+}
+
+#[app::error]
+pub enum Error {
+    NotFound { id: String },
+    Forbidden { message: String },
+    Invalid { message: String },
 }
 
 #[app::event]
-pub enum Event<'a> {
-    Inserted { key: &'a str, value: &'a str },
-    Updated  { key: &'a str, value: &'a str },
-    Removed  { key: &'a str },
+pub enum Event {
+    NoteAdded { id: String, author: String },
+    NoteRemoved { id: String },
 }
 
 #[app::logic]
-impl KvStore {
+impl Notes {
     #[app::init]
-    pub fn init() -> KvStore {
-        KvStore {
-            items: UnorderedMap::new(),
-        }
+    pub fn init() -> app::Result<Self> {
+        Ok(Self::load())
     }
 
-    pub fn set(&mut self, key: String, value: String) -> app::Result<()> {
-        app::log!("set {:?} = {:?}", key, value);
-        if self.items.contains(&key)? {
-            app::emit!(Event::Updated { key: &key, value: &value });
-        } else {
-            app::emit!(Event::Inserted { key: &key, value: &value });
+    /// Adds a note as the caller and returns its id.
+    pub fn add_note(&mut self, text: String) -> app::Result<String> {
+        let author = guards::require_member()?;
+        if text.trim().is_empty() {
+            app::bail!(Error::Invalid { message: "empty note".into() });
         }
-        self.items.insert(key, value.into())?;
+        let id = env::unique_id();
+        self.notes.insert(Note {
+            id: id.clone(),
+            author: author.clone(),
+            text,
+            created_ms: env::time_now(),
+        })?;
+        env::emit(Event::NoteAdded { id: id.clone(), author }, Audience::All)?;
+        Ok(id)
+    }
+
+    /// Removes a note: its author only.
+    pub fn remove_note(&mut self, id: String) -> app::Result<()> {
+        let me = guards::require_member()?;
+        let Some(note) = self.notes.get(&id)? else {
+            app::bail!(Error::NotFound { id });
+        };
+        if note.author != me {
+            app::bail!(Error::Forbidden { message: "not your note".into() });
+        }
+        let _removed = self.notes.remove(&id)?;
+        env::emit(Event::NoteRemoved { id }, Audience::All)?;
         Ok(())
     }
 
-    pub fn get(&self, key: &str) -> app::Result<Option<String>> {
-        Ok(self.items.get(key)?.map(|v| v.get().clone()))
+    /// The newest notes: at most 100 (one page).
+    #[app::view]
+    pub fn list_notes(&self) -> app::Result<Vec<Note>> {
+        Ok(self
+            .notes
+            .find("byCreated", &[], FindOpts::default().limit(100).reverse())?
+            .items)
     }
 
-    pub fn remove(&mut self, key: &str) -> app::Result<Option<String>> {
-        app::emit!(Event::Removed { key });
-        Ok(self.items.remove(key)?.map(|v| v.get().clone()))
+    /// Pins a note's id: org admins only.
+    pub fn pin(&mut self, id: String) -> app::Result<()> {
+        guards::require_admin()?;
+        self.pinned.set(&id)?;
+        Ok(())
+    }
+
+    #[app::view]
+    pub fn pinned(&self) -> app::Result<Option<String>> {
+        Ok(self.pinned.get()?)
     }
 }
 ```
 
-## Building with `cargo mero`
+## The attributes
 
-`cargo mero` is the app toolchain: it scaffolds, builds, tests, and packages. Install it once as a
-cargo subcommand (or download the prebuilt `cargo-mero_<target>.tar.gz` from a core release):
+| Attribute                                      | On                                 | Does                                                                                                                                  |
+| ---------------------------------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `#[app::state(version = N)]`                   | struct                             | The state root. Fields are collection handles named by their camelCase field name; `Self::load()` reads nothing.                      |
+| `#[app::logic]`                                | the state's `impl`                 | Every `pub fn` is a method; private `fn`s are helpers. Generates the dispatcher and the ABI (the component's `calimero:abi` section). |
+| `#[app::init]`                                 | `fn init(..) -> app::Result<Self>` | Runs once, as the owner, when the instance is created. Its arguments, if any, come from `apps.create`'s `initArgs`.                   |
+| `#[app::view]`                                 | `&self` method                     | A read, answered without writing to the log.                                                                                          |
+| `#[app::confirm]`                              | method                             | The caller confirms with a fresh passkey assertion (`412 CONFIRM_REQUIRED` until the client answers it).                              |
+| `#[app::public]` / `#[app::public(rate = ..)]` | method                             | Callable without signing in.                                                                                                          |
+| `#[app::every("1m")]`                          | `&mut self`, no args               | A timer the node runs (`<n>s`, `<n>m`, `<n>h`); `env::timer()` gives the tick.                                                        |
+| `#[app::allow(app = "*")]` / `allow(system)`   | method                             | Another app in the same organization (`env::xcall*`), or the node itself, may call it.                                                |
+| `#[app::action]`                               | fn taking `ctx: &mut ActionCtx`    | Leader-run work outside the log: `ctx.view`, `ctx.call`, `ctx.fetch` (outbound HTTP).                                                 |
+| `#[app::error]`                                | enum, in the logic module          | Variant name = error code; named fields become `{ code, fields }` (`422 APP_ERROR`).                                                  |
+| `#[app::event]`                                | enum, in the logic module          | Variant name = event name; owned, named fields.                                                                                       |
+| `#[derive(Record)]` + `#[table(..)]`           | struct                             | A table row: `key`, `unique(..)`, `index(..)`, `count(..)`, `search = [..]`. Writes its own serde: do not also derive `Serialize`.    |
+| `#[derive(AbiType)]`                           | serde struct or enum               | Writes the type's JSON shape into the ABI, so generated clients type it (otherwise `unknown`).                                        |
 
-```bash
-cargo install --git https://github.com/calimero-network/core cargo-mero
-```
-
-```bash
-cargo mero new my-app     # scaffold state, events, logic, and tests
-cargo mero build          # emit ABI -> compile to wasm32 -> wasm-opt -Oz -> embed ABI
-cargo mero test           # node-free native tests (TestHost + convergence)
-cargo mero bundle --dev   # build all services, write + sign manifest.json, tar the .mpk
-cargo mero guide          # print the canonical end-to-end workflow
-```
-
-`cargo mero build` writes `res/<crate_underscored>.wasm` (with the ABI embedded as the
-`calimero_abi_v1` custom section), `res/abi.json`, and `res/state-schema.json`. It adds the
-`wasm32-unknown-unknown` target itself when `rustup` is present, and the `wasm-opt` size pass is
-built in, so there is nothing to install on `PATH`.
-
-`cargo mero bundle` produces `dist/<package>.mpk`. Signing is part of packaging: pass `--dev` for
-local installs or `--key <file>` to publish. See the `calimero-registry` skill.
-
-## Installing and running on a node (dev workflow)
+## Build, test, package
 
 ```bash
-# (Assumes: meroctl node add node1 ... && meroctl node use node1 already done)
-
-# 1. Install the app (a .mpk bundle, or a bare .wasm for quick local iteration)
-meroctl app install --path dist/com.example.myapp.mpk
-# Returns: application-id
-
-# 2. Create a namespace (root group) for the app
-meroctl namespace create --application-id <application-id>
-# Returns: namespace-id (also a group id)
-
-# 3. Create a context (instance of the app — init() is called). --group-id is required.
-meroctl context create --application-id <application-id> --group-id <namespace-id>
-# Returns: context-id
-
-# 4. Call a mutation (METHOD is positional, the context is the --context flag)
-meroctl call set --context <context-id> --args '{"key":"hello","value":"world"}'
-
-# 5. Call a view (read-only — same form, there is NO --view flag)
-meroctl call get --context <context-id> --args '{"key":"hello"}'
-
-# Dev mode: auto-reinstall when WASM changes (--group-id still required)
-meroctl context create --watch res/myapp.wasm --group-id <namespace-id>
+rustup target add wasm32-wasip2                                      # once
+cargo test                                                           # TestApp: the built component on the real engine
+mero-app-build . --out my-app.wasm                                   # the calimero:app component, ABI embedded
+mero-app-build codegen --abi my-app.wasm --lang ts -o src/generated  # typed client (calimero-abi-codegen skill)
+merod local                                                          # a three-node development cluster, mock attestation
 ```
 
-For `merod` setup and full `meroctl` reference, see `calimero-merod` and `calimero-meroctl` skills.
-
-## Key rules
-
-- The `#[app::state]` struct does **not** hand-write `BorshDeserialize`/`BorshSerialize` or
-  `Default` — `#[app::state]` injects the borsh derives + `#[borsh(crate = ...)]` itself, and a
-  manual borsh derive collides (compile error). See `rules/state-derives.md`.
-- For **other** borsh types (collection value structs, `#[app::private]` types) you do derive borsh
-  by hand and add `#[borsh(crate = "calimero_sdk::borsh")]`
-- Add `#[serde(crate = "calimero_sdk::serde")]` to types you derive serde on by hand (the
-  `#[app::event]` enum gets serde injected, so don't add it there)
-- Never use `HashMap`, `Vec`, `BTreeMap` directly for **persisted shared state** — use CRDT
-  collections
-- `Vec<T>` and `Option<T>` are fine for local / return types — just not for fields that need CRDT
-  sync
-- Mutations use `&mut self`, views use `&self`
-- Return `app::Result<T>` for all public methods; use `?` on collection ops
-- Use `app::bail!(err)` to return errors early (like `return Err(err.into())`)
-
-## Trait obligations (what an `E0277` is telling you)
-
-`#[app::state]` merges the struct field by field, so every field must be `Mergeable`, and every
-container demands traits of its own type parameters. An `E0277` is one of those demands unmet - find
-the row, apply the remedy.
-
-| Container                                                     | Demands of its parameter                                       | Remedy                                                                                    |
-| ------------------------------------------------------------- | -------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| `UnorderedMap<K, V>`, `SortedMap<K, V>`, `Vector<V>`          | `V: Mergeable`                                                 | No primitive is `Mergeable` - wrap it: `UnorderedMap<String, LwwRegister<String>>`        |
-| `AuthoredMap<K, V>`, `AuthoredVector<V>`                      | `V: Mergeable` (`+ Clone` on the vector)                       | Same wrap, or `#[derive(Mergeable)]` on a struct value                                    |
-| `UserStorage<T>`                                              | `T: Mergeable`                                                 | `#[derive(Mergeable)]` on `T`                                                             |
-| `SharedStorage<T>` (`new`, `new_with_field_name`)             | `T: Mergeable + Default`                                       | Derive `Default` on `T`; `LwwRegister<T>` is `Default` only when `T: Default`             |
-| Keys of `UnorderedMap`/`UnorderedSet`/`SortedMap`/`SortedSet` | `AsRef<[u8]> + Clone + PartialEq` (`+ Ord` on the sorted pair) | Key by `String`, not `u64` or a struct                                                    |
-| Any hand-written `impl Mergeable for T`                       | `T: RekeyTarget` (`Mergeable`'s supertrait)                    | `#[derive(Mergeable)]` emits both impls; hand-rolling needs a matching `impl RekeyTarget` |
-
-## Cross-context calls (xcall)
-
-```rust
-use calimero_sdk::env;
-use calimero_sdk::serde_json;
-
-// Call a method on another context
-let ctx_bytes: [u8; 32] = /* context id bytes */;
-let params = serde_json::json!({ "match_id": id, "winner": w });
-let params_bytes = serde_json::to_vec(&params).unwrap();
-env::xcall(&ctx_bytes, "on_match_finished", &params_bytes);
-```
-
-## Environment functions
-
-```rust
-use calimero_sdk::env;
-
-env::executor_id()                                // [u8; 32] — caller's public key bytes
-env::context_id()                                 // [u8; 32] — current context ID
-env::time_now()                                   // u64 — strictly-increasing NANOSECOND timestamp
-                                                  //   (divide by 1_000_000 for ms vs JS Date.now())
-env::xcall_origin()                               // Option<[u8; 32]> — calling context id during an
-                                                  //   xcall dispatch (None for a direct call) — use to
-                                                  //   authorize cross-context entry points
-
-env::random_bytes(buf: &mut [u8])                 // fill buf with random bytes
-
-env::ed25519_verify(sig: &[u8; 64], pub_key: &[u8; 32], msg: &[u8]) -> bool
-
-// Blob streaming API
-let fd = env::blob_create();                      // start writing a new blob
-env::blob_write(fd, data: &[u8]) -> u64;          // write bytes
-let blob_id: [u8; 32] = env::blob_close(fd);     // finalize, returns content-addressed ID
-
-let fd = env::blob_open(blob_id: &[u8; 32]);      // open blob for reading (returns 0 if not found)
-env::blob_read(fd, buffer: &mut [u8]) -> u64;     // read bytes (returns 0 at EOF)
-env::blob_close(fd);                              // close read handle
-
-// Make a blob discoverable to all context members
-env::blob_announce_to_context(blob_id: &[u8; 32], context_id: &[u8; 32]) -> bool;
-
-// Cross-context call
-env::xcall(context_id: &[u8; 32], method: &str, params: &[u8]);
-```
-
-## What's new in 0.11
-
-- **More CRDT collections** — the ordered `SortedMap` and `SortedSet` (range/prefix/paged queries);
-  the authored `AuthoredMap` and `AuthoredVector` (per-entry/slot author ownership — use instead of
-  `UnorderedMap` + hand-rolled max-wins when only the author may edit their data); and
-  `SharedStorage<T>` (a group-writable value gated by a writer set —
-  `SharedStorage::new(writers, frozen)`, alias of `PermissionedStorage<T, WriterSetAcl>`). See
-  `references/state-collections.md`.
-- **Native unit tests with `TestHost`** — exercise app logic in-process without a WASM build (enable
-  `calimero-storage`'s `testing` feature as a dev-dependency). Far faster than a full deploy.
-  Canonical example: `core/apps/kv-store/src/lib.rs` (unit tests) and
-  `core/apps/kv-store/tests/converge.rs` (multi-replica convergence via
-  `calimero_storage::testing::converge_app`).
-- **Parallel event handlers** — handlers may run concurrently, so they must be commutative,
-  idempotent, and side-effect-free. See `references/event-handlers.md`.
-
-## Additional features
-
-- **UserStorage** — per-member isolated storage (not synced to others): see
-  `references/user-and-frozen-storage.md`
-- **FrozenStorage** — immutable content-addressed entries: see
-  `references/user-and-frozen-storage.md`
-- **Event handlers** — named callbacks triggered when an event is emitted on any peer: see
-  `references/event-handlers.md`
-- **Migrations** — `#[app::migrate]` for upgrading state schema: see `references/migrations.md`
-- **Blob API** — streaming binary storage from app logic: see `references/blob-api.md`
-- **Nested CRDTs** — `#[derive(Mergeable)]` for custom structs used as map values: see
-  `references/nested-crdts.md`
-
-## Related skills
-
-- **`calimero-core`** — runtime concepts (context/app model, JSON-RPC protocol, WebSocket events,
-  CRDT type taxonomy)
-- **`calimero-meroctl`** — full `meroctl` CLI reference for deploying and testing the app
-- **`calimero-merod`** — `merod` daemon setup and health checks
+`mero-app-build` and `mero-sign` ship prebuilt on every core release
+(`mero-app-build_<target>.tar.gz`, checked against the release's `SHA256SUMS`). Package a signed
+`.mpk` with core's `scripts/pack-component.py`, which signs through `mero-sign`.
 
 ## References
 
-See `references/` for CRDT collections, events, private storage, and examples. See `rules/` for hard
-constraints the compiler won't catch.
+See `references/` for collections and tables, events, the env API, blobs, testing and upgrades. See
+`rules/` for the attribute placement, derive and runtime rules the dispatcher enforces.
+
+Core's own guide is the source of truth: <https://calimero-network.github.io/core/build/>.

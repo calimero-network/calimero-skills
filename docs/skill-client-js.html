@@ -12,59 +12,49 @@
 <div class="breadcrumb"><a href="index.html">Home</a><span class="sep">/</span><span>Client JS</span></div>
 
 <h1>Client JS Skill</h1>
-<p class="page-subtitle">Context for working with mero-js and calimero-client TypeScript SDKs</p>
+<p class="page-subtitle">Context for frontends and Node.js services on Calimero 1.0 with mero-js's <span class="code">CalimeroClient</span></p>
 
 <div class="card ga">
-<h2>Two SDKs Covered</h2>
-<p style="margin-bottom:12px;">This skill covers both the current and legacy JavaScript/TypeScript SDKs:</p>
-<div class="g2">
-  <div class="cb">
-    <h4>mero-js (current)</h4>
-    <p style="color:#8b949e;font-size:13px;margin:8px 0;">Used by auth-frontend, admin-dashboard, tauri-app. Zero-dependency fetch wrapper with typed clients for auth, admin, RPC, SSE, WebSocket.</p>
-    <div class="typedef" style="font-size:11px;"><span class="kw">import</span> &#123; <span class="ty">MeroJs</span> &#125; <span class="kw">from</span> <span class="comment">'@calimero-network/mero-js'</span>;</div>
-  </div>
-  <div class="cb">
-    <h4>calimero-client (legacy)</h4>
-    <p style="color:#8b949e;font-size:13px;margin:8px 0;">Used by curb and older apps. Separate <span class="code">RpcClient</span> and <span class="code">SubscriptionsClient</span> classes, older auth flow.</p>
-    <div class="typedef" style="font-size:11px;"><span class="kw">import</span> &#123; <span class="ty">RpcClient</span> &#125; <span class="kw">from</span> <span class="comment">'@calimero-network/calimero-client'</span>;</div>
-  </div>
-</div>
+<h2>One Client</h2>
+<p style="margin-bottom:12px;"><span class="code">CalimeroClient</span> (<span class="code">@calimero-network/mero-js</span> 27 and later) attests every node, seals each request end to end, signs people in with passkeys and fails over across the cluster. The v1 client (<span class="code">MeroJs</span>, JSON-RPC, contexts, <span class="code">@calimero-network/calimero-client</span>, mero-react) is for merod 0.x and does not work against 1.0.</p>
+<div class="typedef" style="font-size:11px;"><span class="kw">import</span> &#123; <span class="ty">CalimeroClient</span>, <span class="ty">browserPasskey</span>, <span class="ty">passkeyConfirm</span> &#125; <span class="kw">from</span> <span class="comment">'@calimero-network/mero-js'</span>;</div>
 </div>
 
 <div class="card gb">
-<h2>mero-js Usage Patterns</h2>
+<h2>Usage Patterns</h2>
 <div class="typedef">
-<span class="kw">import</span> &#123; <span class="ty">MeroJs</span>, <span class="ty">HTTPError</span> &#125; <span class="kw">from</span> <span class="comment">'@calimero-network/mero-js'</span>;<br><br>
-<span class="kw">const</span> <span class="field">sdk</span> = <span class="kw">new</span> <span class="ty">MeroJs</span>(&#123; <span class="field">baseUrl</span>: <span class="comment">'http://localhost:2428'</span> &#125;);<br><br>
-<span class="comment">// Auth</span><br>
-<span class="kw">await</span> sdk.<span class="field">auth</span>.<span class="ty">login</span>(&#123; <span class="field">username</span>: <span class="comment">'admin'</span>, <span class="field">password</span>: <span class="comment">'...'</span> &#125;);<br><br>
-<span class="comment">// RPC execution</span><br>
-<span class="kw">const</span> <span class="field">result</span> = <span class="kw">await</span> sdk.<span class="field">rpc</span>.<span class="ty">execute</span>(&#123;<br>
-&nbsp;&nbsp;<span class="field">contextId</span>: <span class="comment">'ctx_...'</span>,<br>
-&nbsp;&nbsp;<span class="field">method</span>: <span class="comment">'get_posts'</span>,<br>
-&nbsp;&nbsp;<span class="field">argsJson</span>: <span class="comment">'{}'</span>,<br>
-&#125;);<br><br>
-<span class="comment">// Admin</span><br>
-<span class="kw">const</span> <span class="field">contexts</span> = <span class="kw">await</span> sdk.<span class="field">admin</span>.<span class="ty">getContexts</span>();
+<span class="kw">const</span> <span class="field">client</span> = <span class="kw">await</span> <span class="ty">CalimeroClient</span>.<span class="ty">connect</span>(&#123;<br>
+&nbsp;&nbsp;<span class="field">cluster</span>: <span class="comment">'eu-shared-1'</span>,<br>
+&nbsp;&nbsp;<span class="field">policy</span>: &#123; <span class="field">release</span>: &#123; <span class="field">minReleaseVersion</span>: <span class="comment">'2.3.109'</span> &#125; &#125;,<br>
+&#125;);<br>
+<span class="kw">await</span> client.<span class="ty">signIn</span>(<span class="ty">browserPasskey</span>());<br><br>
+<span class="comment">// Organizations and app instances</span><br>
+<span class="kw">const</span> &#123; <span class="field">orgId</span>: org &#125; = <span class="kw">await</span> client.<span class="field">orgs</span>.<span class="ty">create</span>(&#123; <span class="field">name</span>: <span class="comment">'Team'</span> &#125;);<br>
+<span class="kw">const</span> &#123; <span class="field">appId</span>: app &#125; = <span class="kw">await</span> client.<span class="field">apps</span>.<span class="ty">create</span>(&#123; <span class="field">name</span>: <span class="comment">'kv'</span>, <span class="field">package</span>: <span class="comment">'com.example.kv'</span>, org &#125;);<br><br>
+<span class="comment">// Calls go through the app's log; views do not write</span><br>
+<span class="kw">await</span> client.<span class="field">apps</span>.<span class="ty">call</span>(&#123; app, <span class="field">method</span>: <span class="comment">'set'</span>, <span class="field">args</span>: &#123; <span class="field">key</span>: <span class="comment">'a'</span>, <span class="field">value</span>: <span class="comment">'1'</span> &#125; &#125;);<br>
+<span class="kw">const</span> &#123; <span class="field">result</span> &#125; = <span class="kw">await</span> client.<span class="field">apps</span>.<span class="ty">view</span>(&#123; app, <span class="field">method</span>: <span class="comment">'get'</span>, <span class="field">args</span>: &#123; <span class="field">key</span>: <span class="comment">'a'</span> &#125; &#125;);<br><br>
+<span class="comment">// Events</span><br>
+<span class="kw">for await</span> (<span class="kw">const</span> event <span class="kw">of</span> client.<span class="ty">events</span>(app)) console.log(event.kind, event.data);
 </div>
 </div>
 
 <div class="card gc">
 <h2>Install This Skill</h2>
 <div class="typedef">
-<span class="comment"># Install the mero-js + calimero-client skill</span><br>
 <span class="field">npx @calimero-network/agent-skills calimero-client-js</span><br><br>
-<span class="comment"># Recommended combination for frontend developers:</span><br>
-<span class="field">npx @calimero-network/agent-skills calimero-node calimero-client-js</span>
+<span class="comment"># With the app's generated typed client:</span><br>
+<span class="field">npx @calimero-network/agent-skills calimero-abi-codegen</span>
 </div>
-<p style="margin-top:12px;color:#8b949e;font-size:13px;">After installing, your AI assistant will know: API shape, camelCase vs snake_case differences between SDK versions, SSO hash reading pattern, error handling with <span class="code">HTTPError</span>, and token refresh flow.</p>
+<p style="margin-top:12px;color:#8b949e;font-size:13px;">After installing, your AI assistant will know: connecting and attestation policy, passkeys and sessions, calls and views, typed errors, passkey step-ups, organizations and invites, events and blobs.</p>
 </div>
 
 <div class="card gd">
-<h2>Key Differences: v1 vs v2 (mero-js)</h2>
-<div class="fr"><div class="fp">generateClientKey params</div><div class="fd">v1: <span class="code">context_id</span>, <span class="code">context_identity</span> (snake_case). v2: <span class="code">contextId</span>, <span class="code">contextIdentity</span> (camelCase).</div></div>
-<div class="fr"><div class="fp">Provider check</div><div class="fd">v1 returns <span class="code">configured</span> field. v2 type expects <span class="code">enabled</span>. Skill documents the <span class="code">(p as any).configured</span> fallback pattern.</div></div>
-<div class="fr"><div class="fp">SSO parsing</div><div class="fd">v2 exports <span class="code">parseAuthCallback(hash)</span> utility. v1 required manual URL parsing.</div></div>
+<h2>v1 to Calimero 1.0</h2>
+<div class="fr"><div class="fp">context</div><div class="fd">An app instance: <span class="code">client.apps.create</span> / <span class="code">client.apps.list</span>.</div></div>
+<div class="fr"><div class="fp">namespace / group</div><div class="fd">An organization / team: <span class="code">client.orgs</span>, invites as tokens.</div></div>
+<div class="fr"><div class="fp">rpc.execute</div><div class="fd"><span class="code">client.apps.call</span> / <span class="code">client.apps.view</span>, or the generated typed client.</div></div>
+<div class="fr"><div class="fp">admin login / JWT</div><div class="fd">Passkeys (<span class="code">signUp</span> / <span class="code">signIn</span>); the client refreshes the session itself.</div></div>
 </div>
 
 </div>
