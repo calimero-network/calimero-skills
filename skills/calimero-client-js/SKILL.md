@@ -1,198 +1,79 @@
 # calimero-client-js — Agent Instructions
 
-You are helping a developer connect a **browser or Node.js frontend** to a Calimero node using
-`@calimero-network/mero-react` (React apps) or `@calimero-network/mero-js` (non-React).
+You are helping a developer connect a **browser or Node.js** frontend to Calimero 1.0 with
+`@calimero-network/mero-js`'s **`CalimeroClient`**. (Building the app itself is the
+`calimero-rust-sdk` skill; its typed client is the `calimero-abi-codegen` skill.)
 
-> **NOT this skill** if the developer is building the application logic that _runs on the node_ in
-> TypeScript — that is `calimero-sdk-js`. This skill is for the _client_ side: auth, RPC calls, and
-> event subscriptions from a browser or React app.
+## What you need to know immediately
 
-## Package versions
+- One client: `CalimeroClient` from `@calimero-network/mero-js` (version 27 and later is the
+  Calimero 1.0 client only). It attests every node (TDX) before sending anything, seals each request
+  end to end, signs people in with **passkeys** (machines with API keys) and fails over across the
+  cluster's nodes.
+- **The v1 client is gone**: `MeroJs`, `mero.rpc.execute`, `mero.admin.*`, JSON-RPC, contexts,
+  `contextId`, `executorPublicKey`, namespaces/groups, `@calimero-network/calimero-client` and
+  `mero-react` are for merod 0.x nodes (mero-js 26.x) and do not work against 1.0.
+- 1.0's names: an app instance (`appId`, v1 "context") lives in an **organization** (`orgId`, v1
+  "namespace"); a person is an **account** (`accountId`); a signed `.mpk` is a **package**.
+- The node's API is **one generated method per route**, grouped: `client.apps`, `client.orgs`,
+  `client.auth`, `client.packages`, `client.consent`, `client.deployments`, `client.ops`,
+  `client.public`. Each takes **one object** (path, query and body fields merged) and an optional
+  per-call options object (`{ confirm }` for a passkey step-up).
+- Call app methods with `client.apps.call({ app, method, args })` (through the app's log) and
+  `client.apps.view({ app, method, args })` (no write). Method and argument names are camelCase;
+  `u64`/`i64` are decimal strings, bytes base64url, `Option` is `null`.
+- Prefer the app's **generated typed client** (`mero-app-build codegen`) over hand-written
+  `apps.call` strings.
+- A development cluster (`merod local`, `merod run --dev`) sends mock attestation quotes, which pass
+  only with `policy: { allowMock: true }`. Nothing is read from the environment.
 
-| Package                        | Notes                                                                                                                                     |
-| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| `@calimero-network/mero-react` | **The path for React apps.** Re-exports everything from `mero-js` plus `MeroProvider`, `useMero`, `useSubscription`, and the admin hooks. |
-| `@calimero-network/mero-js`    | Core SDK. Exposes `MeroJs` (`.rpc`, `.admin`, `.auth`, `.events`). Used standalone in non-React contexts.                                 |
+## Quick start
 
-## Critical: mero-js admin API uses camelCase
+```ts
+import { CalimeroClient, browserPasskey, passkeyConfirm } from '@calimero-network/mero-js';
 
-Admin-api request/response field names are `camelCase`:
-
-```typescript
-// WRONG (snake_case):
-{ context_id: '...', context_identity: '...' }
-
-// CORRECT (camelCase):
-{ contextId: '...', contextIdentity: '...' }
-```
-
-## React app pattern (mero-react)
-
-### Install
-
-```bash
-pnpm add @calimero-network/mero-react
-```
-
-### Setup provider
-
-`MeroProvider` does **not** take a `nodeUrl` prop — the node is chosen at login time (the provider
-drives the auth-redirect flow and stores the node URL). Configure it with the app `mode` and your
-package identifiers:
-
-```tsx
-import { AppMode, MeroProvider } from '@calimero-network/mero-react';
-
-function App() {
-  return (
-    <MeroProvider
-      mode={AppMode.MultiContext} // use MultiContext (see note below)
-      packageName={import.meta.env.VITE_PACKAGE_NAME}
-      registryUrl={import.meta.env.VITE_REGISTRY_URL}
-    >
-      <YourApp />
-    </MeroProvider>
-  );
-}
-```
-
-> **Use `AppMode.MultiContext`.** `AppMode.SingleContext` is not supported — do not use it. The auth
-> flow does not select a context/namespace/group: the callback may arrive without a
-> `context_id`/`context_identity`, so your app picks or creates the context. List with `useContexts`
-> / `useNamespacesForApplication`; create with `mero.admin.createNamespace` →
-> `createGroupInNamespace` → `createContext({ applicationId, groupId })` (call `mero.admin.*`
-> directly, not the `useCreate*` hooks). See `references/sso.md`.
-
-`MeroProviderProps`: `mode` (required), `packageName`, `packageVersion`, `registryUrl`, `timeoutMs`
-(default 30000), `allowedNodeUrls`, `tokenStore`.
-
-### Get the SDK handle with useMero
-
-```typescript
-import { useMero } from '@calimero-network/mero-react';
-
-const {
-  mero, // MeroJs instance (null until connected)
-  isAuthenticated,
-  isOnline,
-  nodeUrl,
-  applicationId,
-  contextId,
-  contextIdentity,
-  connectToNode, // (url) => starts the login redirect
-  logout,
-  isLoading,
-} = useMero();
-```
-
-### Call app methods
-
-Generated clients (from abi-codegen) import `MeroJs` from `@calimero-network/mero-react`.
-`mero.rpc.execute()` returns the method's **output directly** (not a `{ result: { output } }`
-envelope) and **throws** an `RpcError` on failure:
-
-```typescript
-import { MeroJs } from '@calimero-network/mero-react';
-
-export class KvClient {
-  constructor(
-    private mero: MeroJs,
-    private contextId: string,
-    private executorPublicKey: string // kept for back-compat; ignored by the server
-  ) {}
-
-  async set(key: string, value: string): Promise<void> {
-    await this.mero.rpc.execute({
-      contextId: this.contextId,
-      method: 'set',
-      argsJson: { key, value },
-    });
-  }
-
-  async get(key: string): Promise<string | null> {
-    const output = await this.mero.rpc.execute<string | null>({
-      contextId: this.contextId,
-      method: 'get',
-      argsJson: { key },
-    });
-    return output; // already the unwrapped output
-  }
-}
-```
-
-### Subscribe to events (mero-react hook)
-
-The callback receives `SseEventData` — `{ contextId, type?, data }` — where `data` is already
-byte-decoded to JSON by the client. The simplest, most robust pattern (used by the foundation app)
-is to treat any event for a context as a "refetch" trigger rather than diffing payloads:
-
-```typescript
-import { useSubscription } from '@calimero-network/mero-react';
-
-// Subscribe to one or more contexts; refetch state on any event
-useSubscription([contextId], (event) => {
-  // event: { contextId, type?, data }
-  refreshFromNode();
+// A Calimero Cloud cluster, by name. Trust the signed mero-tee release from this one up.
+const client = await CalimeroClient.connect({
+  cluster: 'eu-shared-1',
+  policy: { release: { minReleaseVersion: '2.3.109' } },
 });
 
-// Subscribe to multiple contexts (e.g. game + lobby simultaneously)
-useSubscription([gameContextId, lobbyContextId], (event) => {
-  console.log('from context:', event.contextId);
-});
+await client.signUp(browserPasskey(), 'alice'); // or client.signIn(browserPasskey())
+
+const { orgId: org } = await client.orgs.create({ name: 'Team' });
+const { appId: app } = await client.apps.create({ name: 'kv', package: 'com.example.kv', org });
+
+await client.apps.call({ app, method: 'set', args: { key: 'a', value: '1' } });
+const { result } = await client.apps.view({ app, method: 'get', args: { key: 'a' } });
+await client.apps.call(
+  { app, method: 'clear', args: {} },
+  { confirm: passkeyConfirm(browserPasskey()) } // an #[app::confirm] method
+);
+for await (const event of client.events(app)) console.log(event.kind, event.data);
 ```
 
-See `references/websocket-events.md` for the event shape and the standalone `mero.events` (SSE) API.
+Local development against `merod local`:
 
-## Non-React pattern (mero-js standalone)
-
-In a non-React context, construct `MeroJs` directly and use the same `.rpc` / `.admin` / `.events`
-surface:
-
-```typescript
-import { MeroJs } from '@calimero-network/mero-js';
-
-const mero = new MeroJs({ baseUrl: 'http://localhost:2528' }); // node HTTP/RPC port (2528, not the 2428 P2P swarm port)
-// authenticate (or restore tokens via a tokenStore / setTokenData)…
-
-const output = await mero.rpc.execute<string | null>({
-  contextId,
-  method: 'get',
-  argsJson: { key: 'hello' },
+```ts
+const client = new CalimeroClient({
+  baseUrl: 'http://127.0.0.1:2501',
+  nodes: ['http://127.0.0.1:2502', 'http://127.0.0.1:2503'],
+  policy: { allowMock: true },
 });
-
-mero.events.on('event', (e) => {
-  // e: { contextId, type?, data }
-  console.log(e.contextId, e.data);
-});
-await mero.events.connect();
-await mero.events.subscribe([contextId]);
 ```
-
-## Core workflow
-
-1. On startup: the `MeroProvider` (mero-react) handles auth automatically — it parses the
-   auth-callback hash (used by both Desktop SSO and web login) via `parseAuthCallback`, stores
-   tokens, and restores an existing session.
-2. Read connection state from `useMero()` (`isAuthenticated`, `mero`, `contextId`, …).
-3. Call app methods via the generated typed client or `mero.rpc.execute()`.
-4. Subscribe to events via `useSubscription` (React) or `mero.events` (mero-js).
-
-## Related skills
-
-- **`calimero-core`** — JSON-RPC protocol spec, WebSocket event schemas, context/app/identity model
-- **`calimero-desktop`** — SSO token passing from Calimero Desktop (URL hash flow)
-- **`calimero-node`** — node setup if the developer is also running the node
 
 ## References
 
-See `references/` for auth flow, RPC calls, event subscriptions, and SSO (all on mero-react /
-mero-js). Multi-user and admin topics (Calimero 0.11, all camelCase):
+- `references/auth.md`: connecting, passkeys, sessions, API keys
+- `references/app-calls.md`: calls, views, typed errors, passkey step-ups, the generated client
+- `references/organizations.md`: organizations, invites, roles, teams, instances
+- `references/events.md`: following an instance's events
+- `references/blobs.md`: uploading and downloading files
 
-- `invitations-and-joins.md` — create/share an invitation → join a namespace + its contexts
-- `group-upgrades-and-migrations.md` — `upgradeGroup`, migration status, cascade, retry (0.11)
-- `capabilities-and-access-control.md` — member capability bitmask + `CAPABILITIES`/`hasCap`
-- `metadata.md` — group/member/context metadata (display names) + size limits
-- `aliases.md` — human-readable names for context/application/identity IDs
-- `blobs-and-context-identity.md` — content-addressed blobs + choosing an executor identity
+## Rules
 
-See `rules/` for camelCase API and token refresh requirements.
+- `rules/no-v1-client.md`
+- `rules/camelcase-api.md`
+- `rules/session-refresh.md`
+
+The mero-js documentation is the source of truth: <https://calimero-network.github.io/mero-js/>.

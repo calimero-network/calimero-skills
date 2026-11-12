@@ -12,20 +12,20 @@
 <div class="breadcrumb"><a href="index.html">Home</a><span class="sep">/</span><span>Rust SDK</span></div>
 
 <h1>Rust SDK Skill</h1>
-<p class="page-subtitle">Context injected for building WASM applications with the calimero-sdk Rust crate</p>
+<p class="page-subtitle">Context injected for building Calimero 1.0 apps with core's component SDK (<span class="code">calimero-sdk</span>)</p>
 
 <div class="card ga">
 <h2>What This Skill Teaches</h2>
-<p style="margin-bottom:12px;">The <span class="code">calimero-rust-sdk</span> skill gives your AI assistant deep knowledge of the Calimero Rust SDK so it can write correct WASM application code without guessing at API shape.</p>
+<p style="margin-bottom:12px;">The <span class="code">calimero-rust-sdk</span> skill gives your AI assistant the component SDK: an app is a <span class="code">calimero:app</span> WebAssembly component (<span class="code">wasm32-wasip2</span>) whose instances each run on their own replicated log. SDK 0.12 (<span class="code">calimero-storage</span>, CRDT state, <span class="code">cargo mero</span>) is gone since core 1.0.0-rc.9.</p>
 <div class="g2">
   <div class="cb"><h4>Covered Topics</h4>
     <ul style="margin:8px 0 0 16px;color:#c9d1d9;font-size:13px;">
-      <li style="margin-bottom:6px;"><span class="code">#[app]</span> struct annotation</li>
-      <li style="margin-bottom:6px;"><span class="code">#[logic]</span> impl block</li>
-      <li style="margin-bottom:6px;">State serialization (Borsh)</li>
-      <li style="margin-bottom:6px;">Context and identity APIs</li>
-      <li style="margin-bottom:6px;">Event emission</li>
-      <li>Cargo.toml dependencies</li>
+      <li style="margin-bottom:6px;"><span class="code">#[app::state(version = N)]</span>, <span class="code">#[app::logic]</span>, <span class="code">#[app::init]</span>, <span class="code">#[app::view]</span></li>
+      <li style="margin-bottom:6px;">Tables (<span class="code">#[derive(Record)]</span>) and collections</li>
+      <li style="margin-bottom:6px;"><span class="code">env</span> and <span class="code">guards</span>: caller, org roles, time, ids</li>
+      <li style="margin-bottom:6px;">Errors and events with audiences</li>
+      <li style="margin-bottom:6px;">Blobs, <span class="code">TestApp</span> and scenarios, upgrades</li>
+      <li>Building with <span class="code">mero-app-build</span></li>
     </ul>
   </div>
   <div class="cb"><h4>Install</h4>
@@ -35,53 +35,48 @@
 </div>
 
 <div class="card gb">
-<h2>Minimal WASM App Pattern</h2>
+<h2>Minimal App Pattern</h2>
 <p style="margin-bottom:12px;">The skill teaches this idiomatic structure:</p>
 <div class="typedef">
-<span class="kw">use</span> calimero_sdk::types::Error;<br>
-<span class="kw">use</span> calimero_sdk::&#123;app, env&#125;;<br>
-<span class="kw">use</span> serde::&#123;Deserialize, Serialize&#125;;<br><br>
-<span class="comment">/// Application state — persisted between calls</span><br>
-<span class="kw">#[app::state]</span><br>
-<span class="kw">pub struct</span> <span class="ty">AppState</span> &#123;<br>
-&nbsp;&nbsp;<span class="field">posts</span>: Vec&lt;<span class="ty">Post</span>&gt;,<br>
+<span class="kw">use</span> calimero_sdk::prelude::*;<br><br>
+<span class="kw">#[app::state(version = 1)]</span><br>
+<span class="kw">pub struct</span> <span class="ty">Board</span> &#123;<br>
+&nbsp;&nbsp;<span class="field">posts</span>: <span class="ty">UnorderedMap</span>&lt;<span class="ty">String</span>, <span class="ty">String</span>&gt;,<br>
 &#125;<br><br>
 <span class="kw">#[app::logic]</span><br>
-<span class="kw">impl</span> <span class="ty">AppState</span> &#123;<br>
-&nbsp;&nbsp;<span class="kw">pub fn</span> <span class="ty">create_post</span>(&amp;<span class="kw">mut self</span>, <span class="field">title</span>: <span class="ty">String</span>) -&gt; <span class="ty">Result</span>&lt;(), <span class="ty">Error</span>&gt; &#123;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">self</span>.<span class="field">posts</span>.<span class="ty">push</span>(<span class="ty">Post</span> &#123; <span class="field">title</span> &#125;);<br>
-&nbsp;&nbsp;&nbsp;&nbsp;<span class="ty">Ok</span>(())<br>
+<span class="kw">impl</span> <span class="ty">Board</span> &#123;<br>
+&nbsp;&nbsp;<span class="kw">#[app::init]</span><br>
+&nbsp;&nbsp;<span class="kw">pub fn</span> <span class="ty">init</span>() -&gt; <span class="ty">app::Result</span>&lt;<span class="ty">Self</span>&gt; &#123; <span class="ty">Ok</span>(<span class="ty">Self</span>::load()) &#125;<br><br>
+&nbsp;&nbsp;<span class="kw">pub fn</span> <span class="ty">create_post</span>(&amp;<span class="kw">mut self</span>, <span class="field">title</span>: <span class="ty">String</span>) -&gt; <span class="ty">app::Result</span>&lt;<span class="ty">String</span>&gt; &#123;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">let</span> author = guards::require_member()?;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">let</span> id = env::unique_id();<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">self</span>.<span class="field">posts</span>.insert(&amp;id, &amp;title)?;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="ty">Ok</span>(id)<br>
 &nbsp;&nbsp;&#125;<br><br>
-&nbsp;&nbsp;<span class="kw">pub fn</span> <span class="ty">get_posts</span>(&amp;<span class="kw">self</span>) -&gt; <span class="ty">Result</span>&lt;Vec&lt;<span class="ty">Post</span>&gt;, <span class="ty">Error</span>&gt; &#123;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;<span class="ty">Ok</span>(<span class="kw">self</span>.<span class="field">posts</span>.<span class="ty">clone</span>())<br>
-&nbsp;&nbsp;&#125;<br>
+&nbsp;&nbsp;<span class="kw">#[app::view]</span><br>
+&nbsp;&nbsp;<span class="kw">pub fn</span> <span class="ty">post_count</span>(&amp;<span class="kw">self</span>) -&gt; <span class="ty">app::Result</span>&lt;<span class="ty">u64</span>&gt; &#123; <span class="ty">Ok</span>(<span class="kw">self</span>.<span class="field">posts</span>.len()?) &#125;<br>
 &#125;
 </div>
 </div>
 
 <div class="card gc">
 <h2>Key Concepts Covered</h2>
-<div class="fr"><div class="fp">#[app::state]</div><div class="fd">Marks the struct as application state. The SDK serializes/deserializes this automatically between calls using Borsh.</div></div>
-<div class="fr"><div class="fp">#[app::logic]</div><div class="fd">Marks the <span class="code">impl</span> block. Methods become callable from the node via RPC. <span class="code">&amp;mut self</span> = mutate, <span class="code">&amp;self</span> = query.</div></div>
-<div class="fr"><div class="fp">env::executor_id()</div><div class="fd">Returns the identity (public key) of the caller. Use for access control.</div></div>
-<div class="fr"><div class="fp">env::emit_event()</div><div class="fd">Emits an event that subscribers (SSE/WS) receive in real-time.</div></div>
-<div class="fr"><div class="fp">calimero_sdk::Error</div><div class="fd">Standard error type. Return as <span class="code">Err(...)</span>; the SDK serializes it to a JSON error response.</div></div>
+<div class="fr"><div class="fp">Plain collections</div><div class="fd">One leader applies every write in log order, so state is <span class="code">Table</span>, <span class="code">UnorderedMap</span>, <span class="code">Set</span>, <span class="code">Vector</span>, <span class="code">Cell</span>, <span class="code">Counter</span>, <span class="code">PerUser</span>: not CRDTs.</div></div>
+<div class="fr"><div class="fp">guards / env::caller()</div><div class="fd">The caller is the signed-in account; <span class="code">guards::require_member()</span> and <span class="code">require_admin()</span> check its organization role.</div></div>
+<div class="fr"><div class="fp">env::emit()</div><div class="fd">Emits an <span class="code">#[app::event]</span> variant to an <span class="code">Audience</span> once the call commits.</div></div>
+<div class="fr"><div class="fp">#[app::error]</div><div class="fd">Variant name = error code; clients see <span class="code">422 APP_ERROR</span> with <span class="code">{ code, fields }</span>.</div></div>
+<div class="fr"><div class="fp">Determinism</div><div class="fd"><span class="code">env::time_now()</span>, <span class="code">env::random_bytes()</span>, <span class="code">env::unique_id()</span>; no threads, I/O or wall clock.</div></div>
 </div>
 
 <div class="card gd">
 <h2>Cargo.toml Dependencies</h2>
 <div class="typedef">
-[dependencies]<br>
-calimero-sdk     = <span class="comment">"0.10"</span><br>
-calimero-storage = <span class="comment">"0.10"</span><br><br>
-[build-dependencies]<br>
-calimero-wasm-abi = <span class="comment">"0.10"</span><br>
-serde_json        = <span class="comment">"1"</span><br><br>
 [lib]<br>
 crate-type = [<span class="comment">"cdylib"</span>]<br><br>
-[profile.release]<br>
-opt-level = <span class="comment">"z"</span>&nbsp;&nbsp;<span class="comment"># minimize WASM binary size</span><br>
-lto = <span class="kw">true</span>
+[dependencies]<br>
+calimero-sdk = &#123; git = <span class="comment">"https://github.com/calimero-network/core"</span>, tag = <span class="comment">"1.0.0-rc.19"</span> &#125;<br>
+serde = &#123; version = <span class="comment">"1"</span>, features = [<span class="comment">"derive"</span>] &#125;<br><br>
+<span class="comment"># Build: mero-app-build . --out my-app.wasm  (wasm32-wasip2 component)</span>
 </div>
 </div>
 

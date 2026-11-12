@@ -1,41 +1,48 @@
-# Rule: #[app::state] goes on the struct, #[app::logic] on the impl block
+# Rule: where the app attributes go
 
-**WRONG** — `#[app::state]` placed on an `impl` (the pre-0.11 mistake); it belongs on the struct:
-
-```rust
-#[app::state]   // ✗ this is on an impl — WRONG; #[app::state] must go on the struct
-impl AppState {}
-
-#[app::logic]
-impl AppState {}
-```
-
-**CORRECT:**
+- `#[app::state(version = N)]` goes on the **struct**; `#[app::logic]` on its **`impl` block**.
+- `#[app::init]` is one method of that `impl`: `pub fn init() -> app::Result<Self>`, usually
+  `Ok(Self::load())`.
+- The `#[app::error]` enum and the `#[app::event]` enum live in the **same module** as
+  `#[app::logic]`. Declared elsewhere, they are invisible to the ABI. One of each per module.
+- Every error and event variant has **named** fields (`NotFound { id: String }`) or none (`Closed`).
+  A tuple variant (`NotFound(String)`) is a compile error.
+- There is no `emits = ..` on the state, no `#[app::private]` and no `app::emit!`: emit with
+  `env::emit(Event::X { .. }, Audience::All)?`.
 
 ```rust
-#[app::state(emits = for<'a> Event<'a>)]   // ✓ on the struct (carries emits = ...)
-pub struct AppState {
-    data: UnorderedMap<String, LwwRegister<String>>,
+use calimero_sdk::prelude::*;
+
+#[app::state(version = 1)] // on the struct
+pub struct Limit {
+    value: Cell<u32>,
 }
 
-#[app::logic]   // ✓ on the logic impl block
-impl AppState {
+#[app::error] // same module as #[app::logic]
+pub enum Error {
+    TooBig { max: u32 },
+}
+
+#[app::event]
+pub enum Event {
+    Changed { value: u32 },
+}
+
+#[app::logic] // on the impl
+impl Limit {
     #[app::init]
-    pub fn init() -> AppState {
-        AppState {
-            data: UnorderedMap::new(),
+    pub fn init() -> app::Result<Self> {
+        Ok(Self::load())
+    }
+
+    pub fn set(&mut self, value: u32) -> app::Result<()> {
+        guards::require_member()?;
+        if value > 1000 {
+            app::bail!(Error::TooBig { max: 1000 });
         }
+        self.value.set(&value)?;
+        env::emit(Event::Changed { value }, Audience::All)?;
+        Ok(())
     }
 }
 ```
-
-**Why:** `#[app::state]` is a proc macro that operates on the state **struct** (or enum): it injects
-the borsh derives, implements `calimero_sdk::state::AppState` (wiring up the declared `emits = ...`
-event type), and generates the CRDT merge + registration hooks. `#[app::logic]` is a separate proc
-macro that transforms the **impl block** so its public methods become callable entry points. They
-are never placed on the same item.
-
-**Also:** `#[app::init]` marks the constructor — called once when the context is created. It must
-return the state type, not `Self`. The state struct does **not** derive `Default` and does **not**
-hand-write the borsh derives — `#[app::state]` injects `BorshSerialize`/`BorshDeserialize` itself
-(see `rules/state-derives.md`).
