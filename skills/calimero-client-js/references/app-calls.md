@@ -50,7 +50,7 @@ await client.apps.call({ app: appId, method: 'deleteBoard', args: { id } }, conf
 
 ## The generated typed client
 
-`mero-app-build codegen --abi app.wasm --lang ts -o src/generated` writes a class over these two
+`meroctl app codegen --abi app.wasm --lang ts -o src/generated` writes a class over these two
 routes, with every method, argument, result, error and event typed from the app's ABI:
 
 ```ts

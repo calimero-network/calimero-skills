@@ -1,6 +1,6 @@
 # What `client.ts` exports
 
-`mero-app-build codegen --lang ts` writes one `client.ts` (plus `openapi.json`). For an app named
+`meroctl app codegen --lang ts` writes one `client.ts` (plus `openapi.json`). For an app named
 `kv-store` it exports:
 
 | Export                           | What it is                                                                                                  |

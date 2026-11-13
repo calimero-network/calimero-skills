@@ -13,7 +13,7 @@ This package provides AI agent skills for building on the Calimero Network stack
 | `calimero-desktop`     | `npx @calimero-network/agent-skills calimero-desktop`     | Integrating apps with Calimero Desktop SSO                  |
 | `calimero-node`        | `npx @calimero-network/agent-skills calimero-node`        | Node operators and meroctl scripting                        |
 | `calimero-client-py`   | `npx @calimero-network/agent-skills calimero-client-py`   | Python client for node automation and backend services      |
-| `calimero-abi-codegen` | `npx @calimero-network/agent-skills calimero-abi-codegen` | Typed app clients with `mero-app-build codegen`             |
+| `calimero-abi-codegen` | `npx @calimero-network/agent-skills calimero-abi-codegen` | Typed app clients with `meroctl app codegen`                |
 
 ## Auto-Detection
 
@@ -26,13 +26,13 @@ Skills should be loaded when the following are detected in the project:
 | `@State` / `@Logic` decorators in TypeScript source                    | `calimero-sdk-js`      |
 | `calimero-sdk build` in any script                                     | `calimero-sdk-js`      |
 | `@calimero-network/mero-js` in `package.json`                          | `calimero-client-js`   |
-| `cargo mero bundle` / `cargo mero sign` in any script or workflow      | `calimero-registry`    |
+| `meroctl app pack` / `sign` / `publish` in any script or workflow      | `calimero-registry`    |
 | `calimero-registry` CLI usage                                          | `calimero-registry`    |
 | `[package.metadata.calimero]` in `Cargo.toml`                          | `calimero-registry`    |
 | `access_token` read from `window.location.hash`                        | `calimero-desktop`     |
 | `readDesktopSSO` / `hash.get('access_token')` pattern in frontend code | `calimero-desktop`     |
 | `calimero-client-py` in `requirements.txt` or `pyproject.toml`         | `calimero-client-py`   |
-| `mero-app-build codegen` in any script, or a generated `client.ts`     | `calimero-abi-codegen` |
+| `meroctl app codegen` in any script, or a generated `client.ts`        | `calimero-abi-codegen` |
 
 ## About Calimero
 
@@ -52,6 +52,14 @@ Core concepts:
 
 The SDK 0.12 model (contexts, CRDT state on every node, JSON-RPC, identities and executor keys) is
 gone since core 1.0.0-rc.9. Skills not yet updated to 1.0 (`calimero-core`, `calimero-node`,
-`calimero-merod`, `calimero-meroctl`, `calimero-registry`, `calimero-sdk-js`, `calimero-desktop`,
-`calimero-client-py`) may still describe it; prefer `calimero-rust-sdk`, `calimero-client-js` and
-`calimero-abi-codegen` where they disagree.
+`calimero-merod`, `calimero-meroctl`, `calimero-sdk-js`, `calimero-desktop`, `calimero-client-py`)
+may still describe it; prefer `calimero-rust-sdk`, `calimero-client-js`, `calimero-abi-codegen` and
+`calimero-registry` where they disagree.
+
+Tooling: `meroctl` is the one CLI from core 1.0.0-rc.24. It starts, builds, generates clients for,
+packs, signs and publishes an app
+(`meroctl app new|build|codegen|abi|signer|pack|sign|inspect|publish`) and runs a development
+cluster (`meroctl local up|dev|test`, `meroctl local compute run`). `mero-app-build`, `mero-sign`,
+`mero-compute`, `scripts/pack-component.py`, `create-mero-app`, `cargo-mero`, merobox, the npm
+`@calimero-network/abi-codegen` and the `install-sh` repository are gone; install `meroctl` with
+`curl -fsSL https://raw.githubusercontent.com/calimero-network/core/master/scripts/install.sh | sh`.

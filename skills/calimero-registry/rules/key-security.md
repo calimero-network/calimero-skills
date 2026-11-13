@@ -6,7 +6,7 @@ repo access can sign bundles as you and publish malicious apps under your identi
 ## Required steps
 
 ```bash
-# Immediately after generating your key:
+# Immediately after generating your key (meroctl app signer new my-key.json):
 echo "my-key.json" >> .gitignore
 echo "*.key.json" >> .gitignore
 
@@ -22,12 +22,13 @@ git status  # key.json must NOT appear here
 
 ## CI/CD
 
-In CI, materialize the key from a secret at build time and point `MERO_SIGN_KEY` at it:
+In CI, materialize the key from a secret at build time into an owner-only file and pass it with
+`--key` (`meroctl` refuses a key file that group or others can read):
 
 ```bash
-export MERO_SIGN_KEY="$RUNNER_TEMP/mero-key.json"
-printf '%s' "$CALIMERO_SIGNING_KEY" > "$MERO_SIGN_KEY"
-cargo mero bundle
+key="$RUNNER_TEMP/mero-key.json"
+(umask 077 && printf '%s' "$CALIMERO_SIGNING_KEY" > "$key")
+meroctl app pack logic --key "$key"
 ```
 
 Store `CALIMERO_SIGNING_KEY` as a repository secret (GitHub Secrets, etc.), never in the repo.
@@ -37,7 +38,7 @@ Store `CALIMERO_SIGNING_KEY` as a repository secret (GitHub Secrets, etc.), neve
 Rotate immediately:
 
 ```bash
-cargo mero key generate -o new-key.json
+meroctl app signer new new-key.json
 # Update your public key in the registry
 # Revoke or invalidate the old key
 ```

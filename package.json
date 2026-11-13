@@ -1,6 +1,6 @@
 {
   "name": "@calimero-network/agent-skills",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "AI agent skills for Calimero Network development — Rust SDK, JS SDK, JS client, registry publishing, desktop SSO, and more.",
   "keywords": [
     "calimero",
@@ -9,7 +9,7 @@
     "p2p",
     "crdt",
     "wasm",
-    "cargo-mero",
+    "meroctl",
     "calimero-sdk"
   ],
   "homepage": "https://github.com/calimero-network/calimero-skills",

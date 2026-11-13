@@ -23,8 +23,8 @@ export interface Note {
 ## RIGHT
 
 ```bash
-mero-app-build . --out my-app.wasm
-mero-app-build codegen --abi my-app.wasm --lang ts -o src/generated
+meroctl app build . --out my-app.wasm
+meroctl app codegen --abi my-app.wasm --lang ts -o src/generated
 ```
 
 and treat `createdMs` as a decimal string in the frontend (`Number(note.createdMs)` when it fits).

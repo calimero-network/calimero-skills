@@ -24,11 +24,12 @@ read the old one until it is empty.
 `#[app::state(version = N)]` records `N` in the ABI. Bump it when the state's shape changes.
 
 ```bash
-mero-app-build abi-diff old.mpk new.wasm   # what changed; exits 1 on a breaking change
+meroctl app abi diff old.mpk new.wasm   # what changed; exits 1 on a breaking change
 ```
 
-`mero-sign sign --previous <last release>` runs the same check before signing and refuses to sign
-when a state field was removed or changed kind while the state version stayed the same.
+`meroctl app pack --previous <last release>` (and `meroctl app sign --previous`) runs the same check
+before signing and refuses to sign when a state field was removed or changed kind while the state
+version stayed the same.
 
 ## Test against the shipped release
 
