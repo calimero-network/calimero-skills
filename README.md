@@ -18,7 +18,7 @@ hallucinating APIs that don't exist.
 | [`calimero-desktop`](#calimero-desktop)         | Integrating apps with Calimero Desktop SSO                |
 | [`calimero-node`](#calimero-node)               | Node operator quick-start (merod + meroctl overview)      |
 | [`calimero-merod`](#calimero-merod)             | merod daemon deep-dive — init, config, health             |
-| [`calimero-meroctl`](#calimero-meroctl)         | Complete meroctl CLI reference and scripting              |
+| [`calimero-meroctl`](#calimero-meroctl)         | core 1.0's meroctl: cluster, sign-in, contexts, calls     |
 | [`calimero-registry`](#calimero-registry)       | Packing, signing and publishing apps with `meroctl app`   |
 | [`calimero-abi-codegen`](#calimero-abi-codegen) | Typed app clients with `meroctl app codegen`              |
 
@@ -249,20 +249,28 @@ npx @calimero-network/agent-skills calimero-merod
 
 ### calimero-meroctl
 
-Complete **`meroctl` CLI reference** for developers and operators scripting against a running node.
+**`meroctl`**, core 1.0's one command line, for developers and operators working against a cluster.
 
 Covers:
 
-- All subcommand groups: `node`, `app`, `context`, `call`, `identity`, `namespace`, `group`
-- Every flag for each command
-- Scripting patterns for CI/CD pipelines
-- Multi-node setup with namespace invite + group join-context
-- Dev-mode hot reload (`context create --watch`)
+- Installing it (`scripts/install.sh`, Homebrew)
+- The development cluster: `meroctl local up|down|status|dev|test` (and the Docker default coming in
+  rc.25)
+- Signing in: `login --dev-passkey` on development clusters, API keys and the trust flags
+  (`--allow-mock`, `--tee-profiles`, `--min-release`) on real ones; `attest`
+- Saved nodes (`node add|use`, `--api`), apps (`app install`), contexts
+  (`context create --name ... --path|--package|--bundle [--params] [--namespace [--group]]`) and
+  `call -c CONTEXT METHOD [--view]`
+- Organizations (`namespace`) and teams (`group`), blobs and sealed files, Calimero Cloud (`cloud`),
+  `proxy`, `raw` and `ops`
+- Scripting and CI with `jq` and upgrade keys, and what changed from the 0.x CLI
 
 Key rules included:
 
-- Register a node once with `meroctl node add` + `meroctl node use`; omit `--node` after
-- Always pass `--view` for read-only method calls
+- Read with `call --view`; name the context with `-c`
+- `context create` takes `--namespace`/`--group` (or neither), never `--group-id`
+- File passkeys and `--allow-mock` are for development clusters only
+- Save a node once with `meroctl node add` + `meroctl node use`; omit `--node` after
 
 ```bash
 npx @calimero-network/agent-skills calimero-meroctl
@@ -333,21 +341,24 @@ re-running updates the block cleanly.
 
 CI (and `npm test`) runs these checks; run them locally before opening a PR:
 
-| Command                            | What it enforces                                                                                                                                                                               |
-| ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `npm run format:check`             | Prettier formatting (`.md`/`.json`/`.js`/`.ts`)                                                                                                                                                |
-| `npm run lint:md`                  | Markdown structure (markdownlint)                                                                                                                                                              |
-| `npm test` → `test.js`             | Every skill has `SKILL.md` + non-empty `references/` and `rules/`                                                                                                                              |
-| `npm test` → `validate-content.js` | **Content rules** in fenced code blocks — no `meroctl call --as`/`--view`, `context create` carries `--group-id`, no `SharedStorage`, no deprecated `@calimero-network/calimero-client` import |
-| `npm test` → `check-versions.js`   | Core version pins agree (`1.0.0-rc.N` consistent across skills)                                                                                                                                |
+| Command                            | What it enforces                                                                                                                                                                                                                                                                                                     |
+| ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm run format:check`             | Prettier formatting (`.md`/`.json`/`.js`/`.ts`)                                                                                                                                                                                                                                                                      |
+| `npm run lint:md`                  | Markdown structure (markdownlint)                                                                                                                                                                                                                                                                                    |
+| `npm test` → `test.js`             | Every skill has `SKILL.md` + non-empty `references/` and `rules/`                                                                                                                                                                                                                                                    |
+| `npm test` → `validate-content.js` | **Content rules** in fenced code blocks: core 1.0's meroctl (`call -c`, `context create --name`, no `call --as`, no 0.x `--group-id`/`--application-id`/`context identity`/`peers`/`sync`, no JSON-RPC envelope, no merobox) and no deprecated `@calimero-network/calimero-client` import; rule self-tests run first |
+| `npm test` → `check-versions.js`   | Core version pins agree (`1.0.0-rc.N` consistent across skills)                                                                                                                                                                                                                                                      |
 
 The content linter scans only fenced code blocks (never prose) and strips comments. A deliberate
 counter-example (a "Don't do this" block) opts out with an HTML comment on the line before the
 fence:
 
 ```text
-<!-- validate-ignore: no-view-flag (intentional WRONG example) -->
+<!-- validate-ignore: no-group-id (intentional WRONG example) -->
 ```
+
+Skills not yet updated to core 1.0 (`STALE_SKILLS` in the linter, the list in the root `SKILL.md`)
+report their violations as warnings until they are rewritten; every other skill must pass.
 
 A separate workflow (`version-watch.yml`, also `npm run check:versions:latest`) compares the pinned
 core version to the latest `calimero-network/core` release tag and goes red when core cuts a newer
