@@ -33,7 +33,7 @@ is no separate `abi` artifact):
   "version": "1.0",
   "package": "com.example.myapp",
   "appVersion": "1.0.0",
-  "minRuntimeVersion": "1.0.0-rc.19",
+  "minRuntimeVersion": "1.0.0-rc.24",
   "wasm": {
     "path": "app.wasm",
     "size": 283441,

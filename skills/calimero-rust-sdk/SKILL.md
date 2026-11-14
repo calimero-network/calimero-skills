@@ -47,13 +47,13 @@ crate-type = ["cdylib"]
 
 [dependencies]
 # Pin by git tag to the core release your cluster runs.
-calimero-sdk = { git = "https://github.com/calimero-network/core", tag = "1.0.0-rc.19" }
+calimero-sdk = { git = "https://github.com/calimero-network/core", tag = "1.0.0-rc.24" }
 serde = { version = "1", features = ["derive"] }
 
 # The TestApp harness and the builder it builds the crate with (host only).
 [target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
-calimero-sdk = { git = "https://github.com/calimero-network/core", tag = "1.0.0-rc.19", features = ["testing"] }
-calimero-app-build = { git = "https://github.com/calimero-network/core", tag = "1.0.0-rc.19" }
+calimero-sdk = { git = "https://github.com/calimero-network/core", tag = "1.0.0-rc.24", features = ["testing"] }
+calimero-app-build = { git = "https://github.com/calimero-network/core", tag = "1.0.0-rc.24" }
 serde_json = "1"
 
 # Read by `meroctl app pack .`: the package id, and the listing a registry shows.
