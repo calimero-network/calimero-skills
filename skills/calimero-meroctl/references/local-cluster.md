@@ -52,9 +52,9 @@ it runs, signs up a deployer of its own, builds the crate, uploads it as a raw b
 every save. Ctrl-C stops the frontend, and the cluster when `dev` started it. It takes the `up`
 flags too.
 
-For a build you push yourself: `meroctl app watch --path FILE --dev-passkey F [-c CONTEXT]...` (also
-`dev watch`), or `meroctl dev start --path FILE --dev-passkey F --name dev --watch` to install,
-create a context and keep pushing.
+For a build you push yourself: `meroctl app watch --path FILE --dev-passkey F [-i INSTANCE]...`
+(also `dev watch`), or `meroctl dev start --path FILE --dev-passkey F --name dev --watch` to
+install, create a context and keep pushing.
 
 ## test: scenarios
 
@@ -80,8 +80,8 @@ meroctl local up
 meroctl login --dev-passkey ./dev-passkey.json --name ada
 meroctl app pack apps/kv-store/logic --app-version 0.1.0 --out kv-store.mpk
 meroctl app install --path ./kv-store.mpk
-meroctl context create --package com.calimero.kv-store --name notes --alias notes
-meroctl call -c notes set --args '{"key":"a","value":"1"}'
-meroctl call -c notes get --args '{"key":"a"}' --view
+meroctl instance create --package com.calimero.kv-store --name notes --alias notes
+meroctl call -i notes set --args '{"key":"a","value":"1"}'
+meroctl call -i notes get --args '{"key":"a"}' --view
 meroctl local down
 ```

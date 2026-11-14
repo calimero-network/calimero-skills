@@ -11,7 +11,7 @@ there. Organization roles: `guest`, `member`, `admin`, `owner`. Team roles: `lea
 ```bash
 ORG=$(meroctl namespace create Acme | jq -r .orgId)
 TEAM=$(meroctl namespace create-group "$ORG" eng --join restricted | jq -r .teamId)
-meroctl context create --name eng-notes --package com.example.notes \
+meroctl instance create --name eng-notes --package com.example.notes \
   --namespace "$ORG" --group "$TEAM" --alias eng-notes
 TOKEN=$(meroctl namespace invite "$ORG" --role member --group "$TEAM" --uses 1 \
   --dev-passkey ./dev-passkey.json | jq -r .token)
@@ -21,11 +21,11 @@ The invitee, signed in on their own:
 
 ```bash
 meroctl namespace join "$TOKEN"
-meroctl call -c <app-id> list --view
+meroctl call -i <app-id> list --view
 ```
 
 The answers: `namespace create` `{ orgId }`, `namespace create-group` `{ teamId }`,
-`namespace invite` `{ token }`, `context create` `{ appId, contextId, group, replicas, ... }`.
+`namespace invite` `{ token }`, `instance create` `{ appId, contextId, group, replicas, ... }`.
 
 ## namespace
 
@@ -72,7 +72,7 @@ meroctl group upgrade retry <org-id> <run-id> --dev-passkey ./dev-passkey.json
 ## Who reaches a context
 
 ```bash
-meroctl context access eng-notes org                    # owner | org | team | accounts | public
-meroctl context access eng-notes team --group <team-id>
-meroctl context move eng-notes <other-org-id> --bring-members --dev-passkey ./dev-passkey.json
+meroctl instance access eng-notes org                    # owner | org | team | accounts | public
+meroctl instance access eng-notes team --group <team-id>
+meroctl instance move eng-notes <other-org-id> --bring-members --dev-passkey ./dev-passkey.json
 ```

@@ -1,8 +1,8 @@
 # meroctl Command Reference (core 1.0)
 
 Every command and flag here is in core's meroctl reference (`docs/.../operate/meroctl.mdx`); run
-`meroctl <command> --help` to check against your build. Output is JSON. `CONTEXT` is an alias of the
-signed-in account or an app id; `ORG` an organization id; `TEAM` a team id.
+`meroctl <command> --help` to check against your build. Output is JSON. `INSTANCE` is an alias of
+the signed-in account or an app id; `ORG` an organization id; `TEAM` a team id.
 
 ## Global arguments
 
@@ -67,53 +67,53 @@ meroctl app origins remove com.example.kv https://kv.example.com --dev-passkey .
 ## context: app instances
 
 ```bash
-meroctl context create --name kv --path kv_store.wasm --alias kv          # installs the file first
-meroctl context create --name kv --package com.example.kv --version 1.0.0 --alias kv
-meroctl context create --name team-kv --package com.example.kv \
+meroctl instance create --name kv --path kv_store.wasm --alias kv          # installs the file first
+meroctl instance create --name kv --package com.example.kv --version 1.0.0 --alias kv
+meroctl instance create --name team-kv --package com.example.kv \
   --namespace <org-id> --group <team-id> --params '{"title":"Team notes"}'
-meroctl context list                                         # ls; --package P filters
-meroctl context get kv
-meroctl context update kv --version 1.1.0 --dev-passkey ./dev-passkey.json
-meroctl context watch kv --from 0 --limit 10                 # committed events, then live; ws
-meroctl context alias add notes <app-id>
-meroctl context alias list
-meroctl context use kv                                       # the alias `default`
-meroctl context access kv team --group <team-id>             # owner|org|team|accounts|public
-meroctl context access kv accounts --account <acct-1> --account <acct-2>
-meroctl context metadata kv '{"color":"green"}'              # null clears it
-meroctl context storage kv
-meroctl context abi kv
-meroctl context presence list kv
-meroctl context transfer kv <account-id> --dev-passkey ./dev-passkey.json
-meroctl context move kv <org-id> --bring-members --dev-passkey ./dev-passkey.json
-meroctl context delete kv                                    # del
+meroctl instance list                                         # ls; --package P filters
+meroctl instance get kv
+meroctl instance update kv --version 1.1.0 --dev-passkey ./dev-passkey.json
+meroctl instance watch kv --from 0 --limit 10                 # committed events, then live; ws
+meroctl instance alias add notes <app-id>
+meroctl instance alias list
+meroctl instance use kv                                       # the alias `default`
+meroctl instance access kv team --group <team-id>             # owner|org|team|accounts|public
+meroctl instance access kv accounts --account <acct-1> --account <acct-2>
+meroctl instance metadata kv '{"color":"green"}'              # null clears it
+meroctl instance storage kv
+meroctl instance abi kv
+meroctl instance presence list kv
+meroctl instance transfer kv <account-id> --dev-passkey ./dev-passkey.json
+meroctl instance move kv <org-id> --bring-members --dev-passkey ./dev-passkey.json
+meroctl instance delete kv                                    # del
 ```
 
-`context create` flags: `--name` (required), one of `--package P [--version V]`, `--bundle HASH` or
+`instance create` flags: `--name` (required), one of `--package P [--version V]`, `--bundle HASH` or
 `--path FILE`, plus `--service S` (a multi-service application), `--params JSON` (`init`'s
 arguments), `--namespace ORG`, `--group TEAM` (with `--namespace`), `--alias ALIAS`.
-`context update` takes `--version`, `--package`, `--service`, `--bundle` (not with
+`instance update` takes `--version`, `--package`, `--service`, `--bundle` (not with
 `--version`/`--package`) and `--dev-passkey`; the state stays and the new code reads it.
 
 ## call
 
 ```bash
-meroctl call -c kv set --args '{"key":"a","value":"1"}'      # an intent: POST /apps/{app}/intents
-meroctl call -c kv get --args '{"key":"a"}' --view           # a read:    POST /apps/{app}/views
-meroctl call -c kv get --args '{"key":"a"}' --view --min-index 42   # any replica past index 42
-meroctl call -c kv set --args '{"key":"a","value":"2"}' --idempotency-key run-17
-meroctl call -c kv rotate --dev-passkey ./dev-passkey.json   # a method that asks for confirmation
+meroctl call -i kv set --args '{"key":"a","value":"1"}'      # an intent: POST /apps/{app}/intents
+meroctl call -i kv get --args '{"key":"a"}' --view           # a read:    POST /apps/{app}/views
+meroctl call -i kv get --args '{"key":"a"}' --view --min-index 42   # any replica past index 42
+meroctl call -i kv set --args '{"key":"a","value":"2"}' --idempotency-key run-17
+meroctl call -i kv rotate --dev-passkey ./dev-passkey.json   # a method that asks for confirmation
 ```
 
-| Flag                    | Meaning                                                           |
-| ----------------------- | ----------------------------------------------------------------- |
-| `-c, --context CONTEXT` | required                                                          |
-| `METHOD`                | required, positional; the ABI's camelCase name                    |
-| `--args JSON`           | default `{}`                                                      |
-| `--view`                | read only, answered by the leader; no write                       |
-| `--min-index N`         | with `--view`: a replica that has applied index `N` may answer    |
-| `--idempotency-key KEY` | retries with the same key are answered once                       |
-| `--dev-passkey FILE`    | a method that needs a passkey confirmation (development clusters) |
+| Flag                      | Meaning                                                           |
+| ------------------------- | ----------------------------------------------------------------- |
+| `-i, --instance INSTANCE` | required (`-c`/`--context` before core 1.0.0-rc.26)               |
+| `METHOD`                  | required, positional; the ABI's camelCase name                    |
+| `--args JSON`             | default `{}`                                                      |
+| `--view`                  | read only, answered by the leader; no write                       |
+| `--min-index N`           | with `--view`: a replica that has applied index `N` may answer    |
+| `--idempotency-key KEY`   | retries with the same key are answered once                       |
+| `--dev-passkey FILE`      | a method that needs a passkey confirmation (development clusters) |
 
 The answer is `{ "index": n, "result": ..., "receipt": { ... } }`, the receipt signed by the
 answering node. An app error is `422 APP_ERROR` with the app's code and fields.
@@ -121,14 +121,14 @@ answering node. An app error is `422 APP_ERROR` with the app's code and fields.
 ## blob and file
 
 ```bash
-meroctl blob upload ./photo.png -c kv                       # prints its id
-meroctl blob list -c kv
-meroctl blob info <blob-id> -c kv
-meroctl blob download <blob-id> -c kv -o photo.png          # stdout without -o
-meroctl blob revoke <blob-id> -c kv
-meroctl blob delete <blob-id> -c kv
+meroctl blob upload ./photo.png -i kv                       # prints its id
+meroctl blob list -i kv
+meroctl blob info <blob-id> -i kv
+meroctl blob download <blob-id> -i kv -o photo.png          # stdout without -o
+meroctl blob revoke <blob-id> -i kv
+meroctl blob delete <blob-id> -i kv
 
-meroctl file upload ./report.pdf -c docs                    # a sealed file: { id, size, sha256, index }
+meroctl file upload ./report.pdf -i docs                    # a sealed file: { id, size, sha256, index }
 meroctl file download docs <file-id> -o report.pdf          # plaintext, every byte checked first
 ```
 
@@ -148,7 +148,7 @@ meroctl account device revoke <credential-id> --dev-passkey ./dev-passkey.json
 meroctl account session list
 meroctl account session revoke <session-id>
 meroctl account activity
-meroctl account api-key create --label ci --context kv --read-only --dev-passkey ./dev-passkey.json
+meroctl account api-key create --label ci --instance kv --read-only --dev-passkey ./dev-passkey.json
 meroctl account api-key create --upgrades kv --label deploy --dev-passkey ./dev-passkey.json
 meroctl account api-key list
 meroctl account api-key revoke <key-id> --dev-passkey ./dev-passkey.json
