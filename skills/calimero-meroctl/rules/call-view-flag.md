@@ -1,43 +1,32 @@
-# Rule: A "View" Is Just a Read-Only Method — There Is No `--view` Flag
+# Rule: Read With `--view`, Name the Context With `-c`
 
-**Call read-only ("view") methods exactly like any other method. `meroctl call` has no `--view`
-flag.**
+**`meroctl call -c CONTEXT METHOD --args JSON` writes; add `--view` to read.**
 
 ## Why
 
-A view is not a special call mode at the CLI — it is simply a method that only reads state. The node
-decides whether a call mutated state from what the handler actually did, not from a flag you pass.
-`meroctl call` accepts the **method name positionally** and the context via `--context` (`-c`); its
-only flags are `--args`, `--id`, `--substitute`, `--interactive`/`-i`, and `--timeout`. Passing
-`--view` is an error — clap will reject it.
+In core 1.0 a call is one of two requests. Without `--view` it is an intent
+(`POST /apps/{app}/intents`): it goes through the app's replicated log, as a write. With `--view` it
+is a read (`POST /apps/{app}/views`): answered by the leader (or, with `--min-index N`, by any
+replica that has applied index `N`), with no write and no log entry. A read sent without `--view`
+still works, but costs a log entry and the write path. Both answer `{ index, result, receipt }`.
 
-## How to identify read-only methods
+The context is the `-c`/`--context` flag (an alias or an app id) and the method is positional. The
+0.x forms (`meroctl call <ctx-id> METHOD`, and "there is no `--view` flag") are wrong for 1.0.
 
-- **Rust SDK**: method takes `&self` (not `&mut self`)
-- **JS SDK**: method is annotated with `@View()`
-- **meroctl call**: you cannot tell from the CLI alone — check the app source. There is nothing to
-  pass differently either way.
-
-## Correct usage
-
-The method name comes first (positional); the context is the `--context` flag:
+## Correct
 
 ```bash
-# Read-only method — same form as any call, no --view
-meroctl call get_posts --context <context-id> --args '{}'
-meroctl call get --context <context-id> --args '{"key":"foo"}'
-
-# Mutation — identical form
-meroctl call create_post --context <context-id> --args '{"title":"Hello"}'
-meroctl call set --context <context-id> --args '{"key":"foo","value":"bar"}'
+meroctl call -c kv set --args '{"key":"a","value":"1"}'              # a write
+meroctl call -c kv get --args '{"key":"a"}' --view                   # a read
+meroctl call --context kv getResult --args '{"key":"a"}' --view      # ABI camelCase names
+meroctl call -c kv len --view --min-index 42                         # a stale read is fine past 42
 ```
 
-## Don't do this
+## Wrong
 
-<!-- validate-ignore: no-view-flag (intentional WRONG example demonstrating the missing flag) -->
+<!-- validate-ignore: call-needs-context (intentional WRONG example: the 0.x positional context) -->
 
 ```bash
-# WRONG: there is no --view flag, and the context is a flag, not a leading positional
-meroctl call <ctx-id> get_posts --args '{}' --view
-meroctl call <ctx-id> get --args '{"key":"foo"}' --view
+meroctl call <ctx-id> get --args '{"key":"a"}'          # 0.x: the context is not positional
+meroctl call -c kv get --args '{"key":"a"}'             # works, but a read logged as a write
 ```

@@ -1,89 +1,111 @@
 # calimero-meroctl — Agent Instructions
 
-You are helping a developer use **`meroctl`** — the Calimero CLI for administering a running `merod`
-node (apps, contexts, identities, calls, namespaces, groups).
+You are helping a developer use **`meroctl`**, core 1.0's one command line for Calimero. It makes
+and ships apps without a node (`app new|build|codegen|pack|publish`, see `calimero-registry` and
+`calimero-abi-codegen`), runs a development cluster (`local`), reaches Calimero Cloud (`cloud`), and
+talks to nodes: before it sends anything it fetches the node's attestation and judges the quote,
+then every request travels in the sealed channel.
 
-## What meroctl is
+This skill teaches core 1.0's meroctl (1.0.0-rc.24). The 0.x CLI (contexts bound by `--group-id`,
+`context identity`, `peers`, JSON-RPC calls, merobox) is gone; see "What changed from 0.x" below.
 
-`meroctl` is a standalone CLI that connects to a running `merod` node over HTTP. It does **not**
-start or stop the node — use `merod` for that. `meroctl` is for everything you would do after the
-node is running.
+## Names
 
-## Connecting to a node
+meroctl keeps a few older names for the objects the rest of Calimero's docs call otherwise:
 
-```bash
-# Register a local node once (recommended)
-meroctl node add node1 /path/to/calimero/home
-meroctl node use node1           # set as default
+| Command     | What it manages                                               |
+| ----------- | ------------------------------------------------------------- |
+| `app`       | applications: signed packages, installed once per cluster     |
+| `context`   | app instances                                                 |
+| `namespace` | organizations (alias `ns`)                                    |
+| `group`     | an organization's teams                                       |
+| `account`   | the signed-in account; each passkey is one of its devices     |
+| `local`     | a development cluster on this machine, and the loop around it |
+| `cloud`     | Calimero Cloud: organizations, clusters, a cluster's compute  |
 
-# Or use a remote node
-meroctl node add prod http://my-node.example.com
-meroctl node use prod
-
-# Or pass URL directly on any command (no registration needed)
-meroctl --api http://localhost:2528 context ls
-```
-
-> The node's HTTP/JSON-RPC API listens on **2528** by default (the P2P swarm uses 2428).
-
-Once a node is registered and set as active, you can omit `--node` from every command.
-
-## Core workflow: app → namespace → context → call
-
-A context is always bound to a **group**, and a namespace **is** the root group — so you create a
-namespace first and pass its id as `--group-id`. `meroctl context create` **requires** `--group-id`.
+## Install
 
 ```bash
-# 1. Install app (--package/--version are optional metadata)
-meroctl app install --path myapp.mpk
-# → prints application-id
+# meroctl (Linux x86_64/aarch64, macOS aarch64) into ~/.local/bin, checked against SHA256SUMS
+curl -fsSL https://raw.githubusercontent.com/calimero-network/core/master/scripts/install.sh | sh
 
-# 2. Create a namespace for the app (the namespace IS the root group)
-meroctl namespace create --application-id <application-id>
-# → prints namespace-id  (also usable directly as a group id)
+# merod and meroctl, a pinned release
+curl -fsSL https://raw.githubusercontent.com/calimero-network/core/master/scripts/install.sh \
+  | sh -s -- merod meroctl --version 1.0.0-rc.24
 
-# 3. Create context (calls init()) — bound to the namespace's root group
-meroctl context create --application-id <application-id> --group-id <namespace-id>
-# → prints context-id
-
-# 4. Call a method — METHOD is positional, the context is the --context flag.
-#    A "view" is simply a read-only method; there is NO --view flag.
-meroctl call set --context <context-id> --args '{"key":"hello","value":"world"}'
-
-# 5. Call a view method (a view is just a read-only method — same call form)
-meroctl call get --context <context-id> --args '{"key":"hello"}'
+# or Homebrew
+brew install calimero-network/tap/meroctl calimero-network/tap/merod
 ```
 
-See `references/` (multi-node setup) for invitations, subgroups, and joining contexts.
+## From nothing to a call (development cluster)
 
-## Global flags
+```bash
+meroctl local up                                     # 3 nodes on 127.0.0.1:2501-2503, saved as node `local`
+meroctl login --dev-passkey ./dev-passkey.json --name ada   # a new file signs up
+meroctl app build apps/kv-store --out kv_store.wasm    # in a checkout of core
+meroctl context create --name kv --path kv_store.wasm --alias kv
+meroctl call -c kv set --args '{"key":"a","value":"1"}'
+meroctl call -c kv get --args '{"key":"a"}' --view
+meroctl context watch kv --limit 1                   # committed events, as JSON lines
+meroctl local down
+```
 
-| Flag                    | Purpose                                                         |
-| ----------------------- | --------------------------------------------------------------- |
-| `--node <name>`         | Use a registered node by name                                   |
-| `--api <url>`           | Connect to a node directly by URL (skips registration)          |
-| `--home <path>`         | Alternate meroctl config directory (default: system config dir) |
-| `--output-format <fmt>` | Output format — `json` for machine-readable / scripting         |
+`meroctl local dev apps/<app>` does all of that in one command for a project made by
+`meroctl app new` and rebuilds on every save. See `references/local-cluster.md`.
 
-## Key rules
+## Key facts
 
-- `app install`, `namespace create`, and `context create` are separate steps. `context create`
-  **requires `--group-id`** — pass the `namespace-id` from `namespace create` (the namespace is the
-  root group), or a subgroup id from `namespace create-group`.
-- `meroctl call` takes the **method name positionally** and the context via `--context` (or `-c`);
-  there is **no `--view` flag** — a view is just a read-only method. `call` has no `--as` flag (the
-  call flags are `--args`, `--id`, `--substitute`, `-i`/`--interactive`, `--timeout`); `--as` is for
-  identity-aliasing subcommands like `context create`/`identity`, not `call`.
-- Identity management is **under `context`** (`meroctl context identity …`) — there is no top-level
-  `meroctl identity` command.
-- Uninstall apps with `meroctl app uninstall <app-id>` (not `app remove`).
-- Register a node with `meroctl node add` + `meroctl node use` once; after that no `--node` flag is
-  needed.
+- **Output is JSON**, pretty-printed: the route's answer. There is no `--output-format`; pipe to
+  `jq`.
+- **Which node**: `--api URL`, else `--node ALIAS|URL`, else the default saved node. **Which
+  credential**: `--api-key`, else the session saved for that node's URL, else none.
+- **A `CONTEXT` argument** is an alias of the signed-in account or an app id (a context id works
+  too). `context create --alias` and `context alias add` name one.
+- **`call`** is `meroctl call -c CONTEXT METHOD [--args JSON] [--view [--min-index N]]`. `--view` is
+  a read (`POST /apps/{app}/views`, no write); without it the call is an intent
+  (`POST /apps/{app}/intents`). Both answer `{ index, result, receipt }`. Methods and argument names
+  are the ABI's camelCase; a `u64` travels as a decimal string.
+- **`context create`** needs `--name` and one of `--package P [--version V]`, `--bundle HASH` or
+  `--path FILE`; `--params JSON` feeds `init`, `--namespace ORG [--group TEAM]` puts it in an
+  organization (none: the account's personal organization), `--alias` names it.
+- **Signing in**: `login --dev-passkey FILE` on a development cluster only (it needs
+  `--allow-mock`). On a real cluster, use an API key (`--api-key` or `CALIMERO_API_KEY`) and say
+  which images you trust: `--tee-profiles NAME,...` (without it every real quote is refused) and
+  optionally `--min-release VERSION` (default `2.3.109`).
+- **Owner approvals** (`context update`, `namespace invite`, `account api-key create`, a confirm
+  method's `call`, ...) take `--dev-passkey FILE` on a development cluster; without it the node
+  answers `412 CONFIRM_REQUIRED`, and on a real cluster the owner approves in the console.
+- **Installs**: `app install --path FILE` (a `.mpk`, or a raw `.wasm`) is for development clusters;
+  a real cluster installs `app install PACKAGE@VERSION` from its registry.
+
+## What changed from 0.x
+
+| 0.x                                                       | core 1.0                                                                                           |
+| --------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `context create --application-id A --group-id G`          | `context create --name N (--package P \| --bundle H \| --path F) [--namespace ORG [--group TEAM]]` |
+| `namespace create --application-id A` (the root group)    | `namespace create NAME` (an organization; every account also has a personal one)                   |
+| `call <ctx> METHOD`, "no `--view` flag"                   | `call -c CONTEXT METHOD --args JSON`, `--view` for reads                                           |
+| `POST /jsonrpc` envelope `{ jsonrpc, method: "execute" }` | `meroctl call`, or `POST /apps/{app}/intents` and `/views` (`meroctl raw`, `meroctl proxy`)        |
+| `context identity ...`, executor keys, `--as`             | accounts: passkeys (`login`, `account device`) and API keys (`account api-key`)                    |
+| `peers`, `context sync`, `group sync`                     | gone: no gossip, each app instance's Raft log replicates it                                        |
+| `group join-context`, `namespace join NS INVITE_JSON`     | `namespace join TOKEN`; who reaches a context is its access (`context access`, `--group`)          |
+| `node add NAME /path/to/home`, port 2528                  | `node add NAME URL [--allow-mock]`; `local up` serves 2501-2503                                    |
+| `--output-format json`                                    | always JSON                                                                                        |
+| `context create --watch FILE`                             | `local dev`, `app watch --path FILE --dev-passkey F`, `dev start`                                  |
+| merobox                                                   | `meroctl local up\|dev\|test`                                                                      |
 
 ## References
 
-See `references/` for:
+- `references/commands.md`: every command group (node, login/attest, app, context, call, blob, file,
+  namespace, group, account, cloud, proxy, raw, ops) with its flags.
+- `references/local-cluster.md`: `local up|down|status|dev|test`, Docker, and the rc.25 change.
+- `references/sign-in-and-trust.md`: sessions, file passkeys, API keys, the trust flags, `attest`.
+- `references/orgs-and-teams.md`: organizations, teams, invitations, access.
+- `references/scripting.md`: CI and scripts (API keys, `jq`, upgrade keys, `proxy`, `raw`).
 
-- Full command reference for all subcommand groups
-- Scripting patterns for CI and automation
-- Multi-node setup with namespaces and groups
+## Rules
+
+- `rules/call-view-flag.md`: pass `--view` for reads, `-c` for the context.
+- `rules/context-create-in-an-org.md`: no `--group-id`; `--namespace`/`--group` or nothing.
+- `rules/dev-passkey-is-dev-only.md`: file passkeys and `--allow-mock` only on development clusters.
+- `rules/register-node-once.md`: save a node once, then omit `--node`.

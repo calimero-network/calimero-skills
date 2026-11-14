@@ -12,6 +12,7 @@ This package provides AI agent skills for building on the Calimero Network stack
 | `calimero-registry`    | `npx @calimero-network/agent-skills calimero-registry`    | Signing and publishing apps to the registry                 |
 | `calimero-desktop`     | `npx @calimero-network/agent-skills calimero-desktop`     | Integrating apps with Calimero Desktop SSO                  |
 | `calimero-node`        | `npx @calimero-network/agent-skills calimero-node`        | Node operators and meroctl scripting                        |
+| `calimero-meroctl`     | `npx @calimero-network/agent-skills calimero-meroctl`     | meroctl 1.0: local cluster, sign-in, contexts, calls, orgs  |
 | `calimero-client-py`   | `npx @calimero-network/agent-skills calimero-client-py`   | Python client for node automation and backend services      |
 | `calimero-abi-codegen` | `npx @calimero-network/agent-skills calimero-abi-codegen` | Typed app clients with `meroctl app codegen`                |
 
@@ -52,8 +53,8 @@ Core concepts:
 
 The SDK 0.12 model (contexts, CRDT state on every node, JSON-RPC, identities and executor keys) is
 gone since core 1.0.0-rc.9. Skills not yet updated to 1.0 (`calimero-core`, `calimero-node`,
-`calimero-merod`, `calimero-meroctl`, `calimero-sdk-js`, `calimero-desktop`, `calimero-client-py`)
-may still describe it; prefer `calimero-rust-sdk`, `calimero-client-js`, `calimero-abi-codegen` and
+`calimero-merod`, `calimero-sdk-js`, `calimero-desktop`, `calimero-client-py`) may still describe
+it; prefer `calimero-rust-sdk`, `calimero-client-js`, `calimero-meroctl`, `calimero-abi-codegen` and
 `calimero-registry` where they disagree.
 
 Tooling: `meroctl` is the one CLI from core 1.0.0-rc.24. It starts, builds, generates clients for,

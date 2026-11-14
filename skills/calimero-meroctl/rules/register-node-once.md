@@ -1,34 +1,41 @@
-# Rule: Register Node Once, Then Use by Name
+# Rule: Save a Node Once, Then Use It by Name
 
-**Run `meroctl node add` + `meroctl node use` once. After that, omit `--node` from all commands.**
+**Run `meroctl node add` once (or let `local up` / `cloud use` save it). After that, omit
+`--node`.**
 
 ## Pattern
 
 ```bash
-# One-time setup:
-meroctl node add node1 /path/to/calimero/home   # or http://url for remote
-meroctl node use node1
+# meroctl local up saves `local` and makes it the default when there is none
+meroctl local up
 
-# All subsequent commands use the active node automatically:
-meroctl app install --path app.wasm              # no --node needed
-meroctl context ls                               # no --node needed
-meroctl call get --context <ctx-id> --args '{}'  # no --node needed
+# a real node: save it, make it the default
+meroctl node add prod https://node.example.com
+meroctl node use prod
+
+# or a Calimero Cloud cluster
+meroctl cloud use my-cluster
+
+# every later command uses the default node
+meroctl context list
+meroctl call -c kv get --args '{"key":"a"}' --view
 ```
+
+`node add` takes a URL (any node of the cluster), not a node's home directory. Saved nodes live in
+`{home}/meroctl/nodes.json`; sessions are kept per node URL.
 
 ## Don't do this
 
 ```bash
-# Repetitive and error-prone:
-meroctl --node node1 app install --path app.wasm
-meroctl --node node1 context create --application-id <id> --group-id <namespace-id>
-meroctl --node node1 call get --context <ctx-id> --args '{}'
+meroctl --node prod context list
+meroctl --node prod call -c kv get --args '{"key":"a"}' --view
 ```
 
-## Exception: multiple nodes
+## Exception: several clusters in one script
 
-When scripting across multiple nodes in one session, use explicit `--node` to avoid ambiguity:
+Name the node per command when a script talks to more than one cluster:
 
 ```bash
-meroctl --node node1 namespace invite <ns-id>   # Node A generates invite
-meroctl --node node2 namespace join <ns-id> ... # Node B accepts
+meroctl --node staging call -c kv get --args '{"key":"a"}' --view
+meroctl --node prod call -c kv get --args '{"key":"a"}' --view
 ```
