@@ -1,118 +1,136 @@
 # calimero-registry — Agent Instructions
 
-You are helping a developer **build and publish a Calimero app bundle** to the App Registry.
+You are helping a developer **package, sign and publish a Calimero app** to the App Registry with
+core's **`meroctl`**.
 
-## Two tools
+## One tool
 
-| Tool                | Install                                                                   | Purpose                                    |
-| ------------------- | ------------------------------------------------------------------------- | ------------------------------------------ |
-| `cargo-mero`        | `cargo install --git https://github.com/calimero-network/core cargo-mero` | Builds, signs, and packs the `.mpk` bundle |
-| `calimero-registry` | `npm install -g @calimero-network/registry-cli`                           | Pushes the bundle to the registry          |
+`meroctl` is core's one command line (core 1.0.0-rc.24 and later). Its `app` commands that need no
+node build, sign, pack, inspect and publish a release:
 
-`cargo-mero` also ships as a prebuilt `cargo-mero_<target>.tar.gz` on the core releases page. It is
-a cargo subcommand, so once the binary is on `PATH` you invoke it as `cargo mero`.
+| Command                        | Does                                                                            | Replaces                                         |
+| ------------------------------ | ------------------------------------------------------------------------------- | ------------------------------------------------ |
+| `meroctl app build [DIR]`      | The crate as a `calimero:app` component (and its compute component, if any)     | `mero-app-build`, `cargo mero build`             |
+| `meroctl app signer new FILE`  | A new Ed25519 signing key, written owner-only                                   | `mero-sign generate-key`, `cargo mero key`       |
+| `meroctl app signer id FILE`   | The key's `did:key` signer id                                                   | `mero-sign derive-signer-id`                     |
+| `meroctl app pack [DIR]`       | Writes `manifest.json`, signs it, packs the `.mpk`                              | `scripts/pack-component.py`, `cargo mero bundle` |
+| `meroctl app sign MANIFEST`    | Signs a `manifest.json` in place                                                | `mero-sign sign`, `cargo mero sign`              |
+| `meroctl app inspect FILE.mpk` | Opens the bundle as a node does and prints `verified`, `signerId`, the manifest | —                                                |
+| `meroctl app publish FILE.mpk` | Pushes the signed `.mpk` to the registry                                        | `calimero-registry bundle push`                  |
+
+Install it from a core release (Linux x86_64/aarch64, macOS aarch64), checked against the release's
+`SHA256SUMS`:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/calimero-network/core/master/scripts/install.sh | sh
+meroctl --version
+```
+
+`cargo-mero`, `mero-sign`, `mero-app-build`, `scripts/pack-component.py` and the `install-sh`
+repository are gone after core 1.0.0-rc.24.
 
 ## Quick workflow
 
 ```bash
-# 1. Generate a signing key (one-time)
-cargo mero key generate -o my-key.json
-echo "my-key.json" >> .gitignore
+# 1. A signing key (once). Keep it out of the repo: it is half of the app's identity.
+meroctl app signer new release.key
+echo "release.key" >> .gitignore
 
-# 2. Build every service, write + sign manifest.json, pack the bundle
-cargo mero bundle --key my-key.json
-# -> dist/com.yourorg.myapp.mpk
+# 2. Build the component, write + sign manifest.json, pack the bundle
+meroctl app pack logic --key release.key
+# -> logic/dist/com.yourorg.myapp-0.1.0.mpk
 
-# 3. Configure the registry (one-time)
-calimero-registry config set registry-url https://apps.calimero.network
-calimero-registry config set api-key your-api-key
+# 3. Check it as a node would
+meroctl app inspect logic/dist/com.yourorg.myapp-0.1.0.mpk
 
-# 4. Push
-calimero-registry bundle push dist/com.yourorg.myapp.mpk --remote
+# 4. Publish (the API key from the registry's Organizations page, CLI Access)
+export CALIMERO_REGISTRY_API_KEY=your-api-key
+meroctl app publish logic/dist/com.yourorg.myapp-0.1.0.mpk
 ```
 
 ## Bundle metadata comes from Cargo.toml
 
-`cargo mero bundle` reads `[package.metadata.calimero]` (or `[workspace.metadata.calimero]` for a
-multi-service workspace). Keys are kebab-case; the workspace table wins when both are present.
+Given the crate's directory, `meroctl app pack` reads `[package.metadata.calimero]` and the crate's
+`[package] version`; flags win over the table. Keys are kebab-case.
 
 ```toml
+[package]
+name = "my-app"
+version = "0.1.0"                       # appVersion, unless --app-version
+
 [package.metadata.calimero]
-package = "com.yourorg.myapp"          # required, reverse-DNS
-name = "My App"
+package = "com.yourorg.myapp"           # required (or --package), reverse-DNS
+name = "My App"                         # metadata.name; a registry needs it to list a new package
 description = "Does something useful"
 author = "Your Name"
-min-runtime-version = "0.7.0"
-frontend = "https://my-app.com"        # Desktop opens this URL
+icon = "../app/public/icon.png"         # a PNG, relative to the crate
+category = "developer-tools"
+tags = ["notes"]
+min-runtime-version = "1.0.0-rc.24"     # the oldest node release that runs it
+frontend-dir = "../app/dist"            # the static web build the bundle carries
+frontend = "https://my-app.example.com" # links.frontend
+github = "https://github.com/yourorg/myapp"
 ```
 
-| `Cargo.toml` key      | `manifest.json` field  | Default                      |
-| --------------------- | ---------------------- | ---------------------------- |
-| `package`             | `package`              | required                     |
-| `name`                | `metadata.name`        | the crate name               |
-| `description`         | `metadata.description` | omitted                      |
-| `author`              | `metadata.author`      | omitted                      |
-| `min-runtime-version` | `minRuntimeVersion`    | `0.1.0`                      |
-| `frontend`            | `links.frontend`       | omitted                      |
-| `services`            | `services[]`           | empty (workspace table only) |
+| `Cargo.toml` key                     | `manifest.json` field                    | Flag                          | Default              |
+| ------------------------------------ | ---------------------------------------- | ----------------------------- | -------------------- |
+| `package`                            | `package`                                | `--package`                   | required             |
+| `[package] version`                  | `appVersion`                             | `--app-version`               | required             |
+| `min-runtime-version`                | `minRuntimeVersion`                      | `--min-runtime-version`       | `0.1.0`              |
+| `name`                               | `metadata.name`                          | `--name`                      | no `metadata` at all |
+| `description`                        | `metadata.description`                   | `--description`               | omitted              |
+| `icon` (PNG path)                    | `metadata.icon` (a data URI)             | `--icon`                      | omitted              |
+| `category`                           | `metadata.category`                      | `--category`                  | omitted              |
+| `author`, `license`, `tags`, `guide` | `metadata.*` (`guide` is a file, read)   | none                          | omitted              |
+| `slug`                               | `handlers.slug`                          | none                          | the package          |
+| `frontend`, `github`, `docs`         | `links.*` (http(s) URLs)                 | none                          | omitted              |
+| `frontend-aliases`                   | `frontendAliases`                        | none                          | omitted              |
+| `frontend-dir`                       | `frontend` (the files under `frontend/`) | `--frontend`, `--no-frontend` | none                 |
+| `outbound`                           | `outbound`                               | `--outbound` (repeatable)     | none                 |
+| `upgrades` (`owner` or `publisher`)  | `upgrades`                               | `--upgrades`                  | absent (the owner)   |
 
-The app version is not a metadata key: it defaults to the crate's `[package] version` and is
-overridable with `--app-version`.
+`--description`, `--icon` and `--category` need a `name` (the table's or `--name`). A `frontend-dir`
+that does not exist yet is skipped with a note: build the frontend first, or pass `--no-frontend`.
 
-## Bundle flags
+## Pack flags
 
-| Flag                    | Description                                                               |
-| ----------------------- | ------------------------------------------------------------------------- |
-| `--key <file>`          | Sign with a production Ed25519 key file                                   |
-| `--dev`                 | Sign with the well-known dev key: local only, **refused by the registry** |
-| `--app-version`         | Override the `appVersion` recorded in `manifest.json`                     |
-| `--package`             | Override the reverse-DNS package id                                       |
-| `-o, --output`          | Output path for the `.mpk` (defaults to `dist/<package>.mpk`)             |
-| `--profiling`           | Skip `wasm-opt`, keep debug info                                          |
-| `--features`            | Cargo features, comma or space separated, repeatable                      |
-| `--no-default-features` | Disable the crate's default features                                      |
+| Flag                                                                                                                                 | Description                                                                          |
+| ------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------ |
+| `--key <file>`                                                                                                                       | Sign with this key file; without it the **development key** signs (registry refuses) |
+| `--previous <old>`                                                                                                                   | The last release: report ABI changes, refuse a state change without a version bump   |
+| `--out <file>`                                                                                                                       | The `.mpk` (default `<DIR>/dist/<package>-<version>.mpk`, else `./` without a DIR)   |
+| `--wasm <file>`                                                                                                                      | A component already built (skips the build); `--compute <file>` its compute part     |
+| `--pipeline <file>`                                                                                                                  | A pipeline YAML to ship (repeatable)                                                 |
+| `--frontend <dir>`                                                                                                                   | A static web build (`--frontend-entry`, default `index.html`)                        |
+| `--app-version`, `--package`, `--min-runtime-version`, `--name`, `--description`, `--icon`, `--category`, `--outbound`, `--upgrades` | Override the table above                                                             |
 
-With neither `--key` nor `--dev`, `bundle` reads the `MERO_SIGN_KEY` environment variable as the
-path to a key file. That is the CI-friendly form: materialize the key from a secret, export the
-variable, run `cargo mero bundle`.
+There is no environment variable for the key: pass `--key`. The key file must be readable by its
+owner only (`chmod 600`); `meroctl` refuses one that group or others can read.
+
+## Publish flags
+
+| Flag               | Environment                 | Default                          |
+| ------------------ | --------------------------- | -------------------------------- |
+| `--registry <url>` | `CALIMERO_REGISTRY_URL`     | `https://apps.calimero.network`  |
+| `--api-key <key>`  | `CALIMERO_REGISTRY_API_KEY` | required                         |
+| `--org <org>`      |                             | publish as a Calimero Cloud org  |
+| `--cloud <url>`    | `CALIMERO_CLOUD_URL`        | `https://cloud.calimero.network` |
+| `--public`         |                             | a new package is private         |
+
+With `--org`, the API key is the Cloud organization's `ck_live_…` key (scope `registry:publish`);
+`meroctl` trades it at the Cloud for a short publish token first. The registry must be `https://`
+(or loopback). A refusal comes back with the registry's code (`version_not_allowed`,
+`invalid_signature`, ...).
 
 ## Signing is mandatory
 
-There is no unsigned install path. A bundle is signed as part of packaging, and the node verifies
-both the signature and every artifact's SHA-256 before installing. See `rules/signed-and-hashed.md`.
+There is no unsigned install path. `meroctl app pack` signs as part of packaging, and the node
+verifies both the signature and every artifact's SHA-256 before installing. See
+`rules/signed-and-hashed.md`.
 
 Your signing key is half of your app's on-node identity
 (`ApplicationId = SHA-256(borsh((package, signerId)))`), so signing every release with the same key
 is what makes the next release an upgrade rather than a new app. See `references/signing.md`.
-
-## Bundle push flags
-
-```bash
-# Push to local registry (default)
-calimero-registry bundle push dist/com.yourorg.myapp.mpk --local
-
-# Push to remote registry (uses config file)
-calimero-registry bundle push dist/com.yourorg.myapp.mpk --remote
-
-# Override config with flags
-calimero-registry bundle push dist/com.yourorg.myapp.mpk \
-  --remote \
-  --url https://apps.calimero.network \
-  --api-key your-api-key
-```
-
-## Configuration
-
-```bash
-# Set defaults (stored in ~/.calimero-registry/remote-config.json)
-calimero-registry config set registry-url https://apps.calimero.network
-calimero-registry config set api-key your-api-key
-calimero-registry config list
-
-# Or use environment variables
-export CALIMERO_REGISTRY_URL=https://apps.calimero.network
-export CALIMERO_API_KEY=your-api-key
-```
 
 ## Package naming rules
 
@@ -121,31 +139,34 @@ export CALIMERO_API_KEY=your-api-key
 
 ## Updating an existing app (new version)
 
-Bump `[package] version` in `Cargo.toml` (or pass `--app-version`), then rebuild and push with the
-**same** key - the signer is half the application id, so a different key publishes a different app.
+Bump `[package] version` (or pass `--app-version`), name the last release with `--previous`, and
+sign with the **same** key - the signer is half the application id, so a different key publishes a
+different app.
 
 ```bash
-cargo mero bundle --key my-key.json --app-version 1.1.0
-calimero-registry bundle push dist/com.yourorg.myapp.mpk --remote
+meroctl app pack logic --key release.key --app-version 1.1.0 \
+  --previous logic/dist/com.yourorg.myapp-1.0.0.mpk
+meroctl app publish logic/dist/com.yourorg.myapp-1.1.0.mpk
 ```
 
 ## CI auto-publish
 
 Publish a new version automatically on every merge to the default branch that touches the contract:
-resolve the next version **from the registry itself** (latest published `appVersion` + patch bump),
-pass it to `cargo mero bundle --app-version`, and push the `.mpk`. Users provide their own two
-secrets: `CALIMERO_SIGNING_KEY` (generate with `cargo mero key generate`) and
-`CALIMERO_REGISTRY_API_KEY` (registry Organizations page). Full workflow template,
-version-resolution snippet, and gotchas (registry-cli needs Node ≥ 24; queue - don't cancel -
-concurrent deploys): see `references/ci-auto-publish.md`.
+install `meroctl` from a pinned core release, resolve the next version **from the registry itself**
+(latest published `appVersion` + patch bump), pass it to `meroctl app pack --app-version`, and
+`meroctl app publish` the `.mpk`. Users provide their own two secrets: `CALIMERO_SIGNING_KEY`
+(generate with `meroctl app signer new`) and `CALIMERO_REGISTRY_API_KEY` (registry Organizations
+page, or a Cloud organization's `ck_live_` key with `--org`). Full workflow template,
+version-resolution snippet and gotchas: see `references/ci-auto-publish.md`.
 
 ## Related skills
 
-- **`calimero-rust-sdk`** — building the WASM app that gets published
+- **`calimero-rust-sdk`** — building the app that gets published
+- **`calimero-abi-codegen`** — `meroctl app abi diff` and the typed client
 - **`calimero-core`** — application/context model and how the registry integrates with node app
   install
 
 ## References
 
-See `references/` for manifest format, signing details, and push workflow. See `rules/` for hard
-constraints.
+See `references/` for manifest format, signing details, and the publish workflow. See `rules/` for
+hard constraints.

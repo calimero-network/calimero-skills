@@ -5,13 +5,16 @@ that touches the contract.
 
 ## How it works
 
-1. The workflow resolves the **next version from the registry itself** (latest published
-   `appVersion` + patch bump), so there are no manual version edits and no drift.
-2. `cargo mero bundle --app-version <resolved>` builds every service, stages the artifacts, writes
-   `manifest.json` with a real SHA-256 per artifact, signs it, and tars `dist/<package>.mpk`.
-3. `calimero-registry bundle push dist/<package>.mpk --remote` publishes it.
+1. The workflow installs `meroctl` from a pinned core release (`MEROCTL_TAG`), checked against the
+   release's `SHA256SUMS`: no `cargo install`, nothing compiled but the app.
+2. It resolves the **next version from the registry itself** (latest published `appVersion` + patch
+   bump), so there are no manual version edits and no drift.
+3. `meroctl app pack logic --app-version <resolved> --key <file>` builds the component, writes
+   `manifest.json` with a real SHA-256 per artifact, signs it, and writes
+   `logic/dist/<package>-<version>.mpk`.
+4. `meroctl app publish <mpk>` publishes it.
 
-There is no build script and no separate signing step: step 2 is one command.
+There is no build script and no separate signing step: step 3 is one command.
 
 ## Why one command and not a hand-written manifest
 
@@ -24,20 +27,21 @@ A node install has three hard requirements, and a hand-rolled `manifest.json` br
 - `manifest.json` **must be the first member** of the tar. The node's manifest scan is bounded and
   runs before the signature check, so a manifest sitting behind the wasm is never found.
 
-`cargo mero bundle` satisfies all three by construction. See `rules/signed-and-hashed.md`.
+`meroctl app pack` satisfies all three by construction, and `meroctl app inspect` checks a bundle
+the way a node does. See `rules/signed-and-hashed.md`.
 
 ## Required repository secrets (users set these up themselves)
 
-| Secret                      | What it is                                                                                                                     |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| `CALIMERO_SIGNING_KEY`      | Full JSON content of a signing key file. Generate once with `cargo mero key generate --output my-key.json` and paste the body. |
-| `CALIMERO_REGISTRY_API_KEY` | API token from the registry **Organizations** page (CLI Access section).                                                       |
+| Secret                      | What it is                                                                                                                                      |
+| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `CALIMERO_SIGNING_KEY`      | Full JSON content of a signing key file. Generate once with `meroctl app signer new my-key.json` and paste the body.                            |
+| `CALIMERO_REGISTRY_API_KEY` | API token from the registry **Organizations** page (CLI Access section), or a Cloud organization's `ck_live_` key when publishing with `--org`. |
 
 ```bash
-cargo mero key generate --output my-key.json     # NEVER commit this file
-cargo mero key derive-signer-id --key my-key.json # the signerId this key publishes under
+meroctl app signer new my-key.json            # NEVER commit this file
+meroctl app signer id my-key.json             # the signerId this key publishes under
 gh secret set CALIMERO_SIGNING_KEY < my-key.json
-gh secret set CALIMERO_REGISTRY_API_KEY          # paste the token
+gh secret set CALIMERO_REGISTRY_API_KEY       # paste the token
 ```
 
 Key rules (see `rules/key-security.md`):
@@ -46,8 +50,9 @@ Key rules (see `rules/key-security.md`):
   so a different key publishes a different app instead of an upgrade.
 - New versions must be signed by the same key that signed the previous version, OR any key if the
   package is linked to an org the API-key owner is a member of.
-- Never commit the key file. In CI, materialize it from the secret into a temp file.
-- Never use `--dev` in CI: it signs with a well-known shared key that the registry **refuses**.
+- Never commit the key file. In CI, materialize it from the secret into an owner-only temp file.
+- Never pack without `--key` in CI: the development key is a well-known shared key that the registry
+  **refuses**.
 
 ## Version resolution (`scripts/resolve-app-version.sh`)
 
@@ -57,7 +62,7 @@ returns a flat array of bundle objects with an `appVersion` field: take the max 
 
 ```bash
 #!/usr/bin/env bash
-# Prints the next appVersion on stdout; feeds `cargo mero bundle --app-version`.
+# Prints the next appVersion on stdout; feeds `meroctl app pack --app-version`.
 set -euo pipefail
 
 PACKAGE="com.yourorg.myapp"
@@ -92,7 +97,7 @@ except Exception:
 The same script drives a manual publish, so CI and a laptop pick versions identically:
 
 ```bash
-cargo mero bundle --key my-key.json --app-version "$(scripts/resolve-app-version.sh)"
+meroctl app pack logic --key my-key.json --app-version "$(scripts/resolve-app-version.sh)"
 ```
 
 `APP_VERSION_OVERRIDE=x.y.z` pins an explicit version instead, for a migration bundle or a
@@ -116,9 +121,13 @@ concurrency:
   group: deploy-bundle
   cancel-in-progress: false
 
+permissions:
+  contents: read
+
 env:
-  # Keep in sync with the calimero-sdk tag in logic/Cargo.toml
-  CARGO_MERO_VERSION: 0.11.0-rc.19
+  # The core release meroctl comes from. Keep it at or above the calimero-sdk
+  # tag in logic/Cargo.toml.
+  MEROCTL_TAG: 1.0.0-rc.24
   PACKAGE: com.yourorg.myapp
 
 jobs:
@@ -128,30 +137,35 @@ jobs:
     steps:
       - name: Check required secrets
         env:
-          MERO_SIGN_KEY_JSON: ${{ secrets.CALIMERO_SIGNING_KEY }}
+          CALIMERO_SIGNING_KEY: ${{ secrets.CALIMERO_SIGNING_KEY }}
           CALIMERO_REGISTRY_API_KEY: ${{ secrets.CALIMERO_REGISTRY_API_KEY }}
         run: |
           missing=0
-          [ -n "$MERO_SIGN_KEY_JSON" ] || { echo "::error::CALIMERO_SIGNING_KEY secret is not set"; missing=1; }
+          [ -n "$CALIMERO_SIGNING_KEY" ] || { echo "::error::CALIMERO_SIGNING_KEY secret is not set"; missing=1; }
           [ -n "$CALIMERO_REGISTRY_API_KEY" ] || { echo "::error::CALIMERO_REGISTRY_API_KEY secret is not set"; missing=1; }
           exit $missing
 
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v4
 
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@master
+      # `meroctl app build` (run by `app pack`) compiles the crate for wasm32-wasip2.
+      - uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: '1.89.0'
-          targets: wasm32-unknown-unknown
+          targets: wasm32-wasip2
 
-      # Prebuilt release asset, not `cargo install`: no compile, no cache to keep.
-      # wasm-opt is compiled into the binary, so binaryen is not needed either.
-      - name: Install cargo-mero
+      # The release's prebuilt binary, checked against its SHA256SUMS: no
+      # `cargo install`, no cache to keep. The same shape as
+      # calimero-network/apps' scripts/install-meroctl.sh.
+      - name: Install meroctl
         run: |
-          mkdir -p "$HOME/.cargo/bin"
-          curl -fsSL "https://github.com/calimero-network/core/releases/download/${CARGO_MERO_VERSION}/cargo-mero_x86_64-unknown-linux-gnu.tar.gz" \
-            | tar -xzf - -C "$HOME/.cargo/bin"
-          cargo mero --version
+          set -euo pipefail
+          T=x86_64-unknown-linux-gnu
+          base="https://github.com/calimero-network/core/releases/download/$MEROCTL_TAG"
+          dir="$RUNNER_TEMP/meroctl"
+          mkdir -p "$dir" && cd "$dir"
+          curl -fsSLO --retry 3 "$base/meroctl_$T.tar.gz"
+          curl -fsSL --retry 3 "$base/SHA256SUMS" | grep " meroctl_$T.tar.gz\$" | sha256sum -c
+          tar -xzf "meroctl_$T.tar.gz" meroctl
+          echo "$dir" >> "$GITHUB_PATH"
 
       - name: Resolve next app version
         id: version
@@ -163,50 +177,52 @@ jobs:
 
       - name: Build, sign, and pack the bundle
         env:
-          MERO_SIGN_KEY_JSON: ${{ secrets.CALIMERO_SIGNING_KEY }}
+          CALIMERO_SIGNING_KEY: ${{ secrets.CALIMERO_SIGNING_KEY }}
+          VERSION: ${{ steps.version.outputs.app_version }}
         run: |
-          export MERO_SIGN_KEY="$RUNNER_TEMP/mero-key.json"
-          printf '%s' "$MERO_SIGN_KEY_JSON" > "$MERO_SIGN_KEY"
-          cargo mero bundle \
-            --manifest-path logic/Cargo.toml \
-            --app-version "${{ steps.version.outputs.app_version }}"
-
-      # registry-cli declares engines.node >= 24 - pin it explicitly rather than
-      # relying on whatever the runner image happens to ship
-      - name: Set up Node 24
-        uses: actions/setup-node@v7
-        with:
-          node-version: '24'
-
-      - name: Install calimero-registry CLI
-        run: npm install -g @calimero-network/registry-cli
+          set -euo pipefail
+          key="$RUNNER_TEMP/mero-key.json"
+          # meroctl refuses a key file group or others can read: write it 0600.
+          (umask 077 && printf '%s' "$CALIMERO_SIGNING_KEY" > "$key")
+          meroctl app pack logic --package "$PACKAGE" --app-version "$VERSION" \
+            --key "$key" --out "dist/$PACKAGE-$VERSION.mpk"
+          rm -f "$key"
+          meroctl app inspect "dist/$PACKAGE-$VERSION.mpk"
 
       - name: Publish to App Registry
         env:
-          CALIMERO_API_KEY: ${{ secrets.CALIMERO_REGISTRY_API_KEY }}
+          CALIMERO_REGISTRY_API_KEY: ${{ secrets.CALIMERO_REGISTRY_API_KEY }}
           CALIMERO_REGISTRY_URL: https://apps.calimero.network
-        run: calimero-registry bundle push "logic/dist/$PACKAGE.mpk" --remote
+          VERSION: ${{ steps.version.outputs.app_version }}
+        run: meroctl app publish "dist/$PACKAGE-$VERSION.mpk"
 ```
 
-Prebuilt `cargo-mero_<target>.tar.gz` assets exist for `x86_64-unknown-linux-gnu`,
+Prebuilt `meroctl_<target>.tar.gz` assets exist for `x86_64-unknown-linux-gnu`,
 `aarch64-unknown-linux-gnu`, and `aarch64-apple-darwin`. On any other platform, build it instead:
-`cargo install --git https://github.com/calimero-network/core --tag <tag> cargo-mero`.
+`cargo install --locked --git https://github.com/calimero-network/core --tag <tag> meroctl`.
+
+To publish as a Calimero Cloud organization instead, store the organization's `ck_live_` key (scope
+`registry:publish`) as `CALIMERO_REGISTRY_API_KEY` and run
+`meroctl app publish "dist/$PACKAGE-$VERSION.mpk" --org <org>`; add `--public` to list a new package
+publicly.
 
 ## Gotchas
 
-- **The secret holds key JSON; the `MERO_SIGN_KEY` variable holds a key file PATH.** Wiring the
-  secret straight into `env: MERO_SIGN_KEY` makes `cargo mero bundle` open the JSON blob as a
-  filename. Write it to `$RUNNER_TEMP` first and point the variable at that file.
-- **Never `--dev` in CI.** The dev key is a well-known public seed; the registry refuses bundles
-  signed with it, and switching to a real key later forks the `ApplicationId`.
-- **Node ≥ 24**: `@calimero-network/registry-cli` declares `engines.node >= 24` and fails to install
-  on older runtimes - add an explicit `setup-node` step before `npm install -g` instead of trusting
-  the runner image default.
+- **The secret holds key JSON; `--key` takes a file PATH.** Write the secret to `$RUNNER_TEMP`
+  first, owner-only (`umask 077`): `meroctl` refuses a key file that group or others can read. There
+  is no `MERO_SIGN_KEY` environment variable any more.
+- **Never pack without `--key` in CI.** The development key is a well-known public seed; the
+  registry refuses bundles signed with it, and switching to a real key later forks the
+  `ApplicationId`.
 - **Don't cancel concurrent deploys** - two runs can resolve the same next version; queue them
   (`cancel-in-progress: false`).
 - **Version floor**: `FALLBACK_VERSION` only applies when the registry is unreachable or the package
   was never published - pushing a version that already exists is rejected.
-- **The `.mpk` filename carries no version**: the default output is `dist/<package>.mpk` and the
-  version lives inside the manifest, so the publish step names the file directly and needs no glob.
-- **`dist/` sits next to the manifest you point at**, not next to the repo root, so a contract at
-  `logic/Cargo.toml` produces `logic/dist/<package>.mpk`. `--output <path>` overrides it verbatim.
+- **The `.mpk` filename carries the version**: by default `pack` writes
+  `<DIR>/dist/<package>-<version>.mpk`. The template names the file with `--out`, so the publish
+  step needs no glob.
+- **A frontend is packed only if it is built**: when `[package.metadata.calimero]` names a
+  `frontend-dir`, build the frontend before `pack` (or pass `--no-frontend`); a missing directory is
+  skipped with a note, not an error.
+- **Pin `MEROCTL_TAG`** and move it on purpose: the manifest `pack` writes and the checks it runs
+  are that release's.

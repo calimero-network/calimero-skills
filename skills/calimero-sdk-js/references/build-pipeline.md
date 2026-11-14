@@ -79,12 +79,15 @@ meroctl --node <NODE> call get \
   --args '{"key":"hello"}'
 ```
 
-## End-to-end test with Merobox
+## End-to-end test on a local cluster
 
-Each example in the SDK ships a Merobox workflow for multi-node E2E testing:
+merobox, which ran the SDK's multi-node workflow files, is gone with core 1.0.0-rc.24. Run a
+three-node development cluster with `meroctl` instead and drive it with the commands above:
 
 ```bash
-merobox bootstrap run examples/counter/workflows/counter-js.yml --log-level=trace
+meroctl local up      # merod local in the background, saved as the node `local`
+meroctl local status  # its URLs and ops token
+meroctl local down
 ```
 
 ## Platform support

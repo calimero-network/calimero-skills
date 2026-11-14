@@ -15,7 +15,7 @@ apply its diff, and the test harness replays it with the same seed.
 | `panic!`, `.unwrap()` on user input, `&s[..n]` on UTF-8                              | a trap: the call fails as `422 TRAP`              | return an `#[app::error]` variant; `s.chars().take(n).collect()`      |
 | `std::collections::HashMap` as a state field                                         | not a collection handle                           | `UnorderedMap`, `Set`, `Vector`, `Table`, `Cell<T>` for a small value |
 | `calimero_storage::*`, `LwwRegister`, `UserStorage`, `#[app::private]`, `app::emit!` | does not exist: SDK 0.12 is gone                  | the component SDK's collections, `PerUser<T>`, `env::emit`            |
-| a `wasm32-unknown-unknown` build, `cargo mero build`                                 | an SDK 0.12 module: nodes refuse it               | `mero-app-build` (`wasm32-wasip2` component)                          |
+| a `wasm32-unknown-unknown` build, `cargo mero build`                                 | an SDK 0.12 module: nodes refuse it               | `meroctl app build` (`wasm32-wasip2` component)                       |
 
 A run's log entry is capped at 1 MiB, and a key over 1 KiB is refused (`KeyTooLong`). A failed call
 writes nothing and emits nothing.

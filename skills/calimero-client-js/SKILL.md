@@ -22,8 +22,8 @@ You are helping a developer connect a **browser or Node.js** frontend to Calimer
 - Call app methods with `client.apps.call({ app, method, args })` (through the app's log) and
   `client.apps.view({ app, method, args })` (no write). Method and argument names are camelCase;
   `u64`/`i64` are decimal strings, bytes base64url, `Option` is `null`.
-- Prefer the app's **generated typed client** (`mero-app-build codegen`) over hand-written
-  `apps.call` strings.
+- Prefer the app's **generated typed client** (`meroctl app codegen`) over hand-written `apps.call`
+  strings.
 - A development cluster (`merod local`, `merod run --dev`) sends mock attestation quotes, which pass
   only with `policy: { allowMock: true }`. Nothing is read from the environment.
 

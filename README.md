@@ -19,8 +19,8 @@ hallucinating APIs that don't exist.
 | [`calimero-node`](#calimero-node)               | Node operator quick-start (merod + meroctl overview)      |
 | [`calimero-merod`](#calimero-merod)             | merod daemon deep-dive — init, config, health             |
 | [`calimero-meroctl`](#calimero-meroctl)         | Complete meroctl CLI reference and scripting              |
-| [`calimero-registry`](#calimero-registry)       | Signing and publishing apps to the registry               |
-| [`calimero-abi-codegen`](#calimero-abi-codegen) | Typed app clients with `mero-app-build codegen`           |
+| [`calimero-registry`](#calimero-registry)       | Packing, signing and publishing apps with `meroctl app`   |
+| [`calimero-abi-codegen`](#calimero-abi-codegen) | Typed app clients with `meroctl app codegen`              |
 
 ## Install
 
@@ -88,14 +88,15 @@ Covers:
 - `env` and `guards`: the caller, organization roles, time, ids, events with audiences, cross-app
   calls
 - Blobs (`BlobRef`, `calimero_sdk::files`), testing with `TestApp` and scenarios, upgrades
-- Building with `mero-app-build` (`wasm32-wasip2` component), `merod local` for development
+- Building with `meroctl app build` (`wasm32-wasip2` component), `meroctl local` for development
 
 Key rules included:
 
 - Attribute placement; `#[app::error]` / `#[app::event]` in the logic module, named fields only
 - `Record` or `AbiType` on every type a method exchanges
 - Deterministic runs: `env::time_now()`, `env::random_bytes()`, `env::unique_id()`; SDK 0.12 APIs
-  (`calimero-storage`, `app::emit!`, `#[app::private]`, `cargo mero`) do not exist
+  (`calimero-storage`, `app::emit!`, `#[app::private]`) and the old tools (`cargo mero`,
+  `mero-app-build`, merobox) do not exist
 
 ```bash
 npx @calimero-network/agent-skills calimero-rust-sdk
@@ -161,12 +162,13 @@ For developers **publishing apps** to the Calimero App Registry.
 
 Covers:
 
-- `cargo mero bundle` - build, sign, and pack the `.mpk`
-- Key generation and security
-- `manifest.json` format and required fields
-- Signing workflow (RFC 8785 canonicalization + Ed25519)
-- `calimero-registry bundle push`
-- Team / org signing patterns
+- `meroctl app pack` - build, sign, and pack the `.mpk` (metadata from
+  `[package.metadata.calimero]`)
+- Key generation and security (`meroctl app signer new|id`)
+- `manifest.json` format and required fields, `meroctl app inspect`
+- Signing workflow (RFC 8785 canonicalization + Ed25519), `meroctl app sign`
+- `meroctl app publish`, with a registry API key or a Cloud organization's `ck_live_` key (`--org`)
+- CI auto-publish with a pinned `meroctl` release
 
 Key rules included:
 
@@ -291,15 +293,16 @@ npx @calimero-network/agent-skills calimero-client-py
 
 ### calimero-abi-codegen
 
-For generating a **typed client** for a Calimero app from its ABI with core's
-`mero-app-build codegen` (TypeScript, Python, Swift, Kotlin or OpenAPI).
+For generating a **typed client** for a Calimero app from its ABI with core's `meroctl app codegen`
+(TypeScript, Python, Swift, Kotlin or OpenAPI). The deprecated npm `@calimero-network/abi-codegen`
+read SDK 0.12 ABIs only; the skill keeps its name.
 
 Covers:
 
 - Running `codegen` on a component, `.mpk` or ABI JSON, and how the client class is named
 - Everything the TypeScript `client.ts` exports: `<Name>Client`, `<Name>Api`, `raw`, `events`,
   `InitArgs`, error and event types, the `{ after }` option
-- The component ABI format, installing `mero-app-build`, and `abi-diff` for breaking changes
+- The component ABI format, installing `meroctl`, and `meroctl app abi diff` for breaking changes
 
 Key rules included:
 

@@ -12,17 +12,17 @@
 <div class="breadcrumb"><a href="index.html">Home</a><span class="sep">/</span><span>Registry</span></div>
 
 <h1>Registry Skill</h1>
-<p class="page-subtitle">Context for signing, bundling, and publishing Calimero apps to the App Registry</p>
+<p class="page-subtitle">Context for packing, signing and publishing Calimero apps to the App Registry with core's <span class="code">meroctl</span></p>
 
 <div class="card ga">
 <h2>What This Skill Covers</h2>
-<p style="margin-bottom:12px;">The <span class="code">calimero-registry</span> skill gives your AI assistant knowledge of the two-tool publishing workflow so it can write correct signing scripts, manifest files, and bundle commands.</p>
+<p style="margin-bottom:12px;">The <span class="code">calimero-registry</span> skill gives your AI assistant the <span class="code">meroctl app</span> publishing workflow so it can write correct signing keys, pack commands, manifests and CI workflows. <span class="code">meroctl</span> (core 1.0.0-rc.24) replaces <span class="code">cargo-mero</span>, <span class="code">mero-sign</span>, <span class="code">mero-app-build</span>, <span class="code">scripts/pack-component.py</span> and <span class="code">calimero-registry bundle push</span>.</p>
 <div class="g2">
-  <div class="cb"><h4>Two Tools</h4>
-    <div class="fr" style="margin-top:8px;"><div class="fp">calimero-registry</div><div class="fd">npm CLI — bundle creation and registry push (<span class="code">npm install -g @calimero-network/registry-cli</span>)</div></div>
-    <div class="fr"><div class="fp">mero-sign</div><div class="fd">Rust CLI — Ed25519 key management and manifest signing (<span class="code">cargo install mero-sign</span>)</div></div>
+  <div class="cb"><h4>One Tool</h4>
+    <div class="fr" style="margin-top:8px;"><div class="fp">meroctl app</div><div class="fd"><span class="code">signer new|id</span>, <span class="code">build</span>, <span class="code">pack</span>, <span class="code">sign</span>, <span class="code">inspect</span>, <span class="code">publish</span>; no node needed</div></div>
+    <div class="fr"><div class="fp">Install</div><div class="fd"><span class="code">curl -fsSL https://raw.githubusercontent.com/calimero-network/core/master/scripts/install.sh | sh</span></div></div>
   </div>
-  <div class="cb"><h4>Install</h4>
+  <div class="cb"><h4>Install the skill</h4>
     <div class="typedef" style="margin-top:6px;"><span class="field">npx @calimero-network/agent-skills calimero-registry</span><br><br><span class="comment"># Recommended with Rust SDK:</span><br><span class="field">npx @calimero-network/agent-skills calimero-rust-sdk calimero-registry</span></div>
   </div>
 </div>
@@ -31,40 +31,33 @@
 <div class="card gb">
 <h2>Publish Workflow</h2>
 <div class="typedef">
-<span class="comment"># 1. Install registry CLI</span><br>
-<span class="field">npm install -g @calimero-network/registry-cli</span><br><br>
-<span class="comment"># 2. Configure registry (one-time)</span><br>
-<span class="field">calimero-registry config set registry-url https://apps.calimero.network</span><br>
-<span class="field">calimero-registry config set api-key your-api-key</span><br><br>
-<span class="comment"># 3. Build WASM</span><br>
-<span class="field">./build.sh</span><br><br>
-<span class="comment"># 4. Create bundle (WASM + metadata → .mpk)</span><br>
-<span class="field">calimero-registry bundle create \</span><br>
-&nbsp;&nbsp;<span class="comment">--output myapp-1.0.0.mpk \</span><br>
-&nbsp;&nbsp;<span class="comment">--name "My App" --version 1.0.0 \</span><br>
-&nbsp;&nbsp;<span class="comment">--author "Your Name" \</span><br>
-&nbsp;&nbsp;path/to/app.wasm com.yourorg.myapp<br><br>
-<span class="comment"># 5. Push to registry</span><br>
-<span class="field">calimero-registry bundle push myapp-1.0.0.mpk --remote</span>
+<span class="comment"># 1. A signing key (once); keep it out of git</span><br>
+<span class="field">meroctl app signer new release.key</span><br><br>
+<span class="comment"># 2. Build, write + sign manifest.json, pack (metadata from [package.metadata.calimero])</span><br>
+<span class="field">meroctl app pack logic --key release.key</span><br><br>
+<span class="comment"># 3. Check it as a node would</span><br>
+<span class="field">meroctl app inspect logic/dist/com.yourorg.myapp-0.1.0.mpk</span><br><br>
+<span class="comment"># 4. Publish (CALIMERO_REGISTRY_API_KEY; --org ORG with a Cloud ck_live_ key)</span><br>
+<span class="field">meroctl app publish logic/dist/com.yourorg.myapp-0.1.0.mpk</span>
 </div>
 </div>
 
 <div class="card gc">
 <h2>Key Rules</h2>
-<div class="fr"><div class="fp">Sign before bundle</div><div class="fd">Use <span class="code">mero-sign</span> to sign the manifest <strong>before</strong> running <span class="code">bundle create</span> — not after. The signature is embedded in the bundle.</div></div>
-<div class="fr"><div class="fp">Never commit key.json</div><div class="fd">The Ed25519 signing key in <span class="code">key.json</span> must never be committed to version control. Add it to <span class="code">.gitignore</span>.</div></div>
-<div class="fr"><div class="fp">manifest.json required fields</div><div class="fd">Must include <span class="code">name</span>, <span class="code">version</span>, <span class="code">description</span>, <span class="code">author</span>, and <span class="code">id</span> (reverse-DNS, e.g. <span class="code">com.yourorg.myapp</span>).</div></div>
+<div class="fr"><div class="fp">Signed and hashed</div><div class="fd"><span class="code">meroctl app pack</span> hashes every artifact, signs the manifest and writes it first in the <span class="code">.mpk</span>. Never edit a bundle after packing.</div></div>
+<div class="fr"><div class="fp">Never commit the key</div><div class="fd">The Ed25519 signing key must never be committed. In CI write it from a secret to an owner-only file (<span class="code">umask 077</span>) and pass <span class="code">--key</span>.</div></div>
+<div class="fr"><div class="fp">Same key, every release</div><div class="fd">The signer is half the application id: a new key publishes a different app. Without <span class="code">--key</span> the development key signs, which the registry refuses.</div></div>
 </div>
 
 <div class="card gd">
-<h2>mero-sign Usage</h2>
+<h2>Signing Keys</h2>
 <div class="typedef">
-<span class="comment"># Generate a signing key</span><br>
-<span class="field">mero-sign keygen --output key.json</span><br><br>
-<span class="comment"># Sign the manifest (RFC 8785 canonicalization + Ed25519)</span><br>
-<span class="field">mero-sign sign --key key.json --manifest manifest.json</span><br><br>
-<span class="comment"># Verify a signature</span><br>
-<span class="field">mero-sign verify --manifest manifest.json</span>
+<span class="comment"># Generate a signing key (written mode 0600)</span><br>
+<span class="field">meroctl app signer new key.json</span><br><br>
+<span class="comment"># Its did:key signer id</span><br>
+<span class="field">meroctl app signer id key.json</span><br><br>
+<span class="comment"># Sign a manifest.json in place (RFC 8785 canonicalization + Ed25519)</span><br>
+<span class="field">meroctl app sign manifest.json --key key.json</span>
 </div>
 </div>
 

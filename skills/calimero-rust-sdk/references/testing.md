@@ -71,6 +71,20 @@ fn every_scenario_passes() {
 
 ## On a cluster
 
-`merod local` starts a three-node development cluster with mock attestation; install the bundle
-there and drive it with `meroctl` or a mero-js client (`policy: { allowMock: true }`). merobox is
-not used with core 1.0.
+`meroctl local test [DIR]` runs `cargo test` of the app's crate, which runs every `scenarios/*.json`
+on core's engine (the apps template's harness).
+
+`meroctl local up` starts a three-node development cluster (`merod local`: mock attestation, nodes
+on `127.0.0.1:2501`-`2503`) and saves it as the node `local`; `meroctl local dev [DIR]` also builds
+the app, uploads it, runs the frontend's dev server and rebuilds on every save. Drive it with
+`meroctl` or a mero-js client (`policy: { allowMock: true }`):
+
+```bash
+meroctl local up
+meroctl login --dev-passkey ./dev-passkey.json --name ada
+meroctl app pack . --package com.example.my-app --out my-app.mpk   # the development key signs
+meroctl app install --path ./my-app.mpk
+meroctl local down
+```
+
+merobox is gone: `meroctl local` replaces it.

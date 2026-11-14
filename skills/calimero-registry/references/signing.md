@@ -1,15 +1,15 @@
 # Signing Reference
 
-Every `.mpk` carries an Ed25519 signature over its `manifest.json`. `cargo mero bundle` signs as
-part of packaging; `cargo mero sign` signs an existing `manifest.json` in place.
+Every `.mpk` carries an Ed25519 signature over its `manifest.json`. `meroctl app pack` signs as part
+of packaging; `meroctl app sign` signs an existing `manifest.json` in place.
 
 ## Generate a key
 
 ```bash
-cargo mero key generate -o key.json
+meroctl app signer new key.json
 ```
 
-Writes a JSON key file and prints the derived `signerId`:
+Writes a JSON key file, readable by its owner only (mode `0600`), and prints the derived `signerId`:
 
 ```json
 {
@@ -27,48 +27,55 @@ Writes a JSON key file and prints the derived `signerId`:
 
 Pass `--force` to overwrite an existing key file; the old key becomes unrecoverable.
 
+`meroctl` refuses to sign with a key file that group or others can read: keep it `chmod 600`.
+
 To print the `signerId` of a key file without signing anything:
 
 ```bash
-cargo mero key derive-signer-id -k key.json
+meroctl app signer id key.json
 ```
 
 ## Dev key vs production key
 
-`cargo mero bundle --dev` and `cargo mero sign --dev` use a single well-known key baked into the
-tool, derived deterministically from `SHA-256("calimero-dev-signing-key-v1")`. Every `--dev` bundle
-everywhere resolves to the same signer:
+`meroctl app pack` without `--key`, and `meroctl app sign --dev`, use a single well-known key baked
+into the tool, derived deterministically from `SHA-256("calimero-dev-signing-key-v1")`. Every
+dev-signed bundle everywhere resolves to the same signer:
 
 ```text
 did:key:z6MknF3p5L5FDHJQ7FREUapuX4Wmp4MtF6WrHYaXS2B3eZQd
 ```
 
-It is the analogue of Android's `debug.keystore`: fine for local installs and CI, but it proves
-nothing about provenance, and **the registry refuses bundles signed with it**.
+It is the analogue of Android's `debug.keystore`: fine for a development cluster, but it proves
+nothing about provenance. **The registry refuses bundles signed with it**, and a node not running
+with `--dev` (or `--allow-unsigned-bundles`) refuses to install them (`403 DEV_SIGNED_PACKAGE`).
 
 Use `--key <file>` for anything you publish.
 
 ## Sign an existing manifest
 
 ```bash
-cargo mero sign manifest.json --key key.json
+meroctl app sign manifest.json --key key.json
 # or, for a local-only bundle
-cargo mero sign manifest.json --dev
+meroctl app sign manifest.json --dev
+# report ABI changes against the last release first
+meroctl app sign manifest.json --key key.json --previous dist/com.yourorg.myapp-1.0.0.mpk
 ```
 
-The signature block is written into `manifest.json` in place. `--key` and `--dev` are mutually
-exclusive, and one of them is required.
+The signature block is written into `manifest.json` in place. `--key` (`-k`) and `--dev` are
+mutually exclusive, and one of them is required. `meroctl app pack` does all of this for you; sign
+by hand only to add what `pack` writes no field for (multi-service `services`).
 
 ## How signing works
 
 ```text
   manifest.json (signature field absent or empty)
        │
+       ▼  Add top-level "signerId" (the did:key)
        ▼  Remove signature + all _* prefixed fields
        ▼  RFC 8785 JSON Canonicalization (sorts all keys recursively)
-       ▼  SHA-256(canonical bytes)
+       ▼  SHA-256("calimero.bundle.manifest.v1\0" || canonical bytes)
        ▼  Ed25519 sign(hash, private_key)
-       ▼  Add top-level "signerId" (the did:key) + inject into manifest:
+       ▼  Inject into manifest:
           "signature": {
             "algorithm": "ed25519",
             "publicKey": "base64url-32-bytes",
@@ -76,8 +83,9 @@ exclusive, and one of them is required.
           }
 ```
 
-`minRuntimeVersion` is filled in (default `0.1.0`) when the manifest does not already carry it.
-There is no timestamp field in the signature block.
+Signing refuses a manifest without `minRuntimeVersion` (a signer must not rewrite the document it
+signs); `meroctl app pack` always writes it (default `0.1.0`). There is no timestamp field in the
+signature block.
 
 ## The signerId is half of the ApplicationId
 
@@ -93,21 +101,21 @@ Two consequences follow:
 - **Version-stable.** Same `package`, same key, new version gives the same `ApplicationId`, so the
   node treats the new bundle as an upgrade of the existing application.
 - **Changing either half forks the identity.** A different `package`, or the same package signed
-  with a different key, is a different app to every node. Do not ship `--dev` and then switch to a
-  production key: existing installs will not see the re-signed bundle as an upgrade.
+  with a different key, is a different app to every node. Do not ship a dev-signed bundle and then
+  switch to a production key: existing installs will not see the re-signed bundle as an upgrade.
 
 Pick the production key before the first published release, and back it up. Losing it means you
 cannot publish an in-place upgrade under the same identity.
 
 ## CI
 
-Point `cargo mero bundle` at a key file through `MERO_SIGN_KEY` instead of `--key`, so the key is
-materialized from a secret at build time and never checked in:
+Materialize the key from a secret into an owner-only file at build time, and pass it with `--key`
+(there is no environment variable for it):
 
 ```bash
-export MERO_SIGN_KEY="$RUNNER_TEMP/mero-key.json"
-echo "$MERO_SIGN_KEY_JSON" > "$MERO_SIGN_KEY"   # from a CI secret
-cargo mero bundle
+key="$RUNNER_TEMP/mero-key.json"
+(umask 077 && printf '%s' "$CALIMERO_SIGNING_KEY" > "$key")   # from a CI secret; mode 0600
+meroctl app pack logic --key "$key"
 ```
 
 ## Team workflow

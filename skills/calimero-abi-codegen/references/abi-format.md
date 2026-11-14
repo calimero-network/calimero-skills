@@ -64,7 +64,8 @@ There is no `schema_version: "wasm-abi/1"`, no methods array and no hand-written
 
 ## Reading it
 
-- `mero-app-build codegen --abi <app.wasm | bundle.mpk | abi.json>` reads it directly.
+- `meroctl app codegen --abi <app.wasm | bundle.mpk | abi.json>` reads it directly, and
+  `meroctl app abi show <file>` prints it as JSON.
 - `GET /apps/{app}/abi` returns an installed app's ABI; `meroctl context abi` prints it.
 - `GET /apps/{app}/openapi.json` returns it as an OpenAPI 3.1 document, as does
-  `mero-app-build codegen --lang openapi`.
+  `meroctl app codegen --lang openapi`.

@@ -1,16 +1,20 @@
 # calimero-abi-codegen — Agent Instructions
 
-You are helping a developer generate a **typed client for a Calimero app** from the app's ABI.
+You are helping a developer generate a **typed client for a Calimero app** from the app's ABI with
+**`meroctl app codegen`**. (The skill keeps its old name; the tool is core's `meroctl`.)
 
 ## What you need to know immediately
 
-- Core 1.0 generates clients with **`mero-app-build codegen`**, a subcommand of core's app builder.
-  The npm package `@calimero-network/abi-codegen` (`calimero-abi-codegen`, `wasm-abi/1` manifests,
-  `--manifest`/`--client-name` flags, `{ mero, contextId, executorPublicKey }` clients) read SDK
-  0.12 ABIs only and is not used with core 1.0.
+- Core 1.0 generates clients with **`meroctl app codegen`**, one of `meroctl`'s commands that need
+  no node. `meroctl` is core's one command line: it replaced `mero-app-build` (and its `codegen` and
+  `abi-diff`), `mero-sign`, `mero-compute`, `cargo-mero`, `create-mero-app` and merobox, which are
+  gone after core 1.0.0-rc.24.
+- The npm package `@calimero-network/abi-codegen` (`calimero-abi-codegen`, `wasm-abi/1` manifests,
+  `--manifest`/`--client-name` flags, `{ mero, contextId, executorPublicKey }` clients) is
+  deprecated: it read SDK 0.12 ABIs only and does not work with core 1.0.
 - The ABI is **embedded in the component** (its `calimero:abi` custom section) by `#[app::logic]`.
-  `codegen` reads it from the built `.wasm`, the signed `.mpk` or an ABI JSON file
-  (`meroctl context abi` saves an installed app's).
+  `codegen` reads it from the built component, the signed `.mpk`, a `manifest.json` or an ABI JSON
+  file (`meroctl context abi` saves an installed app's).
 - `--lang` is `ts`, `python`, `swift`, `kotlin` or `openapi`. Each language also writes
   `openapi.json` beside the client unless `--no-openapi`.
 - The TypeScript client is a thin typed layer over mero-js's **`CalimeroClient`**
@@ -24,12 +28,16 @@ You are helping a developer generate a **typed client for a Calimero app** from 
 ## Generate
 
 ```bash
-mero-app-build . --out kv-store.wasm                                     # build the component
-mero-app-build codegen --abi kv-store.wasm --lang ts -o src/generated    # wrote openapi.json, client.ts
-mero-app-build codegen --abi res/abi.json --lang ts --name kv-store --no-openapi -o src/api/kv-store
+meroctl app build . --out kv-store.wasm                                  # build the component
+meroctl app codegen --abi kv-store.wasm --lang ts -o src/generated       # wrote openapi.json, client.ts
+meroctl app codegen --abi res/abi.json --lang ts --name kv-store --no-openapi -o src/api/kv-store
 ```
 
-A multi-service bundle writes one directory per service; `--service <name>` picks one.
+The flags are
+`--abi FILE --lang LANG [-o DIR] [--name N] [--package P] [--service S] [--kotlin-serialization-plugin] [--no-openapi]`;
+`meroctl app codegen --help` prints them. A multi-service bundle writes one directory per service;
+`--service <name>` picks one. `--package` is the Kotlin client's package (default
+`calimero.generated.<name>`).
 
 ## Use it
 
@@ -60,7 +68,7 @@ for await (const event of kv.events()) {
 - `references/generated-output.md`: everything `client.ts` exports, `raw`, `events`, `InitArgs`,
   testing with doubles.
 - `references/abi-format.md`: the component ABI the generator reads.
-- `references/install-and-ci.md`: installing `mero-app-build`, CI, and `abi-diff` for breaking
+- `references/install-and-ci.md`: installing `meroctl`, CI, and `meroctl app abi diff` for breaking
   changes.
 
 ## Rules

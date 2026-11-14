@@ -12,19 +12,19 @@
 <div class="breadcrumb"><a href="index.html">Home</a><span class="sep">/</span><span>ABI Codegen</span></div>
 
 <h1>ABI Codegen Skill</h1>
-<p class="page-subtitle">Context for generating a typed client for a Calimero 1.0 app from its ABI with core's <span class="code">mero-app-build codegen</span></p>
+<p class="page-subtitle">Context for generating a typed client for a Calimero 1.0 app from its ABI with core's <span class="code">meroctl app codegen</span></p>
 
 <div class="card ga">
 <h2>What This Skill Covers</h2>
-<p style="margin-bottom:12px;">The <span class="code">calimero-abi-codegen</span> skill teaches your AI assistant to generate and use the typed client core writes from the ABI embedded in an app's component. The npm <span class="code">abi-codegen</span> package read SDK 0.12 ABIs only and is not used with core 1.0.</p>
+<p style="margin-bottom:12px;">The <span class="code">calimero-abi-codegen</span> skill teaches your AI assistant to generate and use the typed client core writes from the ABI embedded in an app's component. The deprecated npm <span class="code">@calimero-network/abi-codegen</span> package read SDK 0.12 ABIs only and is not used with core 1.0; core's <span class="code">meroctl</span> replaces it, and <span class="code">mero-app-build</span> before it.</p>
 <div class="g2">
   <div class="cb"><h4>Covered Topics</h4>
     <ul style="margin:8px 0 0 16px;color:#c9d1d9;font-size:13px;">
-      <li style="margin-bottom:6px;"><span class="code">mero-app-build codegen --abi &lt;app.wasm | .mpk | abi.json&gt; --lang ts</span></li>
+      <li style="margin-bottom:6px;"><span class="code">meroctl app codegen --abi &lt;app.wasm | .mpk | abi.json&gt; --lang ts</span></li>
       <li style="margin-bottom:6px;">What <span class="code">client.ts</span> exports: <span class="code">&lt;Name&gt;Client</span>, <span class="code">&lt;Name&gt;Api</span>, <span class="code">raw</span>, <span class="code">events</span>, <span class="code">InitArgs</span></li>
       <li style="margin-bottom:6px;">The component ABI (<span class="code">calimero:abi</span> section)</li>
-      <li style="margin-bottom:6px;">Installing <span class="code">mero-app-build</span> in CI</li>
-      <li><span class="code">abi-diff</span> for breaking changes</li>
+      <li style="margin-bottom:6px;">Installing <span class="code">meroctl</span> in CI</li>
+      <li><span class="code">meroctl app abi diff</span> for breaking changes</li>
     </ul>
   </div>
   <div class="cb"><h4>Install</h4>
@@ -37,12 +37,12 @@
 <h2>CLI Usage</h2>
 <div class="typedef">
 <span class="comment"># Build the component, then generate openapi.json + client.ts</span><br>
-<span class="field">mero-app-build . --out kv-store.wasm</span><br>
-<span class="field">mero-app-build codegen --abi kv-store.wasm --lang ts -o src/generated</span><br><br>
+<span class="field">meroctl app build . --out kv-store.wasm</span><br>
+<span class="field">meroctl app codegen --abi kv-store.wasm --lang ts -o src/generated</span><br><br>
 <span class="comment"># From an ABI file, naming the client, without the OpenAPI document</span><br>
-<span class="field">mero-app-build codegen --abi res/abi.json --lang ts --name kv-store --no-openapi -o src/api/kv-store</span><br><br>
+<span class="field">meroctl app codegen --abi res/abi.json --lang ts --name kv-store --no-openapi -o src/api/kv-store</span><br><br>
 <span class="comment"># Breaking changes against the last release</span><br>
-<span class="field">mero-app-build abi-diff dist/kv-store-1.0.0.mpk kv-store.wasm</span>
+<span class="field">meroctl app abi diff dist/com.example.kv-store-1.0.0.mpk kv-store.wasm</span>
 </div>
 </div>
 

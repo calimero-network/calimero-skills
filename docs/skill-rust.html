@@ -16,7 +16,7 @@
 
 <div class="card ga">
 <h2>What This Skill Teaches</h2>
-<p style="margin-bottom:12px;">The <span class="code">calimero-rust-sdk</span> skill gives your AI assistant the component SDK: an app is a <span class="code">calimero:app</span> WebAssembly component (<span class="code">wasm32-wasip2</span>) whose instances each run on their own replicated log. SDK 0.12 (<span class="code">calimero-storage</span>, CRDT state, <span class="code">cargo mero</span>) is gone since core 1.0.0-rc.9.</p>
+<p style="margin-bottom:12px;">The <span class="code">calimero-rust-sdk</span> skill gives your AI assistant the component SDK: an app is a <span class="code">calimero:app</span> WebAssembly component (<span class="code">wasm32-wasip2</span>) whose instances each run on their own replicated log. SDK 0.12 (<span class="code">calimero-storage</span>, CRDT state, <span class="code">cargo mero</span>) is gone since core 1.0.0-rc.9; apps build with core's <span class="code">meroctl</span>.</p>
 <div class="g2">
   <div class="cb"><h4>Covered Topics</h4>
     <ul style="margin:8px 0 0 16px;color:#c9d1d9;font-size:13px;">
@@ -25,7 +25,7 @@
       <li style="margin-bottom:6px;"><span class="code">env</span> and <span class="code">guards</span>: caller, org roles, time, ids</li>
       <li style="margin-bottom:6px;">Errors and events with audiences</li>
       <li style="margin-bottom:6px;">Blobs, <span class="code">TestApp</span> and scenarios, upgrades</li>
-      <li>Building with <span class="code">mero-app-build</span></li>
+      <li>Building with <span class="code">meroctl app build</span>, <span class="code">meroctl local</span> for development</li>
     </ul>
   </div>
   <div class="cb"><h4>Install</h4>
@@ -74,9 +74,9 @@
 [lib]<br>
 crate-type = [<span class="comment">"cdylib"</span>]<br><br>
 [dependencies]<br>
-calimero-sdk = &#123; git = <span class="comment">"https://github.com/calimero-network/core"</span>, tag = <span class="comment">"1.0.0-rc.19"</span> &#125;<br>
+calimero-sdk = &#123; git = <span class="comment">"https://github.com/calimero-network/core"</span>, tag = <span class="comment">"1.0.0-rc.24"</span> &#125;<br>
 serde = &#123; version = <span class="comment">"1"</span>, features = [<span class="comment">"derive"</span>] &#125;<br><br>
-<span class="comment"># Build: mero-app-build . --out my-app.wasm  (wasm32-wasip2 component)</span>
+<span class="comment"># Build: meroctl app build . --out my-app.wasm  (wasm32-wasip2 component)</span>
 </div>
 </div>
 

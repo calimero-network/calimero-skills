@@ -6,8 +6,8 @@ You are helping a developer build a **Calimero app** in Rust with core 1.0's com
 ## What you need to know immediately
 
 - An app is a Rust library built into a **`calimero:app` WebAssembly component** (`wasm32-wasip2`)
-  by `mero-app-build`. Each app instance runs on its own replicated log: the cluster's leader runs a
-  call once and the replicas apply its changes.
+  by `meroctl app build`. Each app instance runs on its own replicated log: the cluster's leader
+  runs a call once and the replicas apply its changes.
 - Because one leader applies every write in log order, state is **plain collections, not CRDTs**:
   `Table`, `UnorderedMap`, `Set`, `Vector`, `Cell`, `Counter`, `PerUser`, `Frozen` (plus `Text` /
   `RichText`, the only CRDTs left). A later write replaces an earlier one.
@@ -28,7 +28,10 @@ You are helping a developer build a **Calimero app** in Rust with core 1.0's com
 - **SDK 0.12 is gone** (core 1.0.0-rc.9 removed it, and nodes refuse its WASM modules):
   `calimero-storage`, `calimero_storage::collections`, `LwwRegister`, `UserStorage`,
   `#[app::state(emits = ..)]`, `app::emit!`, `app::log!`, `#[app::private]`, `env::context_id()`,
-  `env::executor_id()`, borsh-serialized state, `cargo mero` and merobox do not exist in 1.0.
+  `env::executor_id()` and borsh-serialized state do not exist in 1.0.
+- **`meroctl` is the one CLI** (core 1.0.0-rc.24): `meroctl app new|build|codegen|pack|publish` and
+  `meroctl local up|dev|test`. `mero-app-build`, `mero-sign`, `mero-compute`,
+  `scripts/pack-component.py`, `create-mero-app`, `cargo mero` and merobox are gone.
 
 ## Cargo.toml setup
 
@@ -44,14 +47,20 @@ crate-type = ["cdylib"]
 
 [dependencies]
 # Pin by git tag to the core release your cluster runs.
-calimero-sdk = { git = "https://github.com/calimero-network/core", tag = "1.0.0-rc.19" }
+calimero-sdk = { git = "https://github.com/calimero-network/core", tag = "1.0.0-rc.24" }
 serde = { version = "1", features = ["derive"] }
 
 # The TestApp harness and the builder it builds the crate with (host only).
 [target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
-calimero-sdk = { git = "https://github.com/calimero-network/core", tag = "1.0.0-rc.19", features = ["testing"] }
-calimero-app-build = { git = "https://github.com/calimero-network/core", tag = "1.0.0-rc.19" }
+calimero-sdk = { git = "https://github.com/calimero-network/core", tag = "1.0.0-rc.24", features = ["testing"] }
+calimero-app-build = { git = "https://github.com/calimero-network/core", tag = "1.0.0-rc.24" }
 serde_json = "1"
+
+# Read by `meroctl app pack .`: the package id, and the listing a registry shows.
+[package.metadata.calimero]
+package = "com.example.my-app"
+name = "My App"
+description = "Notes for an organization"
 
 [profile.release]
 codegen-units = 1
@@ -177,16 +186,24 @@ impl Notes {
 ## Build, test, package
 
 ```bash
-rustup target add wasm32-wasip2                                      # once
-cargo test                                                           # TestApp: the built component on the real engine
-mero-app-build . --out my-app.wasm                                   # the calimero:app component, ABI embedded
-mero-app-build codegen --abi my-app.wasm --lang ts -o src/generated  # typed client (calimero-abi-codegen skill)
-merod local                                                          # a three-node development cluster, mock attestation
+rustup target add wasm32-wasip2                                       # once
+cargo test                                                            # TestApp: the built component on the real engine
+meroctl app build . --out my-app.wasm                                 # the calimero:app component, ABI embedded
+meroctl app codegen --abi my-app.wasm --lang ts -o src/generated      # typed client (calimero-abi-codegen skill)
+meroctl app signer new release.key                                    # once: the signing key; keep it out of git
+meroctl app pack . --key release.key                                  # signed dist/com.example.my-app-0.1.0.mpk
+meroctl local up                                                      # a three-node development cluster, mock attestation
 ```
 
-`mero-app-build` and `mero-sign` ship prebuilt on every core release
-(`mero-app-build_<target>.tar.gz`, checked against the release's `SHA256SUMS`). Package a signed
-`.mpk` with core's `scripts/pack-component.py`, which signs through `mero-sign`.
+`meroctl` ships prebuilt on every core release (`meroctl_<target>.tar.gz`, checked against the
+release's `SHA256SUMS`); core's installer puts it on `PATH`:
+`curl -fsSL https://raw.githubusercontent.com/calimero-network/core/master/scripts/install.sh | sh`.
+To start from a template instead, `meroctl app new my-app` clones `apps/kv-store` of
+calimero-network/apps (`--template <app>` for another) with the shared packages it builds with: its
+crate is `apps/kv-store/logic`, its frontend `apps/kv-store/app`, and
+`meroctl local dev apps/kv-store` runs both against a local cluster and rebuilds on every save.
+Without `--key`, `pack` signs with the development key, which only a development cluster accepts.
+Publishing is the `calimero-registry` skill.
 
 ## References
 

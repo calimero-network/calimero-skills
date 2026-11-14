@@ -1,122 +1,133 @@
-# Bundle & Push
+# Pack & Publish
 
 ## Install
 
 ```bash
-# Toolchain: builds, signs, and packs the .mpk
-cargo install --git https://github.com/calimero-network/core cargo-mero
+# meroctl: builds, signs, packs, inspects and publishes the .mpk
+curl -fsSL https://raw.githubusercontent.com/calimero-network/core/master/scripts/install.sh | sh
 
-# Registry CLI: pushes it
-npm install -g @calimero-network/registry-cli
+# a pinned release
+curl -fsSL https://raw.githubusercontent.com/calimero-network/core/master/scripts/install.sh \
+  | sh -s -- meroctl --version 1.0.0-rc.24
 ```
 
-`cargo-mero` also ships as a prebuilt `cargo-mero_<target>.tar.gz` on the core releases page.
-`cargo mero build` needs the `wasm32-unknown-unknown` target and adds it automatically when `rustup`
-is available.
+`meroctl` ships prebuilt as `meroctl_<target>.tar.gz` on every core release (Linux x86_64 and
+aarch64, macOS aarch64). From a core checkout, `cargo install --locked --path crates/meroctl` builds
+it. Building the component needs Rust and the `wasm32-wasip2` target
+(`rustup target add wasm32-wasip2`).
 
-## One-time registry configuration
+## Build the component
 
 ```bash
-calimero-registry config set registry-url https://apps.calimero.network
-calimero-registry config set api-key your-api-key
-calimero-registry config list
+meroctl app build logic --out my-app.wasm
 ```
 
-Or use environment variables:
+It builds the crate for `wasm32-wasip2` into a `calimero:app` component with its ABI embedded
+(default `logic/app.component.wasm`), and its compute component when the crate has compute methods
+(`--compute-out`, default `compute.component.wasm` beside it). `--target-dir` sets cargo's target
+directory.
+
+## Pack the bundle
 
 ```bash
-export CALIMERO_REGISTRY_URL=https://apps.calimero.network
-export CALIMERO_API_KEY=your-api-key
+meroctl app pack logic --key my-key.json
 ```
 
-## Build the bundle
+Given the crate's directory, this builds the components (unless `--wasm` / `--compute` name them),
+reads `[package.metadata.calimero]` and the crate's version, writes `manifest.json` with each
+artifact's SHA-256, signs it, and writes `logic/dist/<package>-<version>.mpk`. The skill's metadata
+table lists what the `Cargo.toml` keys become.
+
+Without a crate, name everything with flags:
 
 ```bash
-cargo mero bundle --key my-key.json
+meroctl app pack --wasm my-app.wasm --package com.yourorg.myapp \
+  --app-version 1.0.0 --key my-key.json --out dist/com.yourorg.myapp-1.0.0.mpk
 ```
 
-This builds every service, stages the artifacts under `res/bundle-temp/`, writes `manifest.json`
-with each artifact's SHA-256, signs it, and tars everything into `dist/<package>.mpk`.
+| Flag                          | Description                                                               |
+| ----------------------------- | ------------------------------------------------------------------------- |
+| `--key <file>`                | Sign with a production Ed25519 key file; without it, the development key  |
+| `--app-version <v>`           | Override `appVersion` (defaults to the crate's version)                   |
+| `--package <id>`              | Override the reverse-DNS package id                                       |
+| `--min-runtime-version <v>`   | The oldest node release that runs it (default: the table's, else `0.1.0`) |
+| `--out <path>`                | Output path (default `<DIR>/dist/<package>-<version>.mpk`)                |
+| `--wasm <file>`               | The app component, already built                                          |
+| `--compute <file>`            | Its compute component, packed as `compute.wasm`                           |
+| `--pipeline <file>`           | A pipeline YAML (repeatable), packed under `pipelines/`                   |
+| `--frontend <dir>`            | A static web build, packed under `frontend/` and checked with node rules  |
+| `--frontend-entry <file>`     | The page served at `/` (default `index.html`)                             |
+| `--no-frontend`               | Leave out the table's `frontend-dir`                                      |
+| `--outbound <https prefix>`   | A URL prefix the app's runs may call (repeatable)                         |
+| `--upgrades owner\|publisher` | Who upgrades the package's instances (absent: the owner)                  |
+| `--previous <old>`            | The last release: report ABI changes before signing                       |
 
-| Flag                    | Description                                                |
-| ----------------------- | ---------------------------------------------------------- |
-| `--key <file>`          | Sign with a production Ed25519 key file                    |
-| `--dev`                 | Sign with the dev key: local only, refused by the registry |
-| `--app-version <v>`     | Override `appVersion` (defaults to the crate's version)    |
-| `--package <id>`        | Override the reverse-DNS package id                        |
-| `-o, --output <path>`   | Output path (defaults to `dist/<package>.mpk`)             |
-| `--profiling`           | Skip `wasm-opt`, keep debug info                           |
-| `--manifest-path`       | Path to the app's `Cargo.toml`                             |
-| `--features`            | Cargo features, comma or space separated, repeatable       |
-| `--no-default-features` | Disable the crate's default features                       |
-
-Everything else (`package`, `name`, `description`, `author`, `min-runtime-version`, `frontend`,
-`services`) comes from `[package.metadata.calimero]` / `[workspace.metadata.calimero]` in
-`Cargo.toml`. See the skill's metadata table.
-
-## Push
+## Inspect it
 
 ```bash
-# Push to remote registry (uses config file values)
-calimero-registry bundle push dist/com.yourorg.myapp.mpk --remote
-
-# Push to local registry
-calimero-registry bundle push dist/com.yourorg.myapp.mpk --local
-
-# Override config
-calimero-registry bundle push dist/com.yourorg.myapp.mpk \
-  --remote \
-  --url https://apps.calimero.network \
-  --api-key your-api-key
+meroctl app inspect logic/dist/com.yourorg.myapp-1.0.0.mpk
 ```
+
+Opens the bundle as a node does (the signature, every artifact's hash) and prints `verified`,
+`signerId`, `bundleHash` and the manifest.
+
+## Publish
+
+```bash
+export CALIMERO_REGISTRY_API_KEY=your-api-key       # registry Organizations page, CLI Access
+meroctl app publish logic/dist/com.yourorg.myapp-1.0.0.mpk
+
+# list a new package publicly (it is private by default)
+meroctl app publish logic/dist/com.yourorg.myapp-1.0.0.mpk --public
+
+# another registry, the key as a flag
+meroctl app publish logic/dist/com.yourorg.myapp-1.0.0.mpk \
+  --registry https://apps.calimero.network --api-key your-api-key
+
+# as a Calimero Cloud organization, with its ck_live_ key
+CALIMERO_REGISTRY_API_KEY=ck_live_... meroctl app publish logic/dist/com.yourorg.myapp-1.0.0.mpk --org my-org
+```
+
+`publish` sends the signed manifest and the whole `.mpk` to the registry's
+`POST /api/v2/bundles/push`. There is no `--key` on `publish`: the bundle is already signed.
 
 ## Full publish workflow
 
 ```bash
 # 1. Generate a key (one-time) and keep it out of the repo
-cargo mero key generate -o my-key.json
+meroctl app signer new my-key.json
 echo "my-key.json" >> .gitignore
 
 # 2. Build + sign + pack
-cargo mero bundle --key my-key.json
+meroctl app pack logic --key my-key.json
 
-# 3. Push
-calimero-registry bundle push dist/com.yourorg.myapp.mpk --remote
+# 3. Check, then publish
+meroctl app inspect logic/dist/com.yourorg.myapp-0.1.0.mpk
+meroctl app publish logic/dist/com.yourorg.myapp-0.1.0.mpk
 ```
 
 ## Updating an existing app (new version)
 
 Bump `[package] version` in `Cargo.toml` (or pass `--app-version`) and re-run with the **same** key,
-so the `ApplicationId` stays stable and the node treats the push as an upgrade:
+so the `ApplicationId` stays stable and the node treats the release as an upgrade:
 
 ```bash
-cargo mero bundle --key my-key.json --app-version 1.1.0
-calimero-registry bundle push dist/com.yourorg.myapp.mpk --remote
+meroctl app pack logic --key my-key.json --app-version 1.1.0 \
+  --previous logic/dist/com.yourorg.myapp-1.0.0.mpk
+meroctl app publish logic/dist/com.yourorg.myapp-1.1.0.mpk
 ```
 
-## CI/CD (GitHub Actions)
+## Install on a development cluster
 
-```yaml
-- uses: dtolnay/rust-toolchain@stable
-  with:
-    targets: wasm32-unknown-unknown
+A real cluster installs releases from its registry (`meroctl app install PACKAGE@VERSION`). A
+development cluster (`meroctl local up`) also takes an upload:
 
-- name: Install cargo-mero
-  run: cargo install --git https://github.com/calimero-network/core cargo-mero
-
-- name: Install Registry CLI
-  run: npm install -g @calimero-network/registry-cli
-
-- name: Build and sign the bundle
-  env:
-    MERO_SIGN_KEY_JSON: ${{ secrets.CALIMERO_SIGNING_KEY }}
-  run: |
-    export MERO_SIGN_KEY="$RUNNER_TEMP/mero-key.json"
-    printf '%s' "$MERO_SIGN_KEY_JSON" > "$MERO_SIGN_KEY"
-    cargo mero bundle --app-version "${{ github.event.release.tag_name }}"
-
-- name: Publish Bundle
-  env:
-    CALIMERO_API_KEY: ${{ secrets.CALIMERO_API_KEY }}
-  run: calimero-registry bundle push dist/com.yourorg.myapp.mpk --remote
+```bash
+meroctl local up
+meroctl login --dev-passkey ./dev-passkey.json --name ada
+meroctl app install --path logic/dist/com.yourorg.myapp-0.1.0.mpk
 ```
+
+## CI/CD
+
+See `references/ci-auto-publish.md` for the GitHub Actions workflow.

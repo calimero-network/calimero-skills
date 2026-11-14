@@ -5,17 +5,18 @@ A node accepts a `.mpk` only when all three hold. There is no unsigned install p
 
 ## 1. Signing is mandatory
 
-`cargo mero bundle` always signs. Pass `--key <file>` to publish, `--dev` for local installs only
-(the registry refuses dev-signed bundles), or set `MERO_SIGN_KEY` in CI.
+`meroctl app pack` always signs. Pass `--key <file>` to publish; without it the development key
+signs, for a development cluster only (the registry refuses dev-signed bundles, and so does a node
+not running with `--dev`).
 
 ```bash
-cargo mero bundle --key my-key.json     # publishable
-cargo mero bundle --dev                 # local / CI only
+meroctl app pack logic --key my-key.json     # publishable
+meroctl app pack logic                       # development key: local only
 ```
 
 ## 2. Every artifact carries its SHA-256
 
-Each `wasm`, `abi`, `services[].wasm`, `services[].abi`, and `migrations[]` entry is
+Each `wasm`, `compute`, `pipelines[]`, `frontend.files[]` and `services[]` artifact is
 `{ path, size, hash }` where `hash` is the lowercase-hex SHA-256 of that file's bytes. The node
 recomputes it and refuses to install on a mismatch.
 
@@ -36,20 +37,21 @@ packing. Rebuild instead.
 ## 3. `manifest.json` is the first member of the archive
 
 The `.mpk` is a tar.gz whose manifest scan is bounded and runs before the signature check, so
-`manifest.json` must be at the archive root and appear first. `cargo mero bundle` writes it that
-way. A second entry at `manifest.json` is rejected outright.
+`manifest.json` must be at the archive root and appear first. `meroctl app pack` writes it that way.
+A second entry at `manifest.json` is rejected outright.
 
 ## Why the order matters
 
 The signature covers the RFC 8785 canonicalization of the manifest fields, and the manifest's hashes
 cover the artifact bytes. Editing anything after signing invalidates the chain. So the sequence is
-fixed: build -> hash -> write manifest -> sign -> pack, which is exactly what one
-`cargo mero bundle` does. Then push the `.mpk` untouched:
+fixed: build -> hash -> write manifest -> sign -> pack, which is exactly what one `meroctl app pack`
+does. Check it as a node would, then publish the `.mpk` untouched:
 
 ```bash
-cargo mero bundle --key my-key.json
-calimero-registry bundle push dist/com.yourorg.myapp.mpk --remote
+meroctl app pack logic --key my-key.json
+meroctl app inspect logic/dist/com.yourorg.myapp-0.1.0.mpk
+meroctl app publish logic/dist/com.yourorg.myapp-0.1.0.mpk
 ```
 
-There is **no `--key` flag on `bundle push`**. It only takes `--local` / `--remote` / `--url` /
-`--api-key`.
+There is **no `--key` flag on `app publish`**. It takes `--registry`, `--api-key`, `--org`,
+`--cloud` and `--public`.
