@@ -8,7 +8,7 @@ curl -fsSL https://raw.githubusercontent.com/calimero-network/core/master/script
 
 # a pinned release
 curl -fsSL https://raw.githubusercontent.com/calimero-network/core/master/scripts/install.sh \
-  | sh -s -- meroctl --version 1.0.0-rc.24
+  | sh -s -- meroctl --version 1.0.0-rc.26
 ```
 
 `meroctl` ships prebuilt as `meroctl_<target>.tar.gz` on every core release (Linux x86_64 and

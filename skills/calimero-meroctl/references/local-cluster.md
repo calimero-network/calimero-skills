@@ -21,19 +21,21 @@ may sign in against it with passkeys.
 
 ### Where merod comes from
 
-- **rc.24 (today)**: `merod` from `PATH`, or the file `MEROD` names; state in `.merod-local/`.
-  `--docker [--image IMG]` runs the release's image instead
-  (`ghcr.io/calimero-network/merod:<release>`, ports published on `127.0.0.1`, state in the Docker
-  volume `meroctl-local-<base port>`). On macOS with no `merod` (releases before 1.0.0-rc.25 shipped
-  none) `local up` falls back to the image.
-- **rc.25 (coming, core PR #5068)**: the release's Docker image is the default, so Docker must be
-  installed and running; `--local` (or `MEROD`) runs the `merod` binary instead, and `--docker` is
-  accepted and changes nothing. State moves to `~/.calimero/meroctl/local` (the same from any
-  directory); `down` and `status` still find a cluster an older meroctl started in `./.merod-local`.
+- **The release's Docker image, by default** (from 1.0.0-rc.25):
+  `ghcr.io/calimero-network/merod:<release>`, ports published on `127.0.0.1`, state in the Docker
+  volume `meroctl-local-<base port>`. Docker must be installed and running; `local up` says so first
+  when it is not.
+- **`--local` (or `MEROD=FILE`)**: the `merod` binary on `PATH` (or that file) instead of the image.
+- **`--registry-url URL`** (`MEROD_REGISTRY_URL`): from 1.0.0-rc.26 the cluster installs from the
+  public registry (`https://apps.calimero.network`) by default, so
+  `meroctl app install PACKAGE@VERSION` works on it; an empty value means none.
+- State lives in `~/.calimero/meroctl/local` (the same from any directory); `down` and `status`
+  still find a cluster an older meroctl started in `./.merod-local`. On 1.0.0-rc.24 the binary was
+  the default and `--docker` chose the image; `--docker` is still accepted and changes nothing.
 
 ```bash
-meroctl local up --docker           # rc.24: run the release's image
-meroctl local up --local            # rc.25: run the merod on PATH instead of the image
+meroctl local up                    # the release's image
+meroctl local up --local            # the merod on PATH instead
 ```
 
 ## dev: the build loop

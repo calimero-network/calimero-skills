@@ -6,7 +6,7 @@ and ships apps without a node (`app new|build|codegen|pack|publish`, see `calime
 talks to nodes: before it sends anything it fetches the node's attestation and judges the quote,
 then every request travels in the sealed channel.
 
-This skill teaches core 1.0's meroctl (1.0.0-rc.24). The 0.x CLI (contexts bound by `--group-id`,
+This skill teaches core 1.0's meroctl (1.0.0-rc.26). The 0.x CLI (contexts bound by `--group-id`,
 `context identity`, `peers`, JSON-RPC calls, merobox) is gone; see "What changed from 0.x" below.
 
 ## Names
@@ -31,7 +31,7 @@ curl -fsSL https://raw.githubusercontent.com/calimero-network/core/master/script
 
 # merod and meroctl, a pinned release
 curl -fsSL https://raw.githubusercontent.com/calimero-network/core/master/scripts/install.sh \
-  | sh -s -- merod meroctl --version 1.0.0-rc.24
+  | sh -s -- merod meroctl --version 1.0.0-rc.26
 
 # or Homebrew
 brew install calimero-network/tap/meroctl calimero-network/tap/merod
@@ -101,7 +101,8 @@ meroctl local down
 
 - `references/commands.md`: every command group (node, login/attest, app, context, call, blob, file,
   namespace, group, account, cloud, proxy, raw, ops) with its flags.
-- `references/local-cluster.md`: `local up|down|status|dev|test`, Docker, and the rc.25 change.
+- `references/local-cluster.md`: `local up|down|status|dev|test`, Docker (the default) and
+  `--local`.
 - `references/sign-in-and-trust.md`: sessions, file passkeys, API keys, the trust flags, `attest`.
 - `references/orgs-and-teams.md`: organizations, teams, invitations, access.
 - `references/scripting.md`: CI and scripts (API keys, `jq`, upgrade keys, `proxy`, `raw`).
