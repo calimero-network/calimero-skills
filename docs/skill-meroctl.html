@@ -51,12 +51,12 @@
 <h2>Core Workflow</h2>
 <div class="typedef">
 <span class="comment"># 1. Create an app instance (dev: --path installs the file first)</span><br>
-<span class="field">meroctl context create --name kv --path kv_store.wasm --alias kv</span><br>
+<span class="field">meroctl instance create --name kv --path kv_store.wasm --alias kv</span><br>
 <span class="comment"># real cluster: meroctl app install com.example.kv@1.0.0, then --package com.example.kv</span><br><br>
 <span class="comment"># 2. Write (an intent)</span><br>
-<span class="field">meroctl call -c kv set --args '&#123;"key":"hello","value":"world"&#125;'</span><br><br>
+<span class="field">meroctl call -i kv set --args '&#123;"key":"hello","value":"world"&#125;'</span><br><br>
 <span class="comment"># 3. Read (a view)</span><br>
-<span class="field">meroctl call -c kv get --args '&#123;"key":"hello"&#125;' --view</span>
+<span class="field">meroctl call -i kv get --args '&#123;"key":"hello"&#125;' --view</span>
 </div>
 </div>
 
@@ -65,7 +65,7 @@
 <div class="typedef">
 <span class="field">meroctl namespace create Acme</span>&nbsp;&nbsp;<span class="comment"># &#123; orgId &#125;</span><br>
 <span class="field">meroctl namespace create-group &lt;org-id&gt; eng</span>&nbsp;&nbsp;<span class="comment"># &#123; teamId &#125;</span><br>
-<span class="field">meroctl context create --name eng-kv --package com.example.kv --namespace &lt;org-id&gt; --group &lt;team-id&gt;</span><br>
+<span class="field">meroctl instance create --name eng-kv --package com.example.kv --namespace &lt;org-id&gt; --group &lt;team-id&gt;</span><br>
 <span class="field">meroctl namespace invite &lt;org-id&gt; --role member --uses 1 --dev-passkey ./dev-passkey.json</span>&nbsp;&nbsp;<span class="comment"># &#123; token &#125;</span><br><br>
 <span class="comment"># the invitee, signed in on their own</span><br>
 <span class="field">meroctl namespace join &lt;token&gt;</span>
@@ -74,7 +74,7 @@
 
 <div class="card ga">
 <h2>Key Rules</h2>
-<div class="fr"><div class="fp">--view for reads</div><div class="fd"><span class="code">meroctl call -c CONTEXT METHOD --args JSON</span> is a write (an intent); add <span class="code">--view</span> to read without a log entry. The context is <span class="code">-c</span>, never positional.</div></div>
+<div class="fr"><div class="fp">--view for reads</div><div class="fd"><span class="code">meroctl call -i INSTANCE METHOD --args JSON</span> is a write (an intent); add <span class="code">--view</span> to read without a log entry. The instance is <span class="code">-i</span>, never positional.</div></div>
 <div class="fr"><div class="fp">No --group-id</div><div class="fd"><span class="code">context create</span> takes <span class="code">--name</span>, one of <span class="code">--package</span>/<span class="code">--bundle</span>/<span class="code">--path</span>, and <span class="code">--namespace</span> (with <span class="code">--group</span>) or nothing for the personal organization.</div></div>
 <div class="fr"><div class="fp">Dev passkeys are dev only</div><div class="fd"><span class="code">--dev-passkey</span> and <span class="code">--allow-mock</span> work on development clusters; a real cluster takes an API key and <span class="code">--tee-profiles</span>.</div></div>
 <div class="fr"><div class="fp">Register node once</div><div class="fd"><span class="code">local up</span>, <span class="code">cloud use</span> or <span class="code">node add</span> + <span class="code">node use</span> save a default node; omit <span class="code">--node</span> after.</div></div>

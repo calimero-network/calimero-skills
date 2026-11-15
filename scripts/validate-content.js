@@ -9,8 +9,9 @@
  * current Calimero release (core 1.0) — the class of drift that
  * prettier/markdownlint cannot see. The meroctl rules flag the 0.x CLI forms
  * (`--group-id`, `context identity`, `peers`, a JSON-RPC call envelope,
- * merobox, a positional `call` context), so a regression fails CI instead of
- * silently shipping.
+ * merobox, a positional `call` instance) and the pre-rc.26 spelling of an app
+ * instance (`meroctl context`, `--context`/`-c`), so a regression fails CI
+ * instead of silently shipping.
  *
  * Scope: only fenced code blocks (```bash / ```rust / ```typescript / …) are
  * checked — never prose. Comment lines and trailing inline comments are
@@ -21,7 +22,7 @@
  *
  *   <!-- validate-ignore: no-group-id (intentional WRONG example) -->
  *   ```bash
- *   meroctl context create --name kv --group-id <ns>   # shown as the wrong way
+ *   meroctl instance create --name kv --group-id <ns>   # shown as the wrong way
  *   ```
  *
  * `validate-ignore` with no rule list skips every rule for that block.
@@ -54,8 +55,15 @@ const RUST = ['rust', 'rs'];
 const MEROCTL = /\bmeroctl\b/;
 // `meroctl … call …` (the `call` subcommand, not a `--call`-ish flag or a method named `call_x`).
 const MEROCTL_CALL = /\bmeroctl\b(?:\s+--?[\w-]+(?:[\s=](?!-)\S+)?)*\s+call\b(?!-)/;
-// `meroctl … context create …` but NOT `context create-group` (`create` must be a whole word).
-const CONTEXT_CREATE = /\bmeroctl\b.*\bcontext\s+create\b(?!-)/;
+// `meroctl … instance create …` (or its old spelling, `context create`), but NOT
+// `create-group` (`create` must be a whole word).
+const CONTEXT_CREATE = /\bmeroctl\b.*\b(?:instance|context)\s+create\b(?!-)/;
+// The subcommands of `meroctl instance` (v1's and pre-rc.26 `meroctl context`).
+const INSTANCE_SUBS =
+  'create|list|ls|get|update|delete|del|watch|alias|use|access|metadata|storage|abi|presence|transfer|move';
+const OLD_CONTEXT_CMD = new RegExp(
+  `\\bmeroctl\\b(?:\\s+--?[\\w-]+(?:[\\s=](?!-)\\S+)?)*\\s+context\\s+(?:${INSTANCE_SUBS})\\b(?!-)`
+);
 
 const RULES = [
   {
@@ -66,32 +74,40 @@ const RULES = [
       '`meroctl call` has no --as flag: a call runs as the signed-in account (its session or `--api-key`).',
   },
   {
-    id: 'call-needs-context',
+    id: 'call-needs-instance',
     langs: BASH,
-    check: (l) => MEROCTL_CALL.test(l) && !/\s(?:-c|--context)(?:\s|=)/.test(l),
+    check: (l) => MEROCTL_CALL.test(l) && !/\s(?:-i|--instance|-c|--context)(?:\s|=)/.test(l),
     message:
-      '`meroctl call` takes the context as `-c`/`--context` (`meroctl call -c CONTEXT METHOD --args JSON [--view]`); a positional context is the 0.x form.',
+      '`meroctl call` takes the instance as `-i`/`--instance` (`meroctl call -i INSTANCE METHOD --args JSON [--view]`); a positional instance is the 0.x form.',
+  },
+  {
+    id: 'context-is-instance',
+    langs: BASH,
+    check: (l) =>
+      OLD_CONTEXT_CMD.test(l) || (MEROCTL.test(l) && /\s(?:-c|--context)(?:\s|=)/.test(l)),
+    message:
+      'Since core 1.0.0-rc.26 an app instance is `meroctl instance ...` and `--instance`/`-i`; `context` and `--context`/`-c` are the old spelling (hidden, for one release).',
   },
   {
     id: 'no-group-id',
     langs: BASH,
     check: (l) => MEROCTL.test(l) && /\s--group-id\b/.test(l),
     message:
-      'core 1.0 has no --group-id: `context create` takes `--namespace ORG [--group TEAM]` (or neither, for your personal organization).',
+      'core 1.0 has no --group-id: `instance create` takes `--namespace ORG [--group TEAM]` (or neither, for your personal organization).',
   },
   {
     id: 'context-create-application-id',
     langs: BASH,
     check: (l) => CONTEXT_CREATE.test(l) && /\s--application-id\b/.test(l),
     message:
-      '`meroctl context create` takes `--package P [--version V]`, `--bundle HASH` or `--path FILE`, not --application-id (0.x).',
+      '`meroctl instance create` takes `--package P [--version V]`, `--bundle HASH` or `--path FILE`, not --application-id (0.x).',
   },
   {
     id: 'context-create-needs-name',
     langs: BASH,
     check: (l) => CONTEXT_CREATE.test(l) && !/\s--name(?:\s|=)/.test(l),
     message:
-      '`meroctl context create` requires --name (`context create --name NAME (--package P | --bundle HASH | --path FILE)`).',
+      '`meroctl instance create` requires --name (`instance create --name NAME (--package P | --bundle HASH | --path FILE)`).',
   },
   {
     id: 'no-0x-commands',
@@ -101,14 +117,14 @@ const RULES = [
         l
       ) || /\bmeroctl(?:\s+--?[\w-]+(?:[\s=](?!-)\S+)?)*\s+(?:peers|identity)\b(?!-)/.test(l),
     message:
-      'Gone in core 1.0: `context identity` (accounts and passkeys replace identities), `peers` (no gossip), `context sync`/`group sync` (Raft replicates), `group join-context` (an org member reaches its contexts).',
+      'Gone in core 1.0: `context identity` (accounts and passkeys replace identities), `peers` (no gossip), `context sync`/`group sync` (Raft replicates), `group join-context` (an org member reaches its app instances).',
   },
   {
     id: 'no-jsonrpc-envelope',
     langs: BASH,
     check: (l) => /\\?["']jsonrpc\\?["']\s*:/.test(l) || /\/jsonrpc\b/.test(l),
     message:
-      'core 1.0 has no JSON-RPC endpoint: call a method with `meroctl call -c CONTEXT METHOD --args JSON [--view]` (`POST /apps/{app}/intents` or `/views`).',
+      'core 1.0 has no JSON-RPC endpoint: call a method with `meroctl call -i INSTANCE METHOD --args JSON [--view]` (`POST /apps/{app}/intents` or `/views`).',
   },
   {
     id: 'no-merobox',
@@ -149,13 +165,23 @@ const STALE_SKILLS = new Set([
  */
 const SELF_TESTS = {
   bad: [
-    ['no-call-as', "meroctl call -c kv set --args '{}' --as alice"],
-    ['call-needs-context', 'meroctl call <ctx-id> get --args \'{"key":"a"}\''],
-    ['call-needs-context', 'meroctl --node node1 call get_posts'],
-    ['no-group-id', 'meroctl context create --name kv --package com.example.kv --group-id <ns>'],
+    ['no-call-as', "meroctl call -i kv set --args '{}' --as alice"],
+    ['call-needs-instance', 'meroctl call <ctx-id> get --args \'{"key":"a"}\''],
+    ['call-needs-instance', 'meroctl --node node1 call get_posts'],
+    ['no-group-id', 'meroctl instance create --name kv --package com.example.kv --group-id <ns>'],
     ['no-group-id', 'meroctl namespace create-group <ns> eng --group-id <g>'],
-    ['context-create-application-id', 'meroctl context create --name kv --application-id <app-id>'],
+    [
+      'context-create-application-id',
+      'meroctl instance create --name kv --application-id <app-id>',
+    ],
+    ['context-create-needs-name', 'meroctl instance create --package com.example.kv'],
     ['context-create-needs-name', 'meroctl context create --package com.example.kv'],
+    ['context-is-instance', 'meroctl context create --name kv --path app.wasm'],
+    ['context-is-instance', 'meroctl --node prod context list'],
+    ['context-is-instance', 'meroctl call --context kv get --view'],
+    ['context-is-instance', 'meroctl call -c kv get --view'],
+    ['context-is-instance', 'meroctl blob list -c kv'],
+    ['context-is-instance', 'meroctl account api-key create --context kv --read-only'],
     ['no-0x-commands', 'meroctl context identity generate --context <ctx>'],
     ['no-0x-commands', 'meroctl --node node1 peers'],
     ['no-0x-commands', 'meroctl context sync <ctx>'],
@@ -168,12 +194,12 @@ const SELF_TESTS = {
     ['no-merobox', 'pip install merobox'],
   ],
   good: [
-    'meroctl call --context kv get --args \'{"key":"a"}\' --view',
-    'meroctl call -c notes set --args \'{"key":"a","value":"1"}\'',
-    'meroctl call -c my-kv len --view --min-index 7',
-    'meroctl context create --name kv --path app.wasm',
-    'meroctl context create --path kv_store.wasm --name kv --alias kv',
-    "meroctl context create --name team-kv --package com.example.kv --namespace <org-id> --group <team> --params '{}'",
+    'meroctl call --instance kv get --args \'{"key":"a"}\' --view',
+    'meroctl call -i notes set --args \'{"key":"a","value":"1"}\'',
+    'meroctl call -i my-kv len --view --min-index 7',
+    'meroctl instance create --name kv --path app.wasm',
+    'meroctl instance create --path kv_store.wasm --name kv --alias kv',
+    "meroctl instance create --name team-kv --package com.example.kv --namespace <org-id> --group <team> --params '{}'",
     'meroctl namespace create-group <org-id> eng --join open',
     'meroctl namespace invite <org-id> --role member --group <team> --uses 1',
     'meroctl --api-key "$CALIMERO_API_KEY" --tee-profiles prod --min-release 2.3.109 whoami',
@@ -182,7 +208,11 @@ const SELF_TESTS = {
     'meroctl local up --fresh',
     'meroctl app install com.example.kv@1.0.0',
     'cat ~/.merobox/auth_cache/node.json',
-    'meroctl account api-key create --context kv --read-only --dev-passkey ./dev-passkey.json',
+    'meroctl blob list -i kv',
+    'meroctl instance watch kv --limit 1',
+    'meroctl attest app kv',
+    'curl -fsSL "$base/SHA256SUMS" | grep " meroctl_$T.tar.gz\\$" | sha256sum -c',
+    'meroctl account api-key create --instance kv --read-only --dev-passkey ./dev-passkey.json',
   ],
 };
 

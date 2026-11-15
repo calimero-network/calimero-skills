@@ -1,24 +1,24 @@
 # Scripting and CI with meroctl
 
-Every answer is JSON on stdout (streams such as `context watch` print JSON lines), so parse it with
+Every answer is JSON on stdout (streams such as `instance watch` print JSON lines), so parse it with
 `jq`. There is no `--output-format` flag.
 
 ## Capturing ids
 
 ```bash
 ORG=$(meroctl namespace create Acme | jq -r .orgId)
-APP=$(meroctl context create --name kv --package com.example.kv --namespace "$ORG" | jq -r .appId)
-meroctl call -c "$APP" set --args '{"key":"hello","value":"world"}'
-meroctl call -c "$APP" get --args '{"key":"hello"}' --view | jq -r .result
+APP=$(meroctl instance create --name kv --package com.example.kv --namespace "$ORG" | jq -r .appId)
+meroctl call -i "$APP" set --args '{"key":"hello","value":"world"}'
+meroctl call -i "$APP" get --args '{"key":"hello"}' --view | jq -r .result
 ```
 
-An alias saves the capture: `context create ... --alias kv`, then `meroctl call -c kv ...`.
+An alias saves the capture: `instance create ... --alias kv`, then `meroctl call -i kv ...`.
 
 ## Calling in a loop
 
 ```bash
 for key in foo bar baz; do
-  meroctl call -c kv set --args "$(jq -nc --arg k "$key" '{key: $k, value: ($k + "-val")}')" \
+  meroctl call -i kv set --args "$(jq -nc --arg k "$key" '{key: $k, value: ($k + "-val")}')" \
     --idempotency-key "seed-$key"
 done
 ```
@@ -31,14 +31,14 @@ done
 - name: Scenario and smoke test
   run: |
     curl -fsSL https://raw.githubusercontent.com/calimero-network/core/master/scripts/install.sh \
-      | sh -s -- merod meroctl --version 1.0.0-rc.24
+      | sh -s -- merod meroctl --version 1.0.0-rc.26
     meroctl local test apps/kv-store
     meroctl local up
     meroctl login --dev-passkey ./ci-passkey.json --name ci
     meroctl app build apps/kv-store --out kv.wasm
-    meroctl context create --name kv --path kv.wasm --alias kv
-    meroctl call -c kv set --args '{"key":"t","value":"1"}'
-    test "$(meroctl call -c kv get --args '{"key":"t"}' --view | jq -r .result)" = 1
+    meroctl instance create --name kv --path kv.wasm --alias kv
+    meroctl call -i kv set --args '{"key":"t","value":"1"}'
+    test "$(meroctl call -i kv get --args '{"key":"t"}' --view | jq -r .result)" = 1
     meroctl local down
 ```
 
@@ -56,13 +56,13 @@ printed as `{ keyId, key }`), and the image profiles you trust:
     CALIMERO_API_KEY: ${{ secrets.CALIMERO_UPGRADE_KEY }}
     CALIMERO_TEE_PROFILES: ${{ vars.CALIMERO_TEE_PROFILES }}
   run: |
-    meroctl context update <app-id> --version ${{ github.ref_name }}
+    meroctl instance update <app-id> --version ${{ github.ref_name }}
 ```
 
 The node installs the release from its registry if it lacks it, then upgrades. The key only moves
 that one context to signed releases of its package; every other request with it, reads included, is
 refused `403 UPGRADE_KEY_ONLY`. For other automation, use an ordinary key
-(`account api-key create --context C --read-only`, or one made in the console).
+(`account api-key create --instance I --read-only`, or one made in the console).
 
 ## Any route: raw and proxy
 
@@ -82,8 +82,8 @@ loopback, refuses requests a browser sends for a page, and never logs headers, q
 `--node` picks a saved node per command:
 
 ```bash
-meroctl --node staging call -c kv get --args '{"key":"a"}' --view
-meroctl --node prod --tee-profiles <profile> call -c kv get --args '{"key":"a"}' --view
+meroctl --node staging call -i kv get --args '{"key":"a"}' --view
+meroctl --node prod --tee-profiles <profile> call -i kv get --args '{"key":"a"}' --view
 ```
 
 Any node of a cluster serves every app; there is no per-node join or sync step.

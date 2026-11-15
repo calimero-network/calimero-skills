@@ -17,8 +17,8 @@ meroctl node use prod
 meroctl cloud use my-cluster
 
 # every later command uses the default node
-meroctl context list
-meroctl call -c kv get --args '{"key":"a"}' --view
+meroctl instance list
+meroctl call -i kv get --args '{"key":"a"}' --view
 ```
 
 `node add` takes a URL (any node of the cluster), not a node's home directory. Saved nodes live in
@@ -27,8 +27,8 @@ meroctl call -c kv get --args '{"key":"a"}' --view
 ## Don't do this
 
 ```bash
-meroctl --node prod context list
-meroctl --node prod call -c kv get --args '{"key":"a"}' --view
+meroctl --node prod instance list
+meroctl --node prod call -i kv get --args '{"key":"a"}' --view
 ```
 
 ## Exception: several clusters in one script
@@ -36,6 +36,6 @@ meroctl --node prod call -c kv get --args '{"key":"a"}' --view
 Name the node per command when a script talks to more than one cluster:
 
 ```bash
-meroctl --node staging call -c kv get --args '{"key":"a"}' --view
-meroctl --node prod call -c kv get --args '{"key":"a"}' --view
+meroctl --node staging call -i kv get --args '{"key":"a"}' --view
+meroctl --node prod call -i kv get --args '{"key":"a"}' --view
 ```

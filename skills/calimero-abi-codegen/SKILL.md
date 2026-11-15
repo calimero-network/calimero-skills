@@ -14,7 +14,7 @@ You are helping a developer generate a **typed client for a Calimero app** from 
   deprecated: it read SDK 0.12 ABIs only and does not work with core 1.0.
 - The ABI is **embedded in the component** (its `calimero:abi` custom section) by `#[app::logic]`.
   `codegen` reads it from the built component, the signed `.mpk`, a `manifest.json` or an ABI JSON
-  file (`meroctl context abi` saves an installed app's).
+  file (`meroctl instance abi` saves an installed app's).
 - `--lang` is `ts`, `python`, `swift`, `kotlin` or `openapi`. Each language also writes
   `openapi.json` beside the client unless `--no-openapi`.
 - The TypeScript client is a thin typed layer over mero-js's **`CalimeroClient`**

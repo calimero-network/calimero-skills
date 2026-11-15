@@ -43,7 +43,7 @@ relying party accepts; `login` needs `--allow-mock`. The same file approves what
 
 ```bash
 meroctl namespace invite <org-id> --role member --uses 1 --dev-passkey ./dev-passkey.json
-meroctl context update kv --version 1.1.0 --dev-passkey ./dev-passkey.json
+meroctl instance update kv --version 1.1.0 --dev-passkey ./dev-passkey.json
 ```
 
 Without it the node answers `412 CONFIRM_REQUIRED` and nothing changes.
@@ -57,10 +57,10 @@ in the console, and owner approvals happen in the console.
 ```bash
 export CALIMERO_API_KEY=cal_...
 meroctl --tee-profiles <profile> whoami
-meroctl --tee-profiles <profile> call -c kv get --args '{"key":"a"}' --view
+meroctl --tee-profiles <profile> call -i kv get --args '{"key":"a"}' --view
 ```
 
 From a passkey session you can also mint keys:
-`account api-key create [--label L] [--context C]... [--read-only] [--ttl-secs N]` (printed once),
-or an upgrade key for CI, `account api-key create --upgrades CONTEXT [--package P]`, which only
-moves that context to signed releases with `context update --version`.
+`account api-key create [--label L] [--instance I]... [--read-only] [--ttl-secs N]` (printed once),
+or an upgrade key for CI, `account api-key create --upgrades INSTANCE [--package P]`, which only
+moves that context to signed releases with `instance update --version`.

@@ -21,19 +21,21 @@ may sign in against it with passkeys.
 
 ### Where merod comes from
 
-- **rc.24 (today)**: `merod` from `PATH`, or the file `MEROD` names; state in `.merod-local/`.
-  `--docker [--image IMG]` runs the release's image instead
-  (`ghcr.io/calimero-network/merod:<release>`, ports published on `127.0.0.1`, state in the Docker
-  volume `meroctl-local-<base port>`). On macOS with no `merod` (releases before 1.0.0-rc.25 shipped
-  none) `local up` falls back to the image.
-- **rc.25 (coming, core PR #5068)**: the release's Docker image is the default, so Docker must be
-  installed and running; `--local` (or `MEROD`) runs the `merod` binary instead, and `--docker` is
-  accepted and changes nothing. State moves to `~/.calimero/meroctl/local` (the same from any
-  directory); `down` and `status` still find a cluster an older meroctl started in `./.merod-local`.
+- **The release's Docker image, by default** (from 1.0.0-rc.25):
+  `ghcr.io/calimero-network/merod:<release>`, ports published on `127.0.0.1`, state in the Docker
+  volume `meroctl-local-<base port>`. Docker must be installed and running; `local up` says so first
+  when it is not.
+- **`--local` (or `MEROD=FILE`)**: the `merod` binary on `PATH` (or that file) instead of the image.
+- **`--registry-url URL`** (`MEROD_REGISTRY_URL`): from 1.0.0-rc.26 the cluster installs from the
+  public registry (`https://apps.calimero.network`) by default, so
+  `meroctl app install PACKAGE@VERSION` works on it; an empty value means none.
+- State lives in `~/.calimero/meroctl/local` (the same from any directory); `down` and `status`
+  still find a cluster an older meroctl started in `./.merod-local`. On 1.0.0-rc.24 the binary was
+  the default and `--docker` chose the image; `--docker` is still accepted and changes nothing.
 
 ```bash
-meroctl local up --docker           # rc.24: run the release's image
-meroctl local up --local            # rc.25: run the merod on PATH instead of the image
+meroctl local up                    # the release's image
+meroctl local up --local            # the merod on PATH instead
 ```
 
 ## dev: the build loop
@@ -52,9 +54,9 @@ it runs, signs up a deployer of its own, builds the crate, uploads it as a raw b
 every save. Ctrl-C stops the frontend, and the cluster when `dev` started it. It takes the `up`
 flags too.
 
-For a build you push yourself: `meroctl app watch --path FILE --dev-passkey F [-c CONTEXT]...` (also
-`dev watch`), or `meroctl dev start --path FILE --dev-passkey F --name dev --watch` to install,
-create a context and keep pushing.
+For a build you push yourself: `meroctl app watch --path FILE --dev-passkey F [-i INSTANCE]...`
+(also `dev watch`), or `meroctl dev start --path FILE --dev-passkey F --name dev --watch` to
+install, create a context and keep pushing.
 
 ## test: scenarios
 
@@ -80,8 +82,8 @@ meroctl local up
 meroctl login --dev-passkey ./dev-passkey.json --name ada
 meroctl app pack apps/kv-store/logic --app-version 0.1.0 --out kv-store.mpk
 meroctl app install --path ./kv-store.mpk
-meroctl context create --package com.calimero.kv-store --name notes --alias notes
-meroctl call -c notes set --args '{"key":"a","value":"1"}'
-meroctl call -c notes get --args '{"key":"a"}' --view
+meroctl instance create --package com.calimero.kv-store --name notes --alias notes
+meroctl call -i notes set --args '{"key":"a","value":"1"}'
+meroctl call -i notes get --args '{"key":"a"}' --view
 meroctl local down
 ```
