@@ -47,13 +47,13 @@ crate-type = ["cdylib"]
 
 [dependencies]
 # Pin by git tag to the core release your cluster runs.
-calimero-sdk = { git = "https://github.com/calimero-network/core", tag = "1.0.0-rc.26" }
+calimero-sdk = { git = "https://github.com/calimero-network/core", tag = "1.0.0-rc.28" }
 serde = { version = "1", features = ["derive"] }
 
 # The TestApp harness and the builder it builds the crate with (host only).
 [target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
-calimero-sdk = { git = "https://github.com/calimero-network/core", tag = "1.0.0-rc.26", features = ["testing"] }
-calimero-app-build = { git = "https://github.com/calimero-network/core", tag = "1.0.0-rc.26" }
+calimero-sdk = { git = "https://github.com/calimero-network/core", tag = "1.0.0-rc.28", features = ["testing"] }
+calimero-app-build = { git = "https://github.com/calimero-network/core", tag = "1.0.0-rc.28" }
 serde_json = "1"
 
 # Read by `meroctl app pack .`: the package id, and the listing a registry shows.
@@ -192,7 +192,7 @@ meroctl app build . --out my-app.wasm                                 # the cali
 meroctl app codegen --abi my-app.wasm --lang ts -o src/generated      # typed client (calimero-abi-codegen skill)
 meroctl app signer new release.key                                    # once: the signing key; keep it out of git
 meroctl app pack . --key release.key                                  # signed dist/com.example.my-app-0.1.0.mpk
-meroctl local up                                                      # a three-node development cluster, mock attestation
+meroctl local up                                                      # a one-node development cluster (--nodes 3: three), mock attestation
 ```
 
 `meroctl` ships prebuilt on every core release (`meroctl_<target>.tar.gz`, checked against the

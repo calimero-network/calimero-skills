@@ -6,7 +6,7 @@ and ships apps without a node (`app new|build|codegen|pack|publish`, see `calime
 talks to nodes: before it sends anything it fetches the node's attestation and judges the quote,
 then every request travels in the sealed channel.
 
-This skill teaches core 1.0's meroctl (1.0.0-rc.26). The 0.x CLI (contexts bound by `--group-id`,
+This skill teaches core 1.0's meroctl (1.0.0-rc.28). The 0.x CLI (contexts bound by `--group-id`,
 `context identity`, `peers`, JSON-RPC calls, merobox) is gone; see "What changed from 0.x" below.
 
 ## Names
@@ -31,7 +31,7 @@ curl -fsSL https://raw.githubusercontent.com/calimero-network/core/master/script
 
 # merod and meroctl, a pinned release
 curl -fsSL https://raw.githubusercontent.com/calimero-network/core/master/scripts/install.sh \
-  | sh -s -- merod meroctl --version 1.0.0-rc.26
+  | sh -s -- merod meroctl --version 1.0.0-rc.28
 
 # or Homebrew
 brew install calimero-network/tap/meroctl calimero-network/tap/merod
@@ -40,7 +40,7 @@ brew install calimero-network/tap/meroctl calimero-network/tap/merod
 ## From nothing to a call (development cluster)
 
 ```bash
-meroctl local up                                     # 3 nodes on 127.0.0.1:2501-2503, saved as node `local`
+meroctl local up                                     # 1 node on 127.0.0.1:2501 (--nodes 3: three), saved as node `local`
 meroctl login --dev-passkey ./dev-passkey.json --name ada   # a new file signs up
 meroctl app build apps/kv-store --out kv_store.wasm    # in a checkout of core
 meroctl instance create --name kv --path kv_store.wasm --alias kv
@@ -92,7 +92,7 @@ meroctl local down
 | `context identity ...`, executor keys, `--as`             | accounts: passkeys (`login`, `account device`) and API keys (`account api-key`)                     |
 | `peers`, `context sync`, `group sync`                     | gone: no gossip, each app instance's Raft log replicates it                                         |
 | `group join-context`, `namespace join NS INVITE_JSON`     | `namespace join TOKEN`; who reaches a context is its access (`instance access`, `--group`)          |
-| `node add NAME /path/to/home`, port 2528                  | `node add NAME URL [--allow-mock]`; `local up` serves 2501-2503                                     |
+| `node add NAME /path/to/home`, port 2528                  | `node add NAME URL [--allow-mock]`; `local up` serves 2501 (`--nodes 3`: 2501-2503)                 |
 | `--output-format json`                                    | always JSON                                                                                         |
 | `context create --watch FILE`                             | `local dev`, `app watch --path FILE --dev-passkey F`, `dev start`                                   |
 | merobox                                                   | `meroctl local up\|dev\|test`                                                                       |

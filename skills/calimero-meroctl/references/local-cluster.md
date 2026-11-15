@@ -1,17 +1,24 @@
 # The Local Development Cluster
 
-`meroctl local` runs `merod local` in the background: three nodes in one process, mock attestation
-and a development storage key. It is for development only; never put real data in it.
+`meroctl local` runs `merod local` in the background: one node (from 1.0.0-rc.28; `--nodes 3` runs
+three in one process, as a Cloud cluster replicates every instance), mock attestation and a
+development storage key. It is for development only; never put real data in it.
 
 ## up, status, down
 
 ```bash
-meroctl local up                    # nodes on http://127.0.0.1:2501-2503, waits until they serve
+meroctl local up                    # one node on http://127.0.0.1:2501, waits until it serves
 meroctl local status                # whether it runs, its URLs and the ops token
 meroctl local down                  # stop; the state stays for the next `up`
 meroctl local up --fresh            # start over with empty state
+meroctl local up --nodes 3 --fresh  # three nodes (2501-2503): a leader and two followers
 meroctl local up --nodes 5 --base-port 3501 --dir ./cluster
 ```
+
+A cluster keeps the node count it was made with (`cluster.json` in its state directory): another
+`--nodes` is refused until `--fresh` starts over, since a cluster restarted with fewer nodes never
+reaches a majority. A cluster from 1.0.0-rc.27 or earlier keeps its three nodes. Each state
+directory has a Docker volume of its own (`meroctl-local-<hash>`).
 
 `local up` saves the cluster as the node `local`, trusting its mock quote for that node only, and
 makes it the default when there is none. It prints the URLs and the operator's token
