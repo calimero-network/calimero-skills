@@ -74,10 +74,10 @@ fn every_scenario_passes() {
 `meroctl local test [DIR]` runs `cargo test` of the app's crate, which runs every `scenarios/*.json`
 on core's engine (the apps template's harness).
 
-`meroctl local up` starts a three-node development cluster (`merod local`: mock attestation, nodes
-on `127.0.0.1:2501`-`2503`) and saves it as the node `local`; `meroctl local dev [DIR]` also builds
-the app, uploads it, runs the frontend's dev server and rebuilds on every save. Drive it with
-`meroctl` or a mero-js client (`policy: { allowMock: true }`):
+`meroctl local up` starts a one-node development cluster (`merod local`: mock attestation, on
+`127.0.0.1:2501`; `--nodes 3` runs three) and saves it as the node `local`;
+`meroctl local dev [DIR]` also builds the app, uploads it, runs the frontend's dev server and
+rebuilds on every save. Drive it with `meroctl` or a mero-js client (`policy: { allowMock: true }`):
 
 ```bash
 meroctl local up
