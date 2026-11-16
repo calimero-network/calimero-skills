@@ -12,96 +12,49 @@
 <div class="breadcrumb"><a href="index.html">Home</a><span class="sep">/</span><span>Core</span></div>
 
 <h1>Core Skill</h1>
-<p class="page-subtitle">Foundational Calimero runtime concepts — protocols, CRDT types, namespaces, and the context model</p>
+<p class="page-subtitle">How Calimero 1.0 works: one Raft log per app instance, a system group for who may do what, and a sealed channel to attested nodes</p>
 
 <div class="card ga">
 <h2>What This Skill Covers</h2>
-<p style="margin-bottom:12px;">The <span class="code">calimero-core</span> skill is the foundation every AI assistant needs for Calimero work. Install it alongside any language skill to give full-stack context about what the node accepts, emits, and stores.</p>
+<p style="margin-bottom:12px;">The <span class="code">calimero-core</span> skill gives your AI assistant the model behind every Calimero command and API: what an app instance is, how a call is run once and replicated, how organizations and access work, and what a client verifies before it sends anything. It teaches core 1.0 (1.0.0-rc.29); the 0.x model of contexts, gossip and CRDT merging is gone.</p>
 <div class="g2">
   <div class="cb"><h4>Covered Topics</h4>
     <ul style="margin:8px 0 0 16px;color:#c9d1d9;font-size:13px;">
-      <li style="margin-bottom:6px;">Context / Application / Identity model</li>
-      <li style="margin-bottom:6px;">JSON-RPC protocol and endpoint list</li>
-      <li style="margin-bottom:6px;">WebSocket events (<span class="code">ExecutionEvent</span>, <span class="code">StateMutation</span>)</li>
-      <li style="margin-bottom:6px;">CRDT storage type taxonomy</li>
-      <li style="margin-bottom:6px;">Namespace + group multi-node model</li>
-      <li>Authentication (JWT tokens, login, refresh)</li>
+      <li style="margin-bottom:6px;">App instances (v1's contexts), each with its own Raft log</li>
+      <li style="margin-bottom:6px;">The system group: nodes, accounts, organizations, packages, the app directory</li>
+      <li style="margin-bottom:6px;">Organizations, teams, roles, capabilities, access rules, invites</li>
+      <li style="margin-bottom:6px;">Accounts, passkeys, sessions, API keys, step-ups, the operator</li>
+      <li style="margin-bottom:6px;">Attestation, the sealed channel, receipts, packages and signers</li>
     </ul>
   </div>
   <div class="cb"><h4>Install</h4>
-    <div class="typedef" style="margin-top:6px;"><span class="field">npx @calimero-network/agent-skills calimero-core</span><br><br><span class="comment"># Recommended combos:</span><br><span class="field">npx @calimero-network/agent-skills calimero-core calimero-rust-sdk</span><br><span class="field">npx @calimero-network/agent-skills calimero-core calimero-client-js</span></div>
+    <div class="typedef" style="margin-top:6px;"><span class="field">npx @calimero-network/agent-skills calimero-core</span><br><br><span class="comment"># With a hands-on skill:</span><br><span class="field">npx @calimero-network/agent-skills calimero-core calimero-rust-sdk calimero-client-js</span></div>
   </div>
 </div>
 </div>
 
 <div class="card gb">
-<h2>The Three-Layer Model</h2>
+<h2>The Life of a Call</h2>
 <div class="typedef">
-<span class="comment">┌──────────────────────────────────────────────────┐</span><br>
-<span class="comment">│ Application logic (WASM)                          │  calimero-rust-sdk / calimero-sdk-js</span><br>
-<span class="comment">│ @State / #[app::state], CRDT collections         │</span><br>
-<span class="comment">└────────────────────┬─────────────────────────────┘</span><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment">│ JSON-RPC + WebSocket</span><br>
-<span class="comment">┌────────────────────▼─────────────────────────────┐</span><br>
-<span class="comment">│ merod node runtime                                │  calimero-merod</span><br>
-<span class="comment">│ Hosts WASM, manages storage, exposes HTTP/WS API  │</span><br>
-<span class="comment">└────────────────────┬─────────────────────────────┘</span><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment">│ meroctl / HTTP clients</span><br>
-<span class="comment">┌────────────────────▼─────────────────────────────┐</span><br>
-<span class="comment">│ Clients &amp; tooling                                 │  calimero-client-js / calimero-meroctl</span><br>
-<span class="comment">│ mero-js, mero-react, calimero-client-py           │</span><br>
-<span class="comment">└──────────────────────────────────────────────────┘</span>
+<span class="comment"># the client verifies the node, then seals every request to it</span><br>
+<span class="field">GET  /attestation?nonce=…        # quote checked against a signed mero-tee release</span><br>
+<span class="field">POST /apps/{app}/intents         # sealed; any node forwards it to the app's leader</span><br>
+<br>
+<span class="comment"># the leader runs the component once and appends { call, outcome { result, diff, events } }</span><br>
+<span class="comment"># a majority acknowledges; every replica applies the same diff</span><br>
+<br>
+<span class="comment"># the answer: { index, result, events, receipt }, the receipt signed by an attested key</span><br>
+<span class="field">POST /apps/{app}/views           # a read, no log entry</span><br>
+<span class="field">GET  /apps/{app}/events?from=N   # committed events, then live (SSE)</span>
 </div>
 </div>
 
 <div class="card gc">
-<h2>Application vs Context</h2>
-<div class="fr"><div class="fp">Application</div><div class="fd">The WASM binary + manifest. Installed once. Has an <span class="code">application-id</span>. No state of its own. Think: a class definition.</div></div>
-<div class="fr"><div class="fp">Context</div><div class="fd">A running instance of an app. Has its own isolated CRDT state, members, and storage. Has a <span class="code">context-id</span>. Think: an object instance. One app → many contexts possible.</div></div>
-<div class="fr"><div class="fp">Identity</div><div class="fd">An Ed25519 keypair. Used as <span class="code">executorPublicKey</span> in RPC calls. Identifies who is calling. Created per node.</div></div>
-<div class="fr"><div class="fp">Namespace</div><div class="fd">A root trust anchor. Created by one node, other nodes join via invite token. Required for multi-node context participation.</div></div>
-</div>
-
-<div class="card gd">
-<h2>Execute a Method (JSON-RPC)</h2>
-<div class="typedef">
-<span class="comment">POST /api/v0/context/{contextId}/execute</span><br>
-<span class="comment">Authorization: Bearer &lt;accessToken&gt;</span><br><br>
-&#123;<br>
-&nbsp;&nbsp;<span class="field">"method"</span>: <span class="comment">"get_posts"</span>,<br>
-&nbsp;&nbsp;<span class="field">"argsJson"</span>: <span class="comment">"{}"</span>,<br>
-&nbsp;&nbsp;<span class="field">"executorPublicKey"</span>: <span class="comment">"&lt;base58-pubkey&gt;"</span><br>
-&#125;<br><br>
-<span class="comment">→ { "output": [...] }       // success</span><br>
-<span class="comment">→ { "error": { ... } }     // failure</span>
-</div>
-<p style="margin-top:12px;color:#8b949e;font-size:13px;"><span class="code">argsJson</span> is a JSON <em>string</em> (double-encoded), not an inline object. Mutations and views use the same endpoint — there is no separate query path.</p>
-</div>
-
-<div class="card ga">
-<h2>CRDT Storage Types</h2>
-<div class="fr"><div class="fp">UnorderedMap&lt;K, V&gt;</div><div class="fd">Key-value store. Most common type. Wrap values in <span class="code">LwwRegister&lt;V&gt;</span> (Rust) for last-write-wins scalars.</div></div>
-<div class="fr"><div class="fp">Vector&lt;T&gt;</div><div class="fd">Append-only ordered log. Cannot remove items.</div></div>
-<div class="fr"><div class="fp">LwwRegister&lt;T&gt;</div><div class="fd">Single mutable scalar. Last write wins — safe for simple mutable values.</div></div>
-<div class="fr"><div class="fp">Counter / Counter&lt;true&gt;</div><div class="fd">Grow-only / PN counter. <span class="code">.increment()</span>, <span class="code">.value()</span>.</div></div>
-<div class="fr"><div class="fp">UserStorage&lt;T&gt;</div><div class="fd">Per-member private storage. NOT synced to other members.</div></div>
-<div class="fr"><div class="fp">FrozenStorage&lt;T&gt;</div><div class="fd">Immutable content-addressed blobs. Write once, identified by hash.</div></div>
-</div>
-
-<div class="card gb">
-<h2>WebSocket Events</h2>
-<div class="typedef">
-<span class="comment">// Connect: ws://localhost:2428/ws</span><br>
-<span class="comment">// Subscribe: {"action":"subscribe","contextIds":["ctx-id"]}</span><br><br>
-<span class="comment">// ExecutionEvent — app emitted app::emit!()</span><br>
-&#123; <span class="field">type</span>: <span class="comment">"ExecutionEvent"</span>, <span class="field">contextId</span>: <span class="comment">"..."</span>,<br>
-&nbsp;&nbsp;<span class="field">data</span>: &#123; <span class="field">events</span>: [&#123; <span class="field">kind</span>: <span class="comment">"PostCreated"</span>, <span class="field">data</span>: [<span class="comment">...bytes</span>] &#125;] &#125; &#125;<br><br>
-<span class="comment">// StateMutation — a member mutated state</span><br>
-&#123; <span class="field">type</span>: <span class="comment">"StateMutation"</span>, <span class="field">contextId</span>: <span class="comment">"..."</span>,<br>
-&nbsp;&nbsp;<span class="field">data</span>: &#123; <span class="field">newRoot</span>: <span class="comment">"&lt;hex-hash&gt;"</span> &#125; &#125;<br><br>
-<span class="comment">// Decode byte-array event data (Rust apps):</span><br>
-<span class="kw">const</span> <span class="field">decoded</span> = <span class="ty">JSON</span>.<span class="ty">parse</span>(<span class="kw">new</span> <span class="ty">TextDecoder</span>().<span class="ty">decode</span>(<span class="kw">new</span> <span class="ty">Uint8Array</span>(<span class="field">data</span>)));
-</div>
+<h2>Key Rules</h2>
+<div class="fr"><div class="fp">Leader runs, followers apply</div><div class="fd">No gossip, no CRDT merging, no <span class="code">context sync</span>: calls are linearized, state is plain collections (<span class="code">Text</span> is the one CRDT left).</div></div>
+<div class="fr"><div class="fp">Package ≠ instance</div><div class="fd">A package (<span class="code">meroctl app</span>) is signed code; an instance (<span class="code">meroctl instance</span>) is one running copy with its own log, state, owner, organization and access.</div></div>
+<div class="fr"><div class="fp">Access</div><div class="fd">Every instance is in one organization, with an access rule: <span class="code">owner</span>, <span class="code">accounts</span>, <span class="code">org</span>, <span class="code">team</span> or <span class="code">public</span>. A caller who does not reach it gets <span class="code">404</span>.</div></div>
+<div class="fr"><div class="fp">Credentials</div><div class="fd">People sign in with passkeys (15-minute sessions); machines use scoped API keys (<span class="code">cal_…</span>). Sensitive actions need a passkey step-up (<span class="code">412 CONFIRM_REQUIRED</span>).</div></div>
 </div>
 
 </div>

@@ -1,101 +1,48 @@
 # calimero-desktop — Agent Instructions
 
-You are helping a developer integrate their app frontend with **Calimero Desktop SSO** — the flow
-where users open an app from the Desktop and are automatically logged in without a manual auth
-screen.
+**There is no Calimero Desktop single sign-on for core 1.0.** This skill exists so an agent that
+finds the desktop's URL-hash token flow in a project (`access_token` in `window.location.hash`,
+`parseAuthCallback`, `readDesktopSSO`, `MeroProvider` consuming an SSO hash) knows what it belongs
+to and what a core 1.0 app does instead.
 
-> **NOT this skill** if the developer just needs to authenticate manually via the login form — that
-> is handled entirely by `mero-react` (`MeroProvider` + `ConnectButton`/`connectToNode`). This skill
-> is specifically about the Desktop cold-open case and the token-less pre-seed.
+## What is true now
 
-## The one thing to get right
+- **Calimero Desktop runs the 0.x node.** The desktop app (calimero-network/tauri-app, `master`,
+  desktop 0.0.149) bundles and manages `merod` 0.12.0 and is built on `@calimero-network/mero-js` 26
+  and `mero-react` 10: the 0.x stack of contexts, namespaces, peers and JWT auth. It does not run or
+  connect to core 1.0 clusters.
+- **Its SSO is 0.x auth.** When the desktop opens an app's frontend, it appends a hash with the 0.x
+  node's JWTs (`node_url`, `access_token`, `refresh_token`, `expires_at`, and the app's id); on the
+  page, mero-js 26's `parseAuthCallback` (through `MeroProvider`) stores them. A core 1.0 node
+  issues no such tokens.
+- **mero-js 27 and later removed it**: `parseAuthCallback`, `buildAuthLoginUrl`, the token stores
+  and mero-auth's SSO callback are gone, with the rest of the v1 client.
 
-**`MeroProvider` (from `@calimero-network/mero-react`) already owns the SSO token hash.** On its
-first render it runs `parseAuthCallback(window.location.href)`, stores the tokens where mero-js
-reads them, sets node/app/context, and strips the hash from the address bar. The **same** hash
-format is used by the normal web login redirect.
+## What a core 1.0 app does instead
 
-So the integration is mostly _not writing code_: render `MeroProvider`, gate your routes with
-`useMero`, and let the provider consume the hash. **Do NOT read, parse, or strip a token-bearing
-hash yourself** — racing ahead of the provider leaves the token in the wrong place, so every API
-call goes out unauthenticated (401) and the user is bounced back to the landing page.
+- **People sign in with passkeys**, on the page itself, through mero-js's `CalimeroClient` (`signUp`
+  / `signIn` with `browserPasskey()`); the session is a 15-minute token with a refresh token, kept
+  by the app (`useSession`). Load **`calimero-client-js`**.
+- **The frontend is served by the cluster** from the signed package (`{label}.{apps-domain}`, e.g.
+  `https://{label}.apps.calimero.network/`). A Calimero Cloud node runs passkey ceremonies only for
+  origins it knows: frontends it serves from a bundle, its own `--origins`, or an origin the
+  package's manager registered (`meroctl app origins add`). A copy hosted elsewhere cannot sign
+  anyone in.
+- **Machines use API keys** (`cal_…`), never a token handed over in a URL.
+- **On a development cluster**, `meroctl local up` lets `http://localhost:3000` and
+  `http://localhost:5173` run passkey ceremonies, and `meroctl local dev` runs the frontend on
+  `:5173` against it.
 
-> ⚠️ Do not manually read `window.location.hash`, store tokens by hand, or `history.replaceState` a
-> token-bearing hash — `MeroProvider` owns this flow. See `rules/sso-fallback.md`.
+## If you maintain an app for the desktop's 0.x node
 
-## What Desktop does
-
-Calimero Desktop opens app frontends in a browser window and passes the auth session via the URL
-hash — so users are automatically logged in without going through the manual connect flow. The hash
-is an OAuth-style auth callback; `MeroProvider` consumes it.
-
-## Hash parameters passed by Desktop
-
-These are the params `parseAuthCallback` reads (a hash WITHOUT `access_token` is not treated as an
-auth callback):
-
-| Parameter          | Description                                        |
-| ------------------ | -------------------------------------------------- |
-| `access_token`     | JWT for authenticated node calls (required)        |
-| `refresh_token`    | Token to obtain a new access token                 |
-| `node_url`         | URL of the local node (`http://localhost:PORT`)    |
-| `application_id`   | The installed app's ID on this node                |
-| `context_id`       | The context the session is bound to                |
-| `context_identity` | The executor public key / identity for the context |
-
-## Example URL
-
-```text
-https://your-app.com/#access_token=eyJ...&refresh_token=eyJ...&node_url=http://localhost:2528&application_id=abc123&context_id=...&context_identity=...
-```
-
-## Minimum integration
-
-Wrap your app in `MeroProvider` and gate routes with `useMero`. The provider handles the hash; you
-only read `isAuthenticated` / `isLoading`.
-
-```tsx
-import { AppMode, MeroProvider, useMero } from '@calimero-network/mero-react';
-
-function RequireAuth({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isLoading } = useMero();
-  if (isLoading) return null; // wait for the auth probe — avoids a flash-bounce
-  if (!isAuthenticated) return <Navigate to="/" replace />;
-  return <>{children}</>;
-}
-
-export function App() {
-  return (
-    <MeroProvider mode={AppMode.MultiContext} packageName={APP_PACKAGE}>
-      {/* ...router with <RequireAuth> around protected routes... */}
-    </MeroProvider>
-  );
-}
-```
-
-When opened from Desktop, the hash carries the session, `MeroProvider.parseAuthCallback` consumes
-it, `isAuthenticated` flips true after the probe, and the user lands straight in the app — no manual
-login. When opened in a plain browser with no hash, `isAuthenticated` stays false and your guard
-sends the user to the connect/login screen.
-
-> Use `AppMode.MultiContext` (do not use `AppMode.SingleContext`). The session authenticates the
-> user against the node/app but does not pick a context — your app lists contexts (`useContexts`)
-> and, if none exist, creates the namespace → group → context chain via `mero.admin.createNamespace`
-> / `createGroupInNamespace` / `createContext({ applicationId, groupId })`. See the
-> `calimero-client-js` skill's `references/sso.md`.
-
-## Critical rule
-
-`isLoading` must settle before any redirect. The provider resolves auth asynchronously (it probes
-the node with `getContexts()`), so a guard that redirects while `isLoading` is true will bounce a
-freshly-authenticated user. Always `if (isLoading) return null;` first. See `rules/sso-fallback.md`.
-
-## Related skills
-
-- **`calimero-client-js`** — mero-js / mero-react API for auth, RPC, and WebSocket subscriptions
-- **`calimero-core`** — auth flow (JWT tokens, login, refresh) and JSON-RPC protocol detail
+Stay on mero-js 26 and mero-react 10 for that build, and let `MeroProvider` consume the hash; do not
+parse it yourself. Do not carry that code into a core 1.0 frontend, and do not add it to a new
+project. `references/desktop-today.md` records what the desktop sends, as found in its source.
 
 ## References
 
-See `references/sso-integration.md` for the full provider/guard pattern and the token-less cold-open
-pre-seed. See `rules/sso-fallback.md` for the fallback requirement and the anti-pattern to avoid.
+- `references/desktop-today.md`: what Calimero Desktop is and sends today, and the 1.0 equivalents.
+
+## Rules
+
+- `rules/no-hash-tokens-on-1.0.md`: a core 1.0 frontend never reads a session from the URL.

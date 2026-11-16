@@ -16,7 +16,7 @@
     { label: 'SDK JS', href: 'skill-sdk-js.html', dot: '#f59e0b' },
     { label: 'Client JS', href: 'skill-client-js.html', dot: '#39d0d8' },
     { label: 'Client Python', href: 'skill-client-py.html', dot: '#c084fc' },
-    { label: 'Desktop SSO', href: 'skill-desktop.html', dot: '#a371f7' },
+    { label: 'Desktop', href: 'skill-desktop.html', dot: '#a371f7' },
     { label: 'Node', href: 'skill-node.html', dot: '#22d3ee' },
     { label: 'merod', href: 'skill-merod.html', dot: '#60a5fa' },
     { label: 'meroctl', href: 'skill-meroctl.html', dot: '#38bdf8' },

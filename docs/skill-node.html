@@ -12,55 +12,50 @@
 <div class="breadcrumb"><a href="index.html">Home</a><span class="sep">/</span><span>Node</span></div>
 
 <h1>Node Skill</h1>
-<p class="page-subtitle">Context for operating a Calimero node with <span class="code">merod</span> and scripting it with <span class="code">meroctl</span></p>
+<p class="page-subtitle">Operating a Calimero 1.0 cluster with <span class="code">meroctl ops</span></p>
 
 <div class="card ga">
 <h2>What This Skill Covers</h2>
-<p style="margin-bottom:12px;">The <span class="code">calimero-node</span> skill gives your AI assistant the full <span class="code">meroctl</span> command reference and context lifecycle knowledge so it can write correct node setup scripts and operator runbooks.</p>
+<p style="margin-bottom:12px;">The <span class="code">calimero-node</span> skill gives your AI assistant the operator's side of core 1.0: the ops token and the operator key, every <span class="code">meroctl ops</span> command, and runbooks for growing, backing up, recovering and upgrading a cluster. The Ops API has no read path into apps' data.</p>
 <div class="g2">
   <div class="cb"><h4>Covered Topics</h4>
     <ul style="margin:8px 0 0 16px;color:#c9d1d9;font-size:13px;">
-      <li style="margin-bottom:6px;"><span class="code">merod</span> init and startup</li>
-      <li style="margin-bottom:6px;"><span class="code">meroctl</span> node / app / context / identity / call</li>
-      <li style="margin-bottom:6px;">Context lifecycle (install → create → invite → join)</li>
-      <li style="margin-bottom:6px;">App installation from registry or local WASM</li>
-      <li>Multi-node setup with namespace/group membership</li>
+      <li style="margin-bottom:6px;"><span class="code">ops status</span>, <span class="code">ops placement</span>, <span class="code">ops cluster</span>, metrics</li>
+      <li style="margin-bottom:6px;">Adding, moving and removing nodes (<span class="code">add-node</span>, <span class="code">move</span>, <span class="code">remove-node</span>)</li>
+      <li style="margin-bottom:6px;">Backups, restores and the recovery disk</li>
+      <li style="margin-bottom:6px;">Quotas, release approvals, app upgrades (<span class="code">ops upgrade-org</span>)</li>
+      <li style="margin-bottom:6px;">Upgrading the cluster's release by adding nodes</li>
     </ul>
   </div>
   <div class="cb"><h4>Install</h4>
-    <div class="typedef" style="margin-top:6px;"><span class="field">npx @calimero-network/agent-skills calimero-node</span><br><br><span class="comment"># Recommended for operators:</span><br><span class="field">npx @calimero-network/agent-skills calimero-node calimero-meroctl</span></div>
+    <div class="typedef" style="margin-top:6px;"><span class="field">npx @calimero-network/agent-skills calimero-node</span><br><br><span class="comment"># With the binary and the CLI:</span><br><span class="field">npx @calimero-network/agent-skills calimero-node calimero-merod calimero-meroctl</span></div>
   </div>
 </div>
 </div>
 
 <div class="card gb">
-<h2>Node Setup</h2>
+<h2>Operator Commands</h2>
 <div class="typedef">
-<span class="comment"># Initialise node (creates key material + config)</span><br>
-<span class="field">merod --node node1 init --server-port 2428 --swarm-port 2528</span><br><br>
-<span class="comment"># Start the node</span><br>
-<span class="field">merod --node node1 run</span><br>
-<span class="comment"># Node listens on http://localhost:2428</span><br><br>
-<span class="comment"># Register with meroctl (one-time)</span><br>
-<span class="field">meroctl node add node1 /path/to/calimero/home</span><br>
-<span class="field">meroctl node use node1</span>
+<span class="field">export CALIMERO_API=https://n1.eu1.example.com/</span><br>
+<span class="field">export CALIMERO_TEE_PROFILES=&lt;profile&gt;</span><br>
+<span class="field">export CALIMERO_OPS_TOKEN=&lt;ops token&gt;</span><br>
+<span class="field">export CALIMERO_OPERATOR_KEY_FILE=./operator.key</span><br>
+<br>
+<span class="field">meroctl ops status</span><br>
+<span class="field">meroctl ops add-node 4 https://n4.eu1.example.com/ --zone eu1-b   # signed</span><br>
+<span class="field">meroctl ops move &lt;instance&gt; --replicas 2,3,4                     # signed</span><br>
+<span class="field">meroctl ops backup</span><br>
+<span class="field">meroctl ops set-quotas '{"maxFileBytesPerOrg":50000000000}'      # signed</span><br>
+<span class="field">meroctl ops upgrade-org &lt;org-id&gt; --package com.example.kv --version 1.3.0</span><br>
+<span class="field">meroctl team upgrade status &lt;org-id&gt; &lt;run-id&gt;</span>
 </div>
 </div>
 
 <div class="card gc">
-<h2>Context Lifecycle</h2>
-<div class="fr"><div class="fp">1. Install app</div><div class="fd"><span class="code">meroctl app install --path app.wasm</span> — registers the WASM with the node. Returns an <span class="code">application_id</span>.</div></div>
-<div class="fr"><div class="fp">2. Create context</div><div class="fd"><span class="code">meroctl context create --application-id &lt;id&gt;</span> — creates an isolated instance. Installing an app and creating a context are two separate steps.</div></div>
-<div class="fr"><div class="fp">3. Add identity</div><div class="fd"><span class="code">meroctl identity new --seed &lt;phrase&gt;</span> — creates a keypair. Identities are per-context members.</div></div>
-<div class="fr"><div class="fp">4. Invite &amp; join</div><div class="fd"><span class="code">meroctl context invite</span> generates an invite token; the joining node calls <span class="code">meroctl context join --token &lt;token&gt;</span>.</div></div>
-<div class="fr"><div class="fp">5. Call app</div><div class="fd"><span class="code">meroctl call --context &lt;id&gt; --method get_posts --args '{}'</span> — executes a WASM method on the context.</div></div>
-</div>
-
-<div class="card gd">
 <h2>Key Rules</h2>
-<div class="fr"><div class="fp">App ≠ Context</div><div class="fd">Installing an application registers the WASM code. Creating a context instantiates it with its own isolated storage and members.</div></div>
-<div class="fr"><div class="fp">meroctl node use</div><div class="fd">Set a default node so you don't need <span class="code">--node</span> on every command. Use <span class="code">meroctl node ls</span> to see configured nodes.</div></div>
-<div class="fr"><div class="fp">--home flag</div><div class="fd">Use <span class="code">merod --home ./data --node node1 init</span> to specify a custom data directory instead of the system default.</div></div>
+<div class="fr"><div class="fp">Sign decisions</div><div class="fd">The node answers <span class="code">428 OPERATOR_SIGNATURE_REQUIRED</span>; meroctl signs with <span class="code">--operator-key-file</span>. Nodes hold only the public half (<span class="code">merod --operator-key</span>).</div></div>
+<div class="fr"><div class="fp">New release, new nodes</div><div class="fd">A node never moves to a new mero-tee image in place: add nodes on the new release, move instances onto them, remove the old ones.</div></div>
+<div class="fr"><div class="fp">Governance</div><div class="fd">Release approvals, app upgrades and outbound approvals belong to owners unless the cluster was founded with <span class="code">operator</span> for them.</div></div>
 </div>
 
 </div>

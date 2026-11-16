@@ -17,14 +17,14 @@
 <div class="card ga">
 <h2>Available Skills</h2>
 <p style="margin-bottom:14px;">Each skill is a plain text file. Running <span class="code">npx calimero-skills &lt;skill-name&gt;</span> appends it to the correct file for your editor:</p>
-<div class="fr"><div class="fp">calimero-core</div><div class="fd">Core runtime concepts every developer needs — context/app/identity model, JSON-RPC protocol, WebSocket event schema, CRDT storage types, namespaces and groups.</div></div>
+<div class="fr"><div class="fp">calimero-core</div><div class="fd">How core 1.0 works: app instances on their own Raft logs, the system group, organizations and access, accounts and passkeys, attestation and the sealed channel.</div></div>
 <div class="fr"><div class="fp">calimero-rust-sdk</div><div class="fd">Rust apps on core 1.0's component SDK: <span class="code">#[app::state]</span>/<span class="code">#[app::logic]</span>, tables and collections, <span class="code">env</span> and <span class="code">guards</span>, events, testing, <span class="code">meroctl app build</span>.</div></div>
-<div class="fr"><div class="fp">calimero-sdk-js</div><div class="fd">TypeScript WASM application development — <span class="code">@State</span>/<span class="code">@Logic</span> decorators, CRDT collections, <span class="code">@Init</span> / <span class="code">@View</span> method annotations, and the <span class="code">calimero-cli-js</span> build tool.</div></div>
+<div class="fr"><div class="fp">calimero-sdk-js</div><div class="fd">The 0.x JS app SDK (<span class="code">@State</span>/<span class="code">@Logic</span>) is gone: what replaces it (Rust apps, mero-js clients).</div></div>
 <div class="fr"><div class="fp">calimero-client-js</div><div class="fd">Frontends and Node.js services on mero-js's <span class="code">CalimeroClient</span>: attested connections, passkeys, app calls and views, organizations, events.</div></div>
-<div class="fr"><div class="fp">calimero-client-py</div><div class="fd">Python client for node automation, backend scripts, and CI pipelines — full sync API for contexts, apps, identities, blobs, namespaces, and groups.</div></div>
-<div class="fr"><div class="fp">calimero-desktop</div><div class="fd">Integrating app frontends with Calimero Desktop SSO — URL hash token passing, <span class="code">parseAuthCallback()</span>, and the auth-skip pattern.</div></div>
-<div class="fr"><div class="fp">calimero-node</div><div class="fd">Node operator quick-start — <span class="code">merod</span> setup and the full context lifecycle (install → create → invite → join → sync).</div></div>
-<div class="fr"><div class="fp">calimero-merod</div><div class="fd"><span class="code">merod</span> daemon deep-dive — init flags and defaults, config file schema, health endpoint (<span class="code">/health</span>), Docker health checks.</div></div>
+<div class="fr"><div class="fp">calimero-client-py</div><div class="fd">Python client for core 1.0: attested <span class="code">Client</span>, API keys and passkeys, calls, events, organizations and the Ops API.</div></div>
+<div class="fr"><div class="fp">calimero-desktop</div><div class="fd">Desktop hash-token SSO is 0.x only; a core 1.0 frontend signs in with passkeys through mero-js.</div></div>
+<div class="fr"><div class="fp">calimero-node</div><div class="fd">Operating a cluster with <span class="code">meroctl ops</span>: nodes, placement, backups and recovery, quotas, release approvals, upgrades.</div></div>
+<div class="fr"><div class="fp">calimero-merod</div><div class="fd">The <span class="code">merod</span> binary: <span class="code">init</span>, <span class="code">config</span>, <span class="code">run</span> and every node flag, <span class="code">local</span>, <span class="code">inspect</span>, <span class="code">kms disk-key</span>, <span class="code">attest</span>, job nodes.</div></div>
 <div class="fr"><div class="fp">calimero-meroctl</div><div class="fd">Core 1.0's <span class="code">meroctl</span>: the development cluster (<span class="code">local</span>), sign-in and trust flags, apps, contexts, <span class="code">call --view</span>, organizations and teams, blobs and files, cloud, scripting and CI.</div></div>
 <div class="fr"><div class="fp">calimero-registry</div><div class="fd">Publishing apps to the Calimero App Registry with <span class="code">meroctl app</span> — <span class="code">signer new</span> key management, <span class="code">pack</span> (Ed25519 manifest signing), <span class="code">inspect</span> and <span class="code">publish</span>.</div></div>
 <div class="fr"><div class="fp">calimero-abi-codegen</div><div class="fd">Typed app clients with <span class="code">meroctl app codegen</span>: what <span class="code">client.ts</span> exports, the component ABI, breaking-change checks.</div></div>
@@ -50,14 +50,14 @@
 
 <div class="card gd">
 <h2>Skill File Locations</h2>
-<div class="fr"><div class="fp">skills/calimero-core/</div><div class="fd">Core concepts, JSON-RPC protocol, WebSocket events, CRDT types, namespaces.</div></div>
+<div class="fr"><div class="fp">skills/calimero-core/</div><div class="fd">Core 1.0 concepts: Raft logs, organizations, accounts, attestation.</div></div>
 <div class="fr"><div class="fp">skills/calimero-rust-sdk/</div><div class="fd">Rust apps on core 1.0's component SDK: <span class="code">#[app::state]</span>/<span class="code">#[app::logic]</span>, tables and collections, <span class="code">env</span> and <span class="code">guards</span>, events, testing, <span class="code">meroctl app build</span>.</div></div>
-<div class="fr"><div class="fp">skills/calimero-sdk-js/</div><div class="fd">TypeScript WASM SDK decorators and collections.</div></div>
+<div class="fr"><div class="fp">skills/calimero-sdk-js/</div><div class="fd">The gone 0.x JS SDK and what replaces it.</div></div>
 <div class="fr"><div class="fp">skills/calimero-client-js/</div><div class="fd">Frontends and Node.js services on mero-js's <span class="code">CalimeroClient</span>: attested connections, passkeys, app calls and views, organizations, events.</div></div>
-<div class="fr"><div class="fp">skills/calimero-client-py/</div><div class="fd">Python client API, auth caching, and CI patterns.</div></div>
-<div class="fr"><div class="fp">skills/calimero-desktop/</div><div class="fd">Desktop SSO token-passing flow.</div></div>
-<div class="fr"><div class="fp">skills/calimero-node/</div><div class="fd">Node quick-start combining merod and meroctl.</div></div>
-<div class="fr"><div class="fp">skills/calimero-merod/</div><div class="fd">merod daemon init, config, health endpoints.</div></div>
+<div class="fr"><div class="fp">skills/calimero-client-py/</div><div class="fd">Python client for core 1.0, and the operator's automation.</div></div>
+<div class="fr"><div class="fp">skills/calimero-desktop/</div><div class="fd">Desktop SSO: 0.x only, and the 1.0 passkey sign-in.</div></div>
+<div class="fr"><div class="fp">skills/calimero-node/</div><div class="fd">Operator: meroctl ops, runbooks, upgrades.</div></div>
+<div class="fr"><div class="fp">skills/calimero-merod/</div><div class="fd">merod commands, node flags, health and metrics.</div></div>
 <div class="fr"><div class="fp">skills/calimero-meroctl/</div><div class="fd">Core 1.0's meroctl: local cluster, sign-in, contexts, calls, organizations, scripting.</div></div>
 <div class="fr"><div class="fp">skills/calimero-registry/</div><div class="fd">App signing, bundling, and registry push.</div></div>
 <div class="fr"><div class="fp">skills/calimero-abi-codegen/</div><div class="fd">Typed app clients with <span class="code">meroctl app codegen</span>: what <span class="code">client.ts</span> exports, the component ABI, breaking-change checks.</div></div>

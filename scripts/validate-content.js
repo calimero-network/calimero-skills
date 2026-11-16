@@ -12,7 +12,10 @@
  * merobox, a positional `call` instance) and the old spellings of an app
  * instance (`meroctl context`, `--context`/`-c`, before rc.26) and of an
  * organization and a team (`meroctl namespace`/`group`, `--namespace`/`--group`,
- * before rc.29), so a regression fails CI instead of silently shipping.
+ * before rc.29), so a regression fails CI instead of silently shipping. Other
+ * rules flag the 0.x JS app SDK (`@calimero-network/calimero-sdk-js`,
+ * `calimero-sdk build`) and the 0.x desktop SSO (`parseAuthCallback`, an
+ * `access_token` read from the URL).
  *
  * Scope: only fenced code blocks (```bash / ```rust / ```typescript / …) are
  * checked — never prose. Comment lines and trailing inline comments are
@@ -28,10 +31,9 @@
  *
  * `validate-ignore` with no rule list skips every rule for that block.
  *
- * Skills the root SKILL.md lists as not yet updated to core 1.0 (STALE_SKILLS)
- * still teach 0.x commands; their violations are printed as warnings and do not
- * fail the run, so the drift stays visible until each skill is rewritten and
- * taken off the list. Every other skill must pass.
+ * Skills listed in STALE_SKILLS (none today: every skill teaches core 1.0) would
+ * have their violations printed as warnings rather than failing the run, so a
+ * pending rewrite stays visible. Every other skill must pass.
  *
  * `node scripts/validate-content.js` first runs the rules over SELF_TESTS (lines
  * each rule must flag, and correct 1.0 lines no rule may flag), so a rule that
@@ -147,6 +149,29 @@ const RULES = [
       "merobox is gone in core 1.0: `meroctl local up|dev|test` runs a development cluster and an app's scenarios.",
   },
   {
+    id: 'no-js-app-sdk',
+    langs: BASH,
+    check: (l) =>
+      /(?:^|[\s;&|(`])(?:npx\s+)?calimero-sdk\s+build\b/.test(l) ||
+      /\b(?:add|install|i)\b.*@calimero-network\/calimero-(?:sdk|cli)-js\b/.test(l),
+    message:
+      'The 0.x JS app SDK (`@calimero-network/calimero-sdk-js`, `calimero-sdk build`) builds core modules core 1.0 refuses: write the app in Rust (`calimero-sdk`, `meroctl app build`).',
+  },
+  {
+    id: 'no-js-app-sdk-import',
+    langs: TS,
+    check: (l) => /['"]@calimero-network\/calimero-sdk-js(?:\/[^'"]*)?['"]/.test(l),
+    message:
+      'The 0.x JS app SDK is gone in core 1.0: apps are Rust components (`calimero-rust-sdk`); TypeScript calls them with `@calimero-network/mero-js`.',
+  },
+  {
+    id: 'no-hash-sso',
+    langs: TS,
+    check: (l) => /\bparseAuthCallback\b/.test(l) || /\.get\(\s*['"]access_token['"]\s*\)/.test(l),
+    message:
+      'No core 1.0 node issues JWTs, and mero-js 27+ has no `parseAuthCallback`: sign people in on the page with a passkey (`client.signIn(browserPasskey())`).',
+  },
+  {
     id: 'no-deprecated-client',
     langs: TS,
     check: (l) => /['"]@calimero-network\/calimero-client['"]/.test(l),
@@ -158,17 +183,11 @@ const RULES = [
 const RULES_BY_ID = Object.fromEntries(RULES.map((r) => [r.id, r]));
 
 /**
- * Skills not yet rewritten for core 1.0 (the list in the root SKILL.md). Their
- * violations warn instead of failing; take a skill off when it is rewritten.
+ * Skills not yet rewritten for the current core release (none today). Their
+ * violations warn instead of failing; list a skill here only while a rewrite is
+ * pending, name it in the root SKILL.md, and take it off when it is rewritten.
  */
-const STALE_SKILLS = new Set([
-  'calimero-core',
-  'calimero-node',
-  'calimero-merod',
-  'calimero-sdk-js',
-  'calimero-desktop',
-  'calimero-client-py',
-]);
+const STALE_SKILLS = new Set([]);
 
 /**
  * Rule fixtures: `bad` lines must trip exactly the rule named; `good` lines are
@@ -209,6 +228,9 @@ const SELF_TESTS = {
     ],
     ['no-merobox', 'merobox run --nodes 2'],
     ['no-merobox', 'pip install merobox'],
+    ['no-js-app-sdk', 'npx calimero-sdk build src/index.ts -o build/service.wasm'],
+    ['no-js-app-sdk', 'pnpm add @calimero-network/calimero-sdk-js'],
+    ['no-js-app-sdk', 'pnpm add -D @calimero-network/calimero-cli-js typescript'],
   ],
   good: [
     'meroctl call --instance kv get --args \'{"key":"a"}\' --view',
@@ -232,6 +254,8 @@ const SELF_TESTS = {
     'meroctl attest app kv',
     'curl -fsSL "$base/SHA256SUMS" | grep " meroctl_$T.tar.gz\\$" | sha256sum -c',
     'meroctl account api-key create --instance kv --read-only --dev-passkey ./dev-passkey.json',
+    'pnpm add @calimero-network/mero-js',
+    'meroctl app build apps/kv-store/logic --out app.wasm',
   ],
 };
 
