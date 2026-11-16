@@ -1,148 +1,47 @@
 # calimero-sdk-js — Agent Instructions
 
-You are helping a developer **build a Calimero P2P application in TypeScript** using
-`@calimero-network/calimero-sdk-js`. The app compiles to WebAssembly and runs inside the `merod`
-node runtime.
+**The JavaScript app SDK is gone in Calimero 1.0.** This skill exists so an agent that finds
+`@calimero-network/calimero-sdk-js`, `@State` / `@Logic` decorators or `calimero-sdk build` in a
+project knows what to do instead. Do not write new code against it.
 
-> **NOT this skill** if the developer is connecting a browser/Node.js _frontend_ to a node (that's
-> `calimero-client-js` / `@calimero-network/calimero-client`). This skill is for writing the
-> application logic that _runs on the node_.
+## What is true now (core 1.0.0-rc.29)
 
-## Install
+- **Calimero apps are written in Rust** with core's component SDK (`calimero-sdk`) and built by
+  `meroctl app build` into a `calimero:app` WebAssembly component (`wasm32-wasip2`). Load
+  **`calimero-rust-sdk`**.
+- **Frontends and services in TypeScript** call apps with mero-js's `CalimeroClient` and a typed
+  client from `meroctl app codegen --lang ts`. Load **`calimero-client-js`** and
+  **`calimero-abi-codegen`**.
+- **Core ships no JavaScript SDK.** `@calimero-network/calimero-sdk-js` and
+  `@calimero-network/calimero-cli-js` are 0.x packages: they compile TypeScript through QuickJS into
+  a WebAssembly core module for the 0.x runtime. A core 1.0 node refuses a core module at upload,
+  install and create (`400 UNSUPPORTED_BUNDLE`), and an instance left on the old engine answers
+  `410 UNSUPPORTED_ENGINE`.
 
-```bash
-pnpm add @calimero-network/calimero-sdk-js
-pnpm add -D @calimero-network/calimero-cli-js typescript
-```
+## What about componentize-js?
 
-The CLI's `postinstall` hook downloads QuickJS, WASI-SDK, and Binaryen automatically. If you used
-`--ignore-scripts`, re-run with `pnpm install --ignore-scripts=false`.
+core's engine runs any component that targets the `calimero:app` WIT world, and its limits were
+measured to fit componentize-js 0.23 guests (one memory, two tables, WASI 0.2.12). That is the only
+JavaScript support in core: there is **no SDK, no bindings package, no build command and no
+template** for it. A JavaScript component would have to implement the WIT world itself (`handle`,
+state through `calimero:app/storage`, ...) and embed a `calimero:abi` custom section the node reads
+its methods from, with nothing in core or meroctl to produce either. Treat it as unsupported: do not
+tell a developer it works, and do not generate such a project.
 
-## Core concepts
+## Moving a 0.x JS app
 
-| Concept                    | What it is                                                                             |
-| -------------------------- | -------------------------------------------------------------------------------------- |
-| `@State` class             | Persisted data — fields must be CRDT types                                             |
-| `@Logic(StateClass)` class | Entry points callable via JSON-RPC; must extend the state class                        |
-| `@Init` static method      | Seeds the initial state when context is first created                                  |
-| `@View()` method           | Read-only — skips persistence; required for query methods                              |
-| CRDT collection            | Conflict-free type (`Counter`, `UnorderedMap`, etc.) — all state fields must use these |
-
-## Minimal app
-
-```typescript
-import { State, Logic, Init, View } from '@calimero-network/calimero-sdk-js';
-import { UnorderedMap } from '@calimero-network/calimero-sdk-js/collections';
-import * as env from '@calimero-network/calimero-sdk-js/env';
-
-@State
-export class KvState {
-  items: UnorderedMap<string, string> = new UnorderedMap();
-}
-
-@Logic(KvState)
-export class KvLogic extends KvState {
-  @Init
-  static init(): KvState {
-    return new KvState();
-  }
-
-  set(key: string, value: string): void {
-    env.log(`set ${key}`);
-    this.items.set(key, value);
-  }
-
-  @View()
-  get(key: string): string | null {
-    return this.items.get(key) ?? null;
-  }
-}
-```
-
-## CRDT collections quick reference
-
-| Type                | Use case                                | Key ops                                            |
-| ------------------- | --------------------------------------- | -------------------------------------------------- |
-| `Counter`           | Distributed counting (returns `bigint`) | `increment()`, `incrementBy(n)`, `value()`         |
-| `UnorderedMap<K,V>` | Key-value store (LWW per key)           | `set()`, `get()`, `has()`, `remove()`, `entries()` |
-| `UnorderedSet<T>`   | Unique membership (LWW per element)     | `add()`, `has()`, `delete()`, `toArray()`          |
-| `Vector<T>`         | Ordered list                            | `push()`, `get(i)`, `pop()`, `len()`               |
-| `LwwRegister<T>`    | Single value (timestamp LWW)            | `set()`, `get()`                                   |
-
-Nested collections (`Map<K, Set<V>>`) propagate changes automatically — no manual re-serialization.
-
-## Build & deploy
+Rewrite the logic in Rust; keep the frontend in TypeScript. `references/migrating-to-rust.md` maps
+each 0.x JS SDK concept to its 1.0 counterpart.
 
 ```bash
-# Build to WASM
-npx calimero-sdk build src/index.ts -o build/service.wasm
-
-# Install on node (app install is node-level — no context; --path is the WASM)
-meroctl --node <NODE> app install \
-  --path build/service.wasm
-# → save the application-id, then create a namespace (root group) and a context:
-meroctl --node <NODE> namespace create --application-id <APP_ID>
-# → save the namespace-id (also a group id)
-meroctl --node <NODE> context create --application-id <APP_ID> --group-id <NAMESPACE_ID>
-# → save the context-id  (--group-id is required — a context is bound to a group)
-
-# Call a method (method name is positional; context via --context)
-meroctl --node <NODE> call set \
-  --context <CONTEXT_ID> \
-  --args '{"key":"hello","value":"world"}'
-
-# Call a view (same form — a read-only method just reads; there is no --view flag)
-meroctl --node <NODE> call get \
-  --context <CONTEXT_ID> \
-  --args '{"key":"hello"}'
+meroctl app new my-app && cd my-app      # apps/kv-store: a Rust contract (logic/) and a React frontend (app/)
+meroctl local dev apps/kv-store          # cluster, build, frontend on :5173, rebuild on save
 ```
-
-## Key rules
-
-- All `@State` fields must be CRDT types — never plain `Map`, `Set`, `Array`, or primitives
-- `@View()` is **required** on every read-only method — omitting it causes unnecessary persistence
-- Use `env.log()` not `console.log()` — `console` is not available in the WASM runtime
-- `Counter.value()` returns `bigint`, not `number`
-- `@Init` must be a static method that returns the state class instance
-- `@Logic(StateClass)` must extend the state class
-- No async, no I/O, no threads in app logic — the WASM runtime is synchronous
-- **Windows: building is not supported natively — use WSL** (QuickJS/WASI-SDK toolchain requires
-  Linux/macOS)
-
-## Events
-
-```typescript
-import { emit } from '@calimero-network/calimero-sdk-js';
-
-// Inside a mutation method:
-emit({ type: 'ItemAdded', key: 'foo', value: 'bar' });
-```
-
-Events are pushed to all context members via WebSocket. Clients subscribe with `useSubscription`
-(mero-react) or `mero.events` (mero-js) — see the `calimero-client-js` skill.
-
-## Private storage (node-local)
-
-```typescript
-import { createPrivateEntry } from '@calimero-network/calimero-sdk-js';
-
-// A key (string or Uint8Array) is required — it names the node-local entry.
-const secret = createPrivateEntry<string>('api-key');
-secret.set('my-api-key');
-const val = secret.get(); // string | null
-```
-
-Private entries are never broadcast to other nodes.
-
-## Related skills
-
-- **`calimero-core`** — runtime concepts (context/app model, JSON-RPC protocol, WebSocket events,
-  CRDT type taxonomy)
-- **`calimero-meroctl`** — full `meroctl` CLI reference for deploying and testing the app
-- **`calimero-client-js`** — connecting a browser/React frontend to the node (not building app
-  logic)
 
 ## References
 
-See `references/` for CRDT collections, events, and build pipeline details. See `rules/` for hard
-constraints.
+- `references/migrating-to-rust.md`: 0.x JS SDK concepts and their core 1.0 equivalents.
+
+## Rules
+
+- `rules/no-js-app-sdk.md`: do not write app logic with the 0.x JS SDK.

@@ -2,77 +2,55 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Calimero | Skills — Desktop SSO Skill</title>
+<title>Calimero | Skills — Desktop Skill</title>
 <link rel="stylesheet" href="styles.css">
 <meta name="theme-color" content="#0d1117">
 </head>
 <body>
 <div class="main">
 <div class="content">
-<div class="breadcrumb"><a href="index.html">Home</a><span class="sep">/</span><span>Desktop SSO</span></div>
+<div class="breadcrumb"><a href="index.html">Home</a><span class="sep">/</span><span>Desktop</span></div>
 
-<h1>Desktop SSO Skill</h1>
-<p class="page-subtitle">Context for the Tauri desktop app's single-sign-on token passing flow</p>
+<h1>Desktop Skill</h1>
+<p class="page-subtitle">Calimero Desktop's hash-token SSO is 0.x only; a core 1.0 app signs people in with passkeys</p>
 
 <div class="card ga">
 <h2>What This Skill Covers</h2>
-<p style="margin-bottom:12px;">The <span class="code">desktop-sso</span> skill explains how the Calimero desktop app eliminates 4 manual auth steps by passing JWT tokens via URL hash when opening application windows. Your AI assistant will understand this pattern end-to-end and write correct implementations in both the desktop app (Tauri/Rust/React) and in web apps that receive the tokens.</p>
+<p style="margin-bottom:12px;">Calimero Desktop (the Tauri app) still bundles <span class="code">merod</span> 0.12.0 and is built on mero-js 26: its single sign-on hands the 0.x node's JWTs to an app in the URL hash. Core 1.0 nodes issue no such tokens, and mero-js 27 removed <span class="code">parseAuthCallback</span>. The <span class="code">calimero-desktop</span> skill tells your AI assistant what that code belongs to and what a core 1.0 frontend does instead.</p>
 <div class="g2">
-  <div class="cb"><h4>Desktop side (sends tokens)</h4>
+  <div class="cb"><h4>Covered Topics</h4>
     <ul style="margin:8px 0 0 16px;color:#c9d1d9;font-size:13px;">
-      <li style="margin-bottom:6px;"><span class="code">openAppFrontend()</span> in appUtils.ts</li>
-      <li style="margin-bottom:6px;">URL hash construction</li>
-      <li>Tauri window management</li>
+      <li style="margin-bottom:6px;">What the desktop is and sends today, checked in its source</li>
+      <li style="margin-bottom:6px;">Why <span class="code">access_token</span> in <span class="code">window.location.hash</span> does not apply to core 1.0</li>
+      <li style="margin-bottom:6px;">Passkey sign-in through mero-js <span class="code">CalimeroClient</span></li>
+      <li style="margin-bottom:6px;">Frontends served from the package, registered origins, API keys</li>
     </ul>
   </div>
-  <div class="cb"><h4>App side (receives tokens)</h4>
-    <ul style="margin:8px 0 0 16px;color:#c9d1d9;font-size:13px;">
-      <li style="margin-bottom:6px;"><span class="code">parseAuthCallback()</span></li>
-      <li style="margin-bottom:6px;">Hash parameter names</li>
-      <li>Skip-auth-flow logic</li>
-    </ul>
+  <div class="cb"><h4>Install</h4>
+    <div class="typedef" style="margin-top:6px;"><span class="field">npx @calimero-network/agent-skills calimero-desktop</span><br><br><span class="comment"># For a core 1.0 frontend:</span><br><span class="field">npx @calimero-network/agent-skills calimero-client-js</span></div>
   </div>
 </div>
 </div>
 
 <div class="card gb">
-<h2>Token Passing Pattern</h2>
+<h2>Sign In on Core 1.0</h2>
 <div class="typedef">
-<span class="comment">// Desktop: open app with tokens in hash</span><br>
-<span class="kw">function</span> <span class="ty">openAppFrontend</span>(<span class="field">url</span>: <span class="ty">string</span>, <span class="field">tokens</span>: <span class="ty">Tokens</span>) &#123;<br>
-&nbsp;&nbsp;<span class="kw">const</span> <span class="field">hash</span> = [<br>
-&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment">`node_url=${encodeURIComponent(nodeUrl)}`</span>,<br>
-&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment">`access_token=${tokens.accessToken}`</span>,<br>
-&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment">`refresh_token=${tokens.refreshToken}`</span>,<br>
-&nbsp;&nbsp;].<span class="ty">join</span>(<span class="comment">'&amp;'</span>);<br>
-&nbsp;&nbsp;openWindow(<span class="comment">`${url}#${hash}`</span>);<br>
-&#125;<br><br>
-<span class="comment">// App: read tokens from hash</span><br>
-<span class="kw">import</span> &#123; <span class="ty">parseAuthCallback</span> &#125; <span class="kw">from</span> <span class="comment">'@calimero-network/mero-js'</span>;<br><br>
-<span class="kw">const</span> <span class="field">sso</span> = <span class="ty">parseAuthCallback</span>(window.location.hash);<br>
-<span class="kw">if</span> (<span class="field">sso</span>) &#123;<br>
-&nbsp;&nbsp;<span class="kw">await</span> sdk.<span class="field">auth</span>.<span class="ty">initFromTokens</span>(<span class="field">sso</span>);<br>
-&nbsp;&nbsp;<span class="comment">// skip login flow — already authenticated</span><br>
-&#125;
+<span class="field">import { CalimeroClient, browserPasskey } from '@calimero-network/mero-js';</span><br>
+<br>
+<span class="field">const client = await CalimeroClient.connect({</span><br>
+<span class="field">  cluster: 'eu-shared-1',</span><br>
+<span class="field">  policy: { release: { minReleaseVersion: '2.3.109' } },</span><br>
+<span class="field">});</span><br>
+<span class="field">await client.signIn(browserPasskey());</span>
 </div>
 </div>
 
 <div class="card gc">
-<h2>Install This Skill</h2>
-<div class="typedef">
-<span class="field">npx @calimero-network/agent-skills calimero-desktop</span><br><br>
-<span class="comment"># Recommended combination for app developers:</span><br>
-<span class="field">npx @calimero-network/agent-skills calimero-node calimero-client-js calimero-desktop</span>
-</div>
-<p style="margin-top:12px;color:#8b949e;font-size:13px;">After installing, your AI assistant will know: URL hash parameter names (<span class="code">node_url</span>, <span class="code">access_token</span>, <span class="code">refresh_token</span>, <span class="code">application_id</span>), the <span class="code">parseAuthCallback</span> API, the check order (hash → stored tokens → prompt login), and the Tauri window opening approach.</p>
-</div>
-
-<div class="card gd">
-<h2>Hash Parameters</h2>
-<div class="fr"><div class="fp">node_url</div><div class="fd">The Calimero node URL (e.g. <span class="code">http://localhost:2428</span>). Used to initialize <span class="code">MeroJs({ baseUrl })</span>.</div></div>
-<div class="fr"><div class="fp">access_token</div><div class="fd">JWT access token. Short-lived (minutes). Used as <span class="code">Authorization: Bearer</span> header.</div></div>
-<div class="fr"><div class="fp">refresh_token</div><div class="fd">Long-lived refresh token. Used to obtain new access tokens without re-login.</div></div>
-<div class="fr"><div class="fp">application_id</div><div class="fd">Optional. The installed application ID on the node. Used to route RPC calls to the correct context.</div></div>
+<h2>Desktop (0.x) and Core 1.0</h2>
+<div class="fr"><div class="fp">access_token in the hash</div><div class="fd">a passkey session (15 minutes) and refresh token, or an API key</div></div>
+<div class="fr"><div class="fp">parseAuthCallback</div><div class="fd"><span class="code">CalimeroClient</span> and your own session store (<span class="code">useSession</span>)</div></div>
+<div class="fr"><div class="fp">node_url</div><div class="fd"><span class="code">CalimeroClient.connect({ cluster, policy })</span></div></div>
+<div class="fr"><div class="fp">frontend anywhere</div><div class="fd">served from the package at <span class="code">{label}.{apps-domain}</span>, or a registered origin</div></div>
 </div>
 
 </div>

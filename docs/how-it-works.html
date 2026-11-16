@@ -32,9 +32,9 @@
 <div class="fr"><div class="fp">skills/calimero-rust-sdk/</div><div class="fd">Rust apps on core 1.0's component SDK: <span class="code">#[app::state]</span>/<span class="code">#[app::logic]</span>, tables and collections, <span class="code">env</span> and <span class="code">guards</span>, events, testing, <span class="code">meroctl app build</span>.</div></div>
 <div class="fr"><div class="fp">skills/calimero-client-js/</div><div class="fd">Frontends and Node.js services on mero-js's <span class="code">CalimeroClient</span>: attested connections, passkeys, app calls and views, organizations, events.</div></div>
 <div class="fr"><div class="fp">skills/calimero-registry/</div><div class="fd">App registry: signing keys, manifest format, publish workflow, versioning.</div></div>
-<div class="fr"><div class="fp">skills/calimero-desktop/</div><div class="fd">Desktop integration: SSO URL hash tokens, <span class="code">parseAuthCallback()</span>, window management.</div></div>
-<div class="fr"><div class="fp">skills/calimero-node/</div><div class="fd">Node operations: <span class="code">meroctl</span> CLI commands, config files, health checks.</div></div>
-<div class="fr"><div class="fp">skills/calimero-client-py/</div><div class="fd">Python SDK: <span class="code">create_connection()</span>, <span class="code">create_client()</span>, <span class="code">AuthMode</span>, async patterns.</div></div>
+<div class="fr"><div class="fp">skills/calimero-desktop/</div><div class="fd">Desktop SSO: the 0.x hash-token flow, and passkey sign-in on core 1.0.</div></div>
+<div class="fr"><div class="fp">skills/calimero-node/</div><div class="fd">Operating a cluster: <span class="code">meroctl ops</span>, backups, upgrades.</div></div>
+<div class="fr"><div class="fp">skills/calimero-client-py/</div><div class="fd">Python client for core 1.0: <span class="code">Client</span>, trust policy, calls, events, the Ops API.</div></div>
 <div class="fr"><div class="fp">skills/calimero-abi-codegen/</div><div class="fd">Typed app clients with <span class="code">meroctl app codegen</span>: what <span class="code">client.ts</span> exports, the component ABI, breaking-change checks.</div></div>
 </div>
 
@@ -66,7 +66,7 @@
 <span class="comment"># Install Rust SDK + client JS skills for a full-stack project</span><br>
 <span class="field">npx</span> @calimero-network/agent-skills calimero-rust-sdk<br>
 <span class="field">npx</span> @calimero-network/agent-skills calimero-client-js<br>
-<span class="field">npx</span> @calimero-network/agent-skills calimero-desktop<br><br>
+<span class="field">npx</span> @calimero-network/agent-skills calimero-abi-codegen<br><br>
 <span class="comment"># Or for the Cursor editor:</span><br>
 <span class="field">npx</span> @calimero-network/agent-skills calimero-rust-sdk --cursor<br>
 <span class="field">npx</span> @calimero-network/agent-skills calimero-client-js --cursor

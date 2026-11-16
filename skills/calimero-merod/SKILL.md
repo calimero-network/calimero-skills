@@ -1,55 +1,95 @@
 # calimero-merod — Agent Instructions
 
-You are helping a developer run and configure the **`merod` Calimero node daemon**.
+You are helping a developer or operator run **`merod`**, the Calimero 1.0 node. One process is one
+node of a cluster: it serves the node API on one HTTP listener, keeps its state sealed under a data
+directory, and hosts the system group and the app instances placed on it.
 
-## What merod is
+This skill teaches core 1.0's merod (1.0.0-rc.29). 0.x's merod (a peer-to-peer node on a swarm port,
+`init --server-port`/`--swarm-port`/`--auth-mode`/`--mock-tee`, JSON-RPC and WebSocket APIs, JWT
+auth) is gone. For running a development cluster, prefer `meroctl local up` (`calimero-meroctl`);
+for operating a cluster, `meroctl ops` (`calimero-node`).
 
-`merod` is the Calimero node runtime. It:
+## Commands
 
-- Executes WASM applications inside isolated contexts
-- Manages persistent CRDT storage
-- Exposes a JSON-RPC + WebSocket HTTP API (default port 2528)
-- Participates in the P2P swarm for state sync with other nodes (default port 2428)
-- Issues and validates JWT tokens for client authentication
+```text
+merod [--home DIR] [--node NAME] <COMMAND>
 
-`merod` is a long-running daemon. Use `meroctl` for administration after startup.
-
-## Two-step startup
-
-```bash
-# Step 1 — initialise (run ONCE on a fresh home directory).
-# These match the defaults (server/API 2528, swarm 2428) — the flags are
-# only needed to override them.
-merod --node node1 init --server-port 2528 --swarm-port 2428
-
-# Step 2 — run (run every time)
-merod --node node1 run
+  init     Write the node's configuration ({home}/{NAME}/config.toml)
+  run      Start the node; flags given here override the file for this run
+  config   Change the node's configuration (the flags given), then print it
+  local    A development cluster in this process
+  inspect  What a stopped node's data directory holds (v1's merodb)
+  kms      disk-key: the data-disk key from mero-kms (for a TEE boot script)
+  attest   A release attestation, made without any KMS key
 ```
 
-**Never run `merod run` on an uninitialised home.** Run `init` first.
+`--home` (`CALIMERO_HOME`, default `~/.calimero`) and `--node NAME` (`MEROD_NODE_NAME`) choose the
+configuration `{home}/{NAME}/config.toml` and data `{home}/{NAME}/data`. `init`, `config` and
+`inspect` (without `--data-dir`) need `--node`; `run` does not.
 
-## Key flags
+## A development node
 
-`--node` / `-n` and `--home` are **root** flags — they go before the `init`/`run` subcommand (e.g.
-`merod --node node1 init`). The port and auth flags belong to the `init` subcommand.
+```bash
+merod local                               # 3 nodes on 127.0.0.1:2501-2503, mock attestation, until Ctrl-C
+merod local --nodes 1 --dir ./cluster --fresh
 
-| Flag                   | Purpose                                                 | Default       |
-| ---------------------- | ------------------------------------------------------- | ------------- |
-| `--node <name>` / `-n` | Node identity name (root flag; namespaces config files) | required      |
-| `--home <path>`        | Base directory for all config and data (root flag)      | OS config dir |
-| `--server-port <port>` | HTTP/WS API port (init only)                            | `2528`        |
-| `--swarm-port <port>`  | P2P swarm port (init only)                              | `2428`        |
-| `--auth-mode <mode>`   | Auth mode: `proxy` or `embedded` (init; run overrides)  | `proxy`       |
+# one node of its own, reachable from other machines
+merod --node dev init --dev --node-id 1 --public-url http://127.0.0.1:2528/ \
+  --peers 1=http://127.0.0.1:2528/ --bootstrap --ops-token devtoken
+merod --node dev run
+```
 
-## Port responsibilities
+`meroctl local up` runs `merod local` (one node by default, from the release's Docker image) in the
+background and saves it as the meroctl node `local`.
 
-| Port                   | What connects to it                                             |
-| ---------------------- | --------------------------------------------------------------- |
-| `--server-port` (2528) | meroctl, app clients, browser frontends, Python client          |
-| `--swarm-port` (2428)  | Other `merod` nodes (P2P state sync, namespace invite protocol) |
+## A production node (TDX)
 
-Both ports must be open / reachable for multi-node setups.
+```bash
+merod --node n1 init --node-id 1 --public-url https://n1.eu1.example.com/ --cluster eu1 \
+  --peers 1=https://n1.eu1.example.com/,2=https://n2.eu1.example.com/,3=https://n3.eu1.example.com/ \
+  --kms-url https://kms.internal.example.com/ --kms-identity /data/disk-identity \
+  --rp-id example.com --origins https://app.example.com --apps-domain apps.example.com \
+  --ops-token-sha256 "$OPS_TOKEN_SHA256" --operator-key "$OPERATOR_PUBLIC_HEX" \
+  --backup-dir /backups --recovery-dir /recovery --registry-url https://registry.example.com/
+merod --node n1 run --bootstrap        # on exactly one founding node's first start
+merod --node n2 run                    # the others
+```
+
+The image sets `MERO_TEE_VERSION` and `MERO_TEE_PROFILE`; a TDX node refuses to start without them.
+In TDX mode the storage key comes only from mero-kms (`--kms-url` with `--kms-identity`, the same
+identity file and `--cluster` on every node).
+
+## Key facts
+
+- **One struct is the flags, the file and the environment**: every node flag is a kebab-case key of
+  `config.toml` and a `MEROD_*` variable (`MERO_TEE_*` for the two TEE keys). Precedence for `run`:
+  flag, then variable, then file, then default. Unknown keys are refused; defaults are never
+  written. A container can `run` with variables only, no `init`.
+- **Required**: `--node-id` and `--public-url` (and a data directory). `--listen` defaults to
+  `0.0.0.0:2528`; `--public-url` must be the URL peers and clients use to reach that node.
+- **`--dev`** means mock quotes, a development storage key, plain requests and raw WASM or `.mpk`
+  uploads. Never in production; `--storage-key`, `--storage-key-file` and `--allow-unsigned-bundles`
+  belong only with it.
+- **Governance flags are fixed at genesis** (`--release-approvals`, `--app-upgrades`,
+  `--outbound-approvals`, `--deployments`, `--deployers`, `--sign-up`, and `--operator-key`): give
+  every founding node the same values; changing them later changes nothing.
+- **Passkeys**: `--rp-id` must be a registrable suffix of every `--origins` host and
+  `--apps-domain`, or merod refuses to start.
+- **Only `/health` and `/attestation` answer in the clear**; every other route is sealed. merod
+  serves plain HTTP: put HTTPS in front (passkeys need a secure context), and turn off buffering for
+  `/apps/{app}/events`.
+- **A new release is a new node**: a node does not move to a new mero-tee image in place (its new
+  storage key does not open its disk); see `calimero-node`.
 
 ## References
 
-See `references/` for init flags, config file schema, health endpoints, and Docker setup.
+- `references/node-flags.md`: every node flag with its variable and default.
+- `references/local-inspect-kms-attest.md`: `local`, `inspect`, `kms disk-key`, `attest`, job nodes,
+  Docker.
+- `references/health-and-metrics.md`: `/health`, `/attestation`, metrics and logs.
+
+## Rules
+
+- `rules/dev-is-not-production.md`: `--dev` and development keys only on development nodes.
+- `rules/governance-is-fixed-at-genesis.md`: the same governance flags and operator key on every
+  founding node.

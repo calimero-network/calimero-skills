@@ -8,19 +8,19 @@ hallucinating APIs that don't exist.
 
 ## Skills
 
-| Skill                                           | When to use                                               |
-| ----------------------------------------------- | --------------------------------------------------------- |
-| [`calimero-core`](#calimero-core)               | Understanding the runtime model, protocol, and CRDT types |
-| [`calimero-rust-sdk`](#calimero-rust-sdk)       | Building Rust apps (core 1.0 component SDK)               |
-| [`calimero-sdk-js`](#calimero-sdk-js)           | Building TypeScript WASM applications                     |
-| [`calimero-client-js`](#calimero-client-js)     | Frontends on mero-js `CalimeroClient` (Calimero 1.0)      |
-| [`calimero-client-py`](#calimero-client-py)     | Python client for node automation and backend services    |
-| [`calimero-desktop`](#calimero-desktop)         | Integrating apps with Calimero Desktop SSO                |
-| [`calimero-node`](#calimero-node)               | Node operator quick-start (merod + meroctl overview)      |
-| [`calimero-merod`](#calimero-merod)             | merod daemon deep-dive — init, config, health             |
-| [`calimero-meroctl`](#calimero-meroctl)         | core 1.0's meroctl: cluster, sign-in, contexts, calls     |
-| [`calimero-registry`](#calimero-registry)       | Packing, signing and publishing apps with `meroctl app`   |
-| [`calimero-abi-codegen`](#calimero-abi-codegen) | Typed app clients with `meroctl app codegen`              |
+| Skill                                           | When to use                                             |
+| ----------------------------------------------- | ------------------------------------------------------- |
+| [`calimero-core`](#calimero-core)               | How core 1.0 works: Raft logs, orgs, accounts, trust    |
+| [`calimero-rust-sdk`](#calimero-rust-sdk)       | Building Rust apps (core 1.0 component SDK)             |
+| [`calimero-sdk-js`](#calimero-sdk-js)           | The gone 0.x JS app SDK, and what replaces it           |
+| [`calimero-client-js`](#calimero-client-js)     | Frontends on mero-js `CalimeroClient` (Calimero 1.0)    |
+| [`calimero-client-py`](#calimero-client-py)     | Python client: scripts, services, operator automation   |
+| [`calimero-desktop`](#calimero-desktop)         | Desktop hash-token SSO: 0.x only, and what 1.0 uses     |
+| [`calimero-node`](#calimero-node)               | Operating a cluster with `meroctl ops`                  |
+| [`calimero-merod`](#calimero-merod)             | The `merod` binary: init, config, run, local, attest    |
+| [`calimero-meroctl`](#calimero-meroctl)         | core 1.0's meroctl: cluster, sign-in, instances, calls  |
+| [`calimero-registry`](#calimero-registry)       | Packing, signing and publishing apps with `meroctl app` |
+| [`calimero-abi-codegen`](#calimero-abi-codegen) | Typed app clients with `meroctl app codegen`            |
 
 ## Install
 
@@ -52,22 +52,21 @@ Running the install again updates the existing block without duplicating it.
 
 ### calimero-core
 
-The foundational skill for **any Calimero development**. Install this alongside a language-specific
-skill to give the AI full-stack context.
+The foundational skill for **any Calimero development**: how core 1.0 works. Install it alongside a
+hands-on skill to give the AI the model behind the commands.
 
 Covers:
 
-- Context / Application / Identity mental model
-- Full JSON-RPC protocol and endpoint list (`/api/v0/context/{id}/execute`, etc.)
-- WebSocket event schema (`ExecutionEvent`, `StateMutation`) with decoding examples
-- CRDT storage type taxonomy (`UnorderedMap`, `Vector`, `LwwRegister`, `Counter`, etc.)
-- Namespace and group model for multi-node participation
-- Authentication flow (login, refresh, JWT lifespan)
+- App instances (v1's contexts), each replicated by its own Raft log: the leader runs a call, the
+  followers apply its diff; the system group holds who exists and who may do what
+- Organizations, teams, roles, capabilities, access rules and invites
+- Accounts, passkeys, sessions, API keys, step-ups and the operator
+- Attestation, the sealed channel, receipts, packages and their signers, served frontends
 
 Key rules included:
 
-- Application ≠ Context — installing an app does not create a context
-- CRDT types only for shared state — no `std::collections`, no plain `Map`/`Array`
+- The leader runs, followers apply: no gossip, no CRDT merging, no sync commands
+- A package is code; an instance is one running copy of it
 
 ```bash
 npx @calimero-network/agent-skills calimero-core
@@ -106,22 +105,20 @@ npx @calimero-network/agent-skills calimero-rust-sdk
 
 ### calimero-sdk-js
 
-For developers building **Calimero WASM applications in TypeScript**.
+For projects that still use the **0.x JavaScript app SDK** (`@calimero-network/calimero-sdk-js`,
+`@State`/`@Logic`, `calimero-sdk build`). Core 1.0 ships no JavaScript SDK and refuses the core
+modules it builds.
 
 Covers:
 
-- `@State` class with CRDT collection fields
-- `@Logic(StateClass)` class with callable methods
-- `@Init` static method for seeding initial state
-- `@View()` annotation for read-only query methods
-- `calimero-cli-js` build tool (`pnpm build`, `pnpm deploy`)
-- WASM runtime constraints (no async in state methods, CRDT types only)
+- What is true now: apps are Rust components (`calimero-rust-sdk`); TypeScript is for clients
+  (`calimero-client-js`)
+- What the engine's componentize-js compatibility does and does not mean
+- A 0.x-to-1.0 mapping of every SDK concept, with the KV store in Rust
 
 Key rules included:
 
-- State fields must be CRDT types — do not use plain `Map`, `Set`, or arrays for persistent state
-- `@Logic` class must extend the `@State` class
-- `@Init` must be a `static` method returning the state class
+- Do not write app logic with the 0.x JS SDK
 
 ```bash
 npx @calimero-network/agent-skills calimero-sdk-js
@@ -183,17 +180,19 @@ npx @calimero-network/agent-skills calimero-registry
 
 ### calimero-desktop
 
-For developers **integrating their app frontend** with Calimero Desktop SSO.
+For projects that carry **Calimero Desktop's hash-token SSO** (`access_token` in
+`window.location.hash`, `parseAuthCallback`). The desktop app still runs the 0.x node (merod 0.12,
+mero-js 26), and core 1.0 has no desktop SSO.
 
 Covers:
 
-- Hash params passed by Desktop (`access_token`, `refresh_token`, `node_url`, `application_id`)
-- Full startup integration pattern (React and vanilla JS)
-- How Desktop discovers the app's frontend URL (`manifest.json` `links.frontend`)
+- What the desktop is and sends today, checked in its source
+- What a core 1.0 frontend does instead: passkey sign-in through mero-js, frontends served from the
+  package, API keys for machines
 
 Key rules included:
 
-- Always fall back to manual login when hash params are absent
+- A core 1.0 frontend never reads a session from the URL
 
 ```bash
 npx @calimero-network/agent-skills calimero-desktop
@@ -203,17 +202,20 @@ npx @calimero-network/agent-skills calimero-desktop
 
 ### calimero-node
 
-For **node operators** and developers scripting against a live node.
+For **operators** of a core 1.0 cluster.
 
 Covers:
 
-- `merod` startup and configuration
-- Full `meroctl` command reference (app, context, identity, call)
-- Context lifecycle (app install → context create → invite → join → sync)
+- The ops token and the operator key, and which decisions the operator signs
+- Every `meroctl ops` command: status, placement, nodes, moves, backups, restores, recovery, quotas,
+  release approvals, app upgrades (`ops upgrade-org`)
+- Runbooks: add, remove and move nodes, back up and restore, found a cluster again, upgrade the
+  cluster's release and its apps
 
 Key rules included:
 
-- Application and context are different — installing an app does not create a context
+- Sign operator decisions with the operator key, kept off the nodes
+- Roll a new release by adding nodes, never by swapping the image under a node
 
 ```bash
 npx @calimero-network/agent-skills calimero-node
@@ -223,23 +225,18 @@ npx @calimero-network/agent-skills calimero-node
 
 ### calimero-merod
 
-For developers and operators who need deep knowledge of the **`merod` daemon** — init options,
-configuration, health checking, and Docker deployment.
+For developers and operators running **`merod`**, the core 1.0 node.
 
 Covers:
 
-- `merod init` — all flags, data directory layout
-- `merod run` — startup flags and background execution
-- Config file schema (`config.toml`) and defaults
-- Health endpoint (`GET /health` returns `{ "status": "alive" }`)
-- Docker and Docker Compose health check patterns
-- Multiple nodes on one machine (port management)
+- `merod init`, `config` and `run`, and every node flag with its `MEROD_*` variable and default
+- `merod local`, `inspect`, `kms disk-key`, `attest`, job nodes and containers
+- `/health`, `/attestation`, `/ops/status` and the metrics worth alerting on
 
 Key rules included:
 
-- Always run `merod init` before `merod run` on a new home directory
-- Never re-init a production node — it destroys the keypair and breaks existing contexts
-- Ports are set at init time; server-port and swarm-port have different consumers
+- `--dev` and development keys only on development nodes
+- Governance flags and the operator key are fixed at genesis
 
 ```bash
 npx @calimero-network/agent-skills calimero-merod
@@ -254,21 +251,21 @@ npx @calimero-network/agent-skills calimero-merod
 Covers:
 
 - Installing it (`scripts/install.sh`, Homebrew)
-- The development cluster: `meroctl local up|down|status|dev|test` (and the Docker default coming in
-  rc.25)
+- The development cluster: `meroctl local up|down|status|dev|test` (one node by default, in the
+  release's Docker image)
 - Signing in: `login --dev-passkey` on development clusters, API keys and the trust flags
   (`--allow-mock`, `--tee-profiles`, `--min-release`) on real ones; `attest`
-- Saved nodes (`node add|use`, `--api`), apps (`app install`), contexts
-  (`context create --name ... --path|--package|--bundle [--params] [--namespace [--group]]`) and
-  `call -c CONTEXT METHOD [--view]`
-- Organizations (`namespace`) and teams (`group`), blobs and sealed files, Calimero Cloud (`cloud`),
+- Saved nodes (`node add|use`, `--api`), apps (`app install`), app instances
+  (`instance create --name ... --path|--package|--bundle [--params] [--org [--team]]`) and
+  `call -i INSTANCE METHOD [--view]`
+- Organizations (`org`) and teams (`team`), blobs and sealed files, Calimero Cloud (`cloud`),
   `proxy`, `raw` and `ops`
 - Scripting and CI with `jq` and upgrade keys, and what changed from the 0.x CLI
 
 Key rules included:
 
-- Read with `call --view`; name the context with `-c`
-- `context create` takes `--namespace`/`--group` (or neither), never `--group-id`
+- Read with `call --view`; name the instance with `-i`
+- `instance create` takes `--org`/`--team` (or neither), never `--group-id`
 - File passkeys and `--allow-mock` are for development clusters only
 - Save a node once with `meroctl node add` + `meroctl node use`; omit `--node` after
 
@@ -280,18 +277,18 @@ npx @calimero-network/agent-skills calimero-meroctl
 
 ### calimero-client-py
 
-For developers using the **Python client** to automate or script against a Calimero node.
+For developers using the **Python client** (`calimero-client-py`) against core 1.0.
 
 Covers:
 
-- Full async API (contexts, apps, identities, blobs, aliases, proposals)
-- Authentication and token caching (`~/.merobox/auth_cache/`)
-- First-time token seeding and CI/CD patterns
+- `Client` and `Client.connect` with a trust policy; API keys and passkeys
+- Calls, views, confirm methods, events and presence
+- Instances, packages, organizations, API keys and the operator's Ops API
 
 Key rules included:
 
-- `node_name` must be stable and unique per node — changing it loses cached tokens
-- All client methods are async and must be awaited
+- The 0.x client (`create_connection`, contexts, cached tokens) is gone
+- Name the images you trust; `allow_mock` only on development clusters
 
 ```bash
 npx @calimero-network/agent-skills calimero-client-py
@@ -341,13 +338,13 @@ re-running updates the block cleanly.
 
 CI (and `npm test`) runs these checks; run them locally before opening a PR:
 
-| Command                            | What it enforces                                                                                                                                                                                                                                                                                                     |
-| ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `npm run format:check`             | Prettier formatting (`.md`/`.json`/`.js`/`.ts`)                                                                                                                                                                                                                                                                      |
-| `npm run lint:md`                  | Markdown structure (markdownlint)                                                                                                                                                                                                                                                                                    |
-| `npm test` → `test.js`             | Every skill has `SKILL.md` + non-empty `references/` and `rules/`                                                                                                                                                                                                                                                    |
-| `npm test` → `validate-content.js` | **Content rules** in fenced code blocks: core 1.0's meroctl (`call -c`, `context create --name`, no `call --as`, no 0.x `--group-id`/`--application-id`/`context identity`/`peers`/`sync`, no JSON-RPC envelope, no merobox) and no deprecated `@calimero-network/calimero-client` import; rule self-tests run first |
-| `npm test` → `check-versions.js`   | Core version pins agree (`1.0.0-rc.N` consistent across skills)                                                                                                                                                                                                                                                      |
+| Command                            | What it enforces                                                                                                                                                                                                                                                                                                                                                          |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm run format:check`             | Prettier formatting (`.md`/`.json`/`.js`/`.ts`)                                                                                                                                                                                                                                                                                                                           |
+| `npm run lint:md`                  | Markdown structure (markdownlint)                                                                                                                                                                                                                                                                                                                                         |
+| `npm test` → `test.js`             | Every skill has `SKILL.md` + non-empty `references/` and `rules/`                                                                                                                                                                                                                                                                                                         |
+| `npm test` → `validate-content.js` | **Content rules** in fenced code blocks: core 1.0's meroctl (`call -i`, `instance create --name`, `org`/`team`, no `call --as`, no 0.x `--group-id`/`--application-id`/`context identity`/`peers`/`sync`, no JSON-RPC envelope, no merobox), no 0.x JS app SDK, no hash-token SSO and no deprecated `@calimero-network/calimero-client` import; rule self-tests run first |
+| `npm test` → `check-versions.js`   | Core version pins agree (`1.0.0-rc.N` consistent across skills)                                                                                                                                                                                                                                                                                                           |
 
 The content linter scans only fenced code blocks (never prose) and strips comments. A deliberate
 counter-example (a "Don't do this" block) opts out with an HTML comment on the line before the
@@ -357,8 +354,8 @@ fence:
 <!-- validate-ignore: no-group-id (intentional WRONG example) -->
 ```
 
-Skills not yet updated to core 1.0 (`STALE_SKILLS` in the linter, the list in the root `SKILL.md`)
-report their violations as warnings until they are rewritten; every other skill must pass.
+Every skill teaches core 1.0 and must pass. A skill listed in `STALE_SKILLS` in the linter (none
+today) reports its violations as warnings while a rewrite is pending.
 
 A separate workflow (`version-watch.yml`, also `npm run check:versions:latest`) compares the pinned
 core version to the latest `calimero-network/core` release tag and goes red when core cuts a newer

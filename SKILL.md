@@ -4,36 +4,39 @@ This package provides AI agent skills for building on the Calimero Network stack
 
 ## Available Skills
 
-| Skill                  | Install command                                           | When to use                                                 |
-| ---------------------- | --------------------------------------------------------- | ----------------------------------------------------------- |
-| `calimero-rust-sdk`    | `npx @calimero-network/agent-skills calimero-rust-sdk`    | Building Rust apps (core 1.0 component SDK)                 |
-| `calimero-sdk-js`      | `npx @calimero-network/agent-skills calimero-sdk-js`      | Building TypeScript/JS WASM applications that run on a node |
-| `calimero-client-js`   | `npx @calimero-network/agent-skills calimero-client-js`   | Browser/Node.js frontends on mero-js `CalimeroClient`       |
-| `calimero-registry`    | `npx @calimero-network/agent-skills calimero-registry`    | Signing and publishing apps to the registry                 |
-| `calimero-desktop`     | `npx @calimero-network/agent-skills calimero-desktop`     | Integrating apps with Calimero Desktop SSO                  |
-| `calimero-node`        | `npx @calimero-network/agent-skills calimero-node`        | Node operators and meroctl scripting                        |
-| `calimero-meroctl`     | `npx @calimero-network/agent-skills calimero-meroctl`     | meroctl 1.0: local cluster, sign-in, contexts, calls, orgs  |
-| `calimero-client-py`   | `npx @calimero-network/agent-skills calimero-client-py`   | Python client for node automation and backend services      |
-| `calimero-abi-codegen` | `npx @calimero-network/agent-skills calimero-abi-codegen` | Typed app clients with `meroctl app codegen`                |
+| Skill                  | Install command                                           | When to use                                                   |
+| ---------------------- | --------------------------------------------------------- | ------------------------------------------------------------- |
+| `calimero-core`        | `npx @calimero-network/agent-skills calimero-core`        | How core 1.0 works: instances, Raft logs, orgs, auth, trust   |
+| `calimero-rust-sdk`    | `npx @calimero-network/agent-skills calimero-rust-sdk`    | Building Rust apps (core 1.0 component SDK)                   |
+| `calimero-sdk-js`      | `npx @calimero-network/agent-skills calimero-sdk-js`      | A project on the gone 0.x JS app SDK: what replaces it        |
+| `calimero-client-js`   | `npx @calimero-network/agent-skills calimero-client-js`   | Browser/Node.js frontends on mero-js `CalimeroClient`         |
+| `calimero-client-py`   | `npx @calimero-network/agent-skills calimero-client-py`   | Python scripts, services and operator automation              |
+| `calimero-abi-codegen` | `npx @calimero-network/agent-skills calimero-abi-codegen` | Typed app clients with `meroctl app codegen`                  |
+| `calimero-registry`    | `npx @calimero-network/agent-skills calimero-registry`    | Signing and publishing apps to the registry                   |
+| `calimero-meroctl`     | `npx @calimero-network/agent-skills calimero-meroctl`     | meroctl 1.0: local cluster, sign-in, instances, calls, orgs   |
+| `calimero-node`        | `npx @calimero-network/agent-skills calimero-node`        | Operating a cluster: `meroctl ops`, nodes, backups, upgrades  |
+| `calimero-merod`       | `npx @calimero-network/agent-skills calimero-merod`       | The `merod` binary: init, config, run, local, inspect, attest |
+| `calimero-desktop`     | `npx @calimero-network/agent-skills calimero-desktop`     | Desktop hash-token SSO in a project: 0.x only, what 1.0 uses  |
 
 ## Auto-Detection
 
 Skills should be loaded when the following are detected in the project:
 
-| Signal                                                                 | Load skill             |
-| ---------------------------------------------------------------------- | ---------------------- |
-| `calimero-sdk` in `Cargo.toml`                                         | `calimero-rust-sdk`    |
-| `@calimero-network/calimero-sdk-js` in `package.json`                  | `calimero-sdk-js`      |
-| `@State` / `@Logic` decorators in TypeScript source                    | `calimero-sdk-js`      |
-| `calimero-sdk build` in any script                                     | `calimero-sdk-js`      |
-| `@calimero-network/mero-js` in `package.json`                          | `calimero-client-js`   |
-| `meroctl app pack` / `sign` / `publish` in any script or workflow      | `calimero-registry`    |
-| `calimero-registry` CLI usage                                          | `calimero-registry`    |
-| `[package.metadata.calimero]` in `Cargo.toml`                          | `calimero-registry`    |
-| `access_token` read from `window.location.hash`                        | `calimero-desktop`     |
-| `readDesktopSSO` / `hash.get('access_token')` pattern in frontend code | `calimero-desktop`     |
-| `calimero-client-py` in `requirements.txt` or `pyproject.toml`         | `calimero-client-py`   |
-| `meroctl app codegen` in any script, or a generated `client.ts`        | `calimero-abi-codegen` |
+| Signal                                                                  | Load skill                                               |
+| ----------------------------------------------------------------------- | -------------------------------------------------------- |
+| `calimero-sdk` in `Cargo.toml`                                          | `calimero-rust-sdk`                                      |
+| `@calimero-network/calimero-sdk-js` in `package.json`                   | `calimero-sdk-js` (0.x, gone), then `calimero-rust-sdk`  |
+| `@State` / `@Logic` decorators in TypeScript source                     | `calimero-sdk-js` (0.x, gone), then `calimero-rust-sdk`  |
+| `calimero-sdk build` in any script                                      | `calimero-sdk-js` (0.x, gone), then `calimero-rust-sdk`  |
+| `@calimero-network/mero-js` in `package.json`                           | `calimero-client-js`                                     |
+| `meroctl app pack` / `sign` / `publish` in any script or workflow       | `calimero-registry`                                      |
+| `calimero-registry` CLI usage                                           | `calimero-registry`                                      |
+| `[package.metadata.calimero]` in `Cargo.toml`                           | `calimero-registry`                                      |
+| `meroctl app codegen` in any script, or a generated `client.ts`         | `calimero-abi-codegen`                                   |
+| `calimero-client-py` in `requirements.txt` or `pyproject.toml`          | `calimero-client-py`                                     |
+| `meroctl ops` or `--ops-token` in any script                            | `calimero-node`                                          |
+| `merod init` / `merod run`, or a `MEROD_*` variable in a deployment     | `calimero-merod`                                         |
+| `access_token` read from `window.location.hash`, or `parseAuthCallback` | `calimero-desktop` (0.x only), then `calimero-client-js` |
 
 ## About Calimero
 
@@ -52,10 +55,10 @@ Core concepts:
 - **Node** (`merod`) — runs app instances on its cluster; `merod local` starts a development cluster
 
 The SDK 0.12 model (contexts, CRDT state on every node, JSON-RPC, identities and executor keys) is
-gone since core 1.0.0-rc.9. Skills not yet updated to 1.0 (`calimero-core`, `calimero-node`,
-`calimero-merod`, `calimero-sdk-js`, `calimero-desktop`, `calimero-client-py`) may still describe
-it; prefer `calimero-rust-sdk`, `calimero-client-js`, `calimero-meroctl`, `calimero-abi-codegen` and
-`calimero-registry` where they disagree.
+gone since core 1.0.0-rc.9, and every skill here teaches core 1.0 (1.0.0-rc.29). Two skills now
+exist mainly to redirect: core ships no JavaScript app SDK (`calimero-sdk-js`: write apps in Rust),
+and Calimero Desktop still runs the 0.x node, so its hash-token SSO does not apply to 1.0
+(`calimero-desktop`: sign in with passkeys through mero-js).
 
 Tooling: `meroctl` is the one CLI from core 1.0.0-rc.24. It starts, builds, generates clients for,
 packs, signs and publishes an app
