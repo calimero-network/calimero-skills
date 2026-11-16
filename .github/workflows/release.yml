@@ -40,6 +40,11 @@ jobs:
           node-version: '24'
           registry-url: 'https://registry.npmjs.org'
 
+      # Node 24's bundled npm can lag: trusted publishing needs npm 11.5.1 or
+      # later, and an older npm 11 dropped the package's `bin` at publish.
+      - name: Update npm
+        run: npm install -g npm@11
+
       - name: Install dependencies
         run: npm ci
 
@@ -83,6 +88,21 @@ jobs:
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # `npx @calimero-network/agent-skills` runs the package's bin: refuse to
+      # publish a tarball without it (npm drops a bin it finds invalid, with
+      # only a warning).
+      - name: Check the package keeps its bin
+        if: steps.semantic.outputs.new_release == 'true'
+        run: |
+          tgz=$(npm pack --silent)
+          tar -xOzf "$tgz" package/package.json | node -e '
+            const p = JSON.parse(require("fs").readFileSync(0, "utf8"));
+            const bin = p.bin && p.bin["calimero-skills"];
+            if (!bin) { console.error("::error::the packed package.json has no bin; npx would not run the installer"); process.exit(1); }
+            console.log("bin calimero-skills ->", bin);'
+          tar -tzf "$tgz" | grep -qx package/scripts/install.js
+          rm -f "$tgz"
 
       - name: Publish to npm
         if: steps.semantic.outputs.new_release == 'true'
