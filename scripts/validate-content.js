@@ -9,9 +9,10 @@
  * current Calimero release (core 1.0) — the class of drift that
  * prettier/markdownlint cannot see. The meroctl rules flag the 0.x CLI forms
  * (`--group-id`, `context identity`, `peers`, a JSON-RPC call envelope,
- * merobox, a positional `call` instance) and the pre-rc.26 spelling of an app
- * instance (`meroctl context`, `--context`/`-c`), so a regression fails CI
- * instead of silently shipping.
+ * merobox, a positional `call` instance) and the old spellings of an app
+ * instance (`meroctl context`, `--context`/`-c`, before rc.26) and of an
+ * organization and a team (`meroctl namespace`/`group`, `--namespace`/`--group`,
+ * before rc.29), so a regression fails CI instead of silently shipping.
  *
  * Scope: only fenced code blocks (```bash / ```rust / ```typescript / …) are
  * checked — never prose. Comment lines and trailing inline comments are
@@ -61,6 +62,9 @@ const CONTEXT_CREATE = /\bmeroctl\b.*\b(?:instance|context)\s+create\b(?!-)/;
 // The subcommands of `meroctl instance` (v1's and pre-rc.26 `meroctl context`).
 const INSTANCE_SUBS =
   'create|list|ls|get|update|delete|del|watch|alias|use|access|metadata|storage|abi|presence|transfer|move';
+// `meroctl … namespace|ns <sub>` and `meroctl … group <sub>`: the pre-rc.29 `org` and `team`.
+const OLD_ORG_CMD =
+  /\bmeroctl\b(?:\s+--?[\w-]+(?:[\s=](?!-)\S+)?)*\s+(?:(?:namespace|ns)\s+(?:create|get|list|ls|delete|invite|join|leave|groups|create-group|members|metadata|member-metadata|capabilities|outbound|approve-release)|group\s+(?:get|update|delete|reparent|subgroups|members|metadata|settings|leave|upgrade))\b(?!-)/;
 const OLD_CONTEXT_CMD = new RegExp(
   `\\bmeroctl\\b(?:\\s+--?[\\w-]+(?:[\\s=](?!-)\\S+)?)*\\s+context\\s+(?:${INSTANCE_SUBS})\\b(?!-)`
 );
@@ -89,11 +93,19 @@ const RULES = [
       'Since core 1.0.0-rc.26 an app instance is `meroctl instance ...` and `--instance`/`-i`; `context` and `--context`/`-c` are the old spelling (hidden, for one release).',
   },
   {
+    id: 'namespace-is-org',
+    langs: BASH,
+    check: (l) =>
+      OLD_ORG_CMD.test(l) || (MEROCTL.test(l) && /\s--(?:namespace|group)(?:\s|=)/.test(l)),
+    message:
+      'Since core 1.0.0-rc.29 an organization is `meroctl org ...` (`teams`, `create-team`) and a team `meroctl team ...` (`subteams`), with `--org`/`--team`; `namespace`, `group` and `--namespace`/`--group` are the old spelling (hidden, for one release).',
+  },
+  {
     id: 'no-group-id',
     langs: BASH,
     check: (l) => MEROCTL.test(l) && /\s--group-id\b/.test(l),
     message:
-      'core 1.0 has no --group-id: `instance create` takes `--namespace ORG [--group TEAM]` (or neither, for your personal organization).',
+      'core 1.0 has no --group-id: `instance create` takes `--org ORG [--team TEAM]` (or neither, for your personal organization).',
   },
   {
     id: 'context-create-application-id',
@@ -169,7 +181,12 @@ const SELF_TESTS = {
     ['call-needs-instance', 'meroctl call <ctx-id> get --args \'{"key":"a"}\''],
     ['call-needs-instance', 'meroctl --node node1 call get_posts'],
     ['no-group-id', 'meroctl instance create --name kv --package com.example.kv --group-id <ns>'],
-    ['no-group-id', 'meroctl namespace create-group <ns> eng --group-id <g>'],
+    ['no-group-id', 'meroctl org create-team <ns> eng --group-id <g>'],
+    ['namespace-is-org', 'meroctl namespace create Acme'],
+    ['namespace-is-org', 'meroctl --node prod namespace create-group <org> eng'],
+    ['namespace-is-org', 'meroctl group members list <org> <team>'],
+    ['namespace-is-org', 'meroctl instance create --name kv --package p --namespace <org>'],
+    ['namespace-is-org', 'meroctl org invite <org> --group <team>'],
     [
       'context-create-application-id',
       'meroctl instance create --name kv --application-id <app-id>',
@@ -199,9 +216,11 @@ const SELF_TESTS = {
     'meroctl call -i my-kv len --view --min-index 7',
     'meroctl instance create --name kv --path app.wasm',
     'meroctl instance create --path kv_store.wasm --name kv --alias kv',
-    "meroctl instance create --name team-kv --package com.example.kv --namespace <org-id> --group <team> --params '{}'",
-    'meroctl namespace create-group <org-id> eng --join open',
-    'meroctl namespace invite <org-id> --role member --group <team> --uses 1',
+    "meroctl instance create --name team-kv --package com.example.kv --org <org-id> --team <team> --params '{}'",
+    'meroctl org create-team <org-id> eng --join open',
+    'meroctl org invite <org-id> --role member --team <team> --uses 1',
+    'meroctl team members list <org-id> <team-id>',
+    'meroctl team upgrade trigger <org-id> --package p --version 1.1.0 --team <team-id>',
     'meroctl --api-key "$CALIMERO_API_KEY" --tee-profiles prod --min-release 2.3.109 whoami',
     'meroctl node add local http://127.0.0.1:2501 --allow-mock',
     'meroctl login --dev-passkey ./dev-passkey.json --name ada',

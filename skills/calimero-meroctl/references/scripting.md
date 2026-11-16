@@ -6,8 +6,8 @@ Every answer is JSON on stdout (streams such as `instance watch` print JSON line
 ## Capturing ids
 
 ```bash
-ORG=$(meroctl namespace create Acme | jq -r .orgId)
-APP=$(meroctl instance create --name kv --package com.example.kv --namespace "$ORG" | jq -r .appId)
+ORG=$(meroctl org create Acme | jq -r .orgId)
+APP=$(meroctl instance create --name kv --package com.example.kv --org "$ORG" | jq -r .appId)
 meroctl call -i "$APP" set --args '{"key":"hello","value":"world"}'
 meroctl call -i "$APP" get --args '{"key":"hello"}' --view | jq -r .result
 ```
@@ -31,7 +31,7 @@ done
 - name: Scenario and smoke test
   run: |
     curl -fsSL https://raw.githubusercontent.com/calimero-network/core/master/scripts/install.sh \
-      | sh -s -- merod meroctl --version 1.0.0-rc.28
+      | sh -s -- merod meroctl --version 1.0.0-rc.29
     meroctl local test apps/kv-store
     meroctl local up
     meroctl login --dev-passkey ./ci-passkey.json --name ci

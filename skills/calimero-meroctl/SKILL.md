@@ -6,7 +6,7 @@ and ships apps without a node (`app new|build|codegen|pack|publish`, see `calime
 talks to nodes: before it sends anything it fetches the node's attestation and judges the quote,
 then every request travels in the sealed channel.
 
-This skill teaches core 1.0's meroctl (1.0.0-rc.28). The 0.x CLI (contexts bound by `--group-id`,
+This skill teaches core 1.0's meroctl (1.0.0-rc.29). The 0.x CLI (contexts bound by `--group-id`,
 `context identity`, `peers`, JSON-RPC calls, merobox) is gone; see "What changed from 0.x" below.
 
 ## Names
@@ -31,7 +31,7 @@ curl -fsSL https://raw.githubusercontent.com/calimero-network/core/master/script
 
 # merod and meroctl, a pinned release
 curl -fsSL https://raw.githubusercontent.com/calimero-network/core/master/scripts/install.sh \
-  | sh -s -- merod meroctl --version 1.0.0-rc.28
+  | sh -s -- merod meroctl --version 1.0.0-rc.29
 
 # or Homebrew
 brew install calimero-network/tap/meroctl calimero-network/tap/merod
@@ -61,6 +61,9 @@ meroctl local down
   credential**: `--api-key`, else the session saved for that node's URL, else none.
 - **An `INSTANCE` argument** is an alias of the signed-in account or an app id (a context id works
   too). `instance create --alias` and `instance alias add` name one.
+- **`org` was `namespace`, and `team` was `group`,** before core 1.0.0-rc.29 (`teams`/`create-team`
+  were `groups`/`create-group`, `--org`/`--team` were `--namespace`/`--group`): the old spelling
+  still parses for one release, hidden. Write `org`, `team`, `--org` and `--team`.
 - **`instance` was `context`** before core 1.0.0-rc.26: `meroctl context ...`, `--context` and `-c`
   still parse for one release, hidden, and an answer's `contextId` is unchanged. Write `instance`,
   `--instance` and `-i`.
@@ -69,33 +72,33 @@ meroctl local down
   (`POST /apps/{app}/intents`). Both answer `{ index, result, receipt }`. Methods and argument names
   are the ABI's camelCase; a `u64` travels as a decimal string.
 - **`instance create`** needs `--name` and one of `--package P [--version V]`, `--bundle HASH` or
-  `--path FILE`; `--params JSON` feeds `init`, `--namespace ORG [--group TEAM]` puts it in an
-  organization (none: the account's personal organization), `--alias` names it.
+  `--path FILE`; `--params JSON` feeds `init`, `--org ORG [--team TEAM]` puts it in an organization
+  (none: the account's personal organization), `--alias` names it.
 - **Signing in**: `login --dev-passkey FILE` on a development cluster only (it needs
   `--allow-mock`). On a real cluster, use an API key (`--api-key` or `CALIMERO_API_KEY`) and say
   which images you trust: `--tee-profiles NAME,...` (without it every real quote is refused) and
   optionally `--min-release VERSION` (default `2.3.109`).
-- **Owner approvals** (`instance update`, `namespace invite`, `account api-key create`, a confirm
-  method's `call`, ...) take `--dev-passkey FILE` on a development cluster; without it the node
-  answers `412 CONFIRM_REQUIRED`, and on a real cluster the owner approves in the console.
+- **Owner approvals** (`instance update`, `org invite`, `account api-key create`, a confirm method's
+  `call`, ...) take `--dev-passkey FILE` on a development cluster; without it the node answers
+  `412 CONFIRM_REQUIRED`, and on a real cluster the owner approves in the console.
 - **Installs**: `app install --path FILE` (a `.mpk`, or a raw `.wasm`) is for development clusters;
   a real cluster installs `app install PACKAGE@VERSION` from its registry.
 
 ## What changed from 0.x
 
-| 0.x                                                       | core 1.0                                                                                            |
-| --------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| `context create --application-id A --group-id G`          | `instance create --name N (--package P \| --bundle H \| --path F) [--namespace ORG [--group TEAM]]` |
-| `namespace create --application-id A` (the root group)    | `namespace create NAME` (an organization; every account also has a personal one)                    |
-| `call <ctx> METHOD`, "no `--view` flag"                   | `call -i INSTANCE METHOD --args JSON`, `--view` for reads                                           |
-| `POST /jsonrpc` envelope `{ jsonrpc, method: "execute" }` | `meroctl call`, or `POST /apps/{app}/intents` and `/views` (`meroctl raw`, `meroctl proxy`)         |
-| `context identity ...`, executor keys, `--as`             | accounts: passkeys (`login`, `account device`) and API keys (`account api-key`)                     |
-| `peers`, `context sync`, `group sync`                     | gone: no gossip, each app instance's Raft log replicates it                                         |
-| `group join-context`, `namespace join NS INVITE_JSON`     | `namespace join TOKEN`; who reaches a context is its access (`instance access`, `--group`)          |
-| `node add NAME /path/to/home`, port 2528                  | `node add NAME URL [--allow-mock]`; `local up` serves 2501 (`--nodes 3`: 2501-2503)                 |
-| `--output-format json`                                    | always JSON                                                                                         |
-| `context create --watch FILE`                             | `local dev`, `app watch --path FILE --dev-passkey F`, `dev start`                                   |
-| merobox                                                   | `meroctl local up\|dev\|test`                                                                       |
+| 0.x                                                       | core 1.0                                                                                     |
+| --------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `context create --application-id A --group-id G`          | `instance create --name N (--package P \| --bundle H \| --path F) [--org ORG [--team TEAM]]` |
+| `namespace create --application-id A` (the root group)    | `org create NAME` (an organization; every account also has a personal one)                   |
+| `call <ctx> METHOD`, "no `--view` flag"                   | `call -i INSTANCE METHOD --args JSON`, `--view` for reads                                    |
+| `POST /jsonrpc` envelope `{ jsonrpc, method: "execute" }` | `meroctl call`, or `POST /apps/{app}/intents` and `/views` (`meroctl raw`, `meroctl proxy`)  |
+| `context identity ...`, executor keys, `--as`             | accounts: passkeys (`login`, `account device`) and API keys (`account api-key`)              |
+| `peers`, `context sync`, `group sync`                     | gone: no gossip, each app instance's Raft log replicates it                                  |
+| `group join-context`, `namespace join NS INVITE_JSON`     | `org join TOKEN`; who reaches a context is its access (`instance access`, `--team`)          |
+| `node add NAME /path/to/home`, port 2528                  | `node add NAME URL [--allow-mock]`; `local up` serves 2501 (`--nodes 3`: 2501-2503)          |
+| `--output-format json`                                    | always JSON                                                                                  |
+| `context create --watch FILE`                             | `local dev`, `app watch --path FILE --dev-passkey F`, `dev start`                            |
+| merobox                                                   | `meroctl local up\|dev\|test`                                                                |
 
 ## References
 
@@ -110,6 +113,6 @@ meroctl local down
 ## Rules
 
 - `rules/call-view-flag.md`: pass `--view` for reads, `-i` for the instance.
-- `rules/context-create-in-an-org.md`: no `--group-id`; `--namespace`/`--group` or nothing.
+- `rules/context-create-in-an-org.md`: no `--group-id`; `--org`/`--team` or nothing.
 - `rules/dev-passkey-is-dev-only.md`: file passkeys and `--allow-mock` only on development clusters.
 - `rules/register-node-once.md`: save a node once, then omit `--node`.

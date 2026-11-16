@@ -18,7 +18,7 @@ owner approvals happen in the console; meroctl uses an API key.
 # development cluster
 meroctl local up                                            # node `local`, mock quote trusted
 meroctl login --dev-passkey ./dev-passkey.json --name ada
-meroctl namespace invite <org-id> --uses 1 --dev-passkey ./dev-passkey.json
+meroctl org invite <org-id> --uses 1 --dev-passkey ./dev-passkey.json
 
 # real cluster
 export CALIMERO_API_KEY=cal_...                             # made in the console

@@ -15,14 +15,14 @@ curl -fsSL https://raw.githubusercontent.com/calimero-network/core/master/script
 
 # a pinned release
 curl -fsSL https://raw.githubusercontent.com/calimero-network/core/master/scripts/install.sh \
-  | sh -s -- meroctl --version 1.0.0-rc.28
+  | sh -s -- meroctl --version 1.0.0-rc.29
 meroctl --version
 ```
 
 Or by hand, which is what a CI step does:
 
 ```bash
-V=1.0.0-rc.28 T=x86_64-unknown-linux-gnu   # the core release, and this machine's target
+V=1.0.0-rc.29 T=x86_64-unknown-linux-gnu   # the core release, and this machine's target
 curl -fsSLO "https://github.com/calimero-network/core/releases/download/$V/meroctl_$T.tar.gz"
 curl -fsSL "https://github.com/calimero-network/core/releases/download/$V/SHA256SUMS" \
   | grep " meroctl_$T.tar.gz\$" | sha256sum -c
@@ -50,7 +50,7 @@ shape calimero-network/apps uses (`scripts/install-meroctl.sh`, pinned by `MEROC
 ```yaml
 - name: Install meroctl
   env:
-    MEROCTL_TAG: 1.0.0-rc.28
+    MEROCTL_TAG: 1.0.0-rc.29
   run: |
     T=x86_64-unknown-linux-gnu
     base="https://github.com/calimero-network/core/releases/download/$MEROCTL_TAG"
