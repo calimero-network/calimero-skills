@@ -1,0 +1,122 @@
+name: Release and Publish
+
+# Every push to master (a merged pull request) runs semantic-release over the
+# conventional commits since the last v* tag. When a PR title calls for a release
+# (feat, fix, perf, or a breaking `!`), it writes the version and CHANGELOG.md,
+# tags vX, creates the GitHub Release, publishes @calimero-network/agent-skills@X
+# to npm and pushes the release commit to master. RELEASING.md has the rules.
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+jobs:
+  release:
+    name: Create Release and Publish
+    runs-on: ubuntu-latest
+    # One release at a time: two overlapping runs would compute the same next
+    # version and race on its tag. Queued, not cancelled, so no push is lost.
+    concurrency:
+      group: release-${{ github.ref }}
+      cancel-in-progress: false
+    permissions:
+      contents: write
+      id-token: write
+      issues: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          # npm 11.5+ (Node 24) publishes with npm trusted publishing (OIDC).
+          node-version: '24'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Test
+        run: |
+          npm run format:check
+          npm run lint:md
+          npm test
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Run semantic-release
+        id: semantic
+        run: |
+          # semantic-release exits 0 both when it releases and when there is
+          # nothing to release; a non-zero exit is a real failure. Its log goes
+          # through tee and the status is read from PIPESTATUS, so a failure
+          # still shows its log.
+          log="$RUNNER_TEMP/semantic-release.log"
+          before=$(git rev-parse HEAD)
+          npx semantic-release 2>&1 | tee "$log"
+          status=${PIPESTATUS[0]}
+          if [ "$status" -ne 0 ]; then
+            echo "::error::semantic-release failed with exit code $status; its log is above"
+            exit "$status"
+          fi
+          if grep -q "Published release" "$log"; then
+            echo "new_release=true" >> "$GITHUB_OUTPUT"
+          elif [ "$(git rev-parse HEAD)" != "$before" ]; then
+            # @semantic-release/git commits the release locally (push: false), so
+            # a moved HEAD means a release was made; publishing nothing would
+            # leave a tag and a GitHub Release with no npm package behind them.
+            echo "::error::semantic-release made a release commit but its log has no 'Published release' line; refusing to treat this as no release"
+            exit 1
+          else
+            echo "new_release=false" >> "$GITHUB_OUTPUT"
+            echo "No new release"
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish to npm
+        if: steps.semantic.outputs.new_release == 'true'
+        # Trusted publishing (OIDC) when npm has this workflow registered as the
+        # package's trusted publisher; otherwise the NPM_TOKEN secret.
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Push release commit and tag
+        if: steps.semantic.outputs.new_release == 'true'
+        run: |
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+          # The tag, the GitHub Release and the npm package exist; what is left
+          # is moving master onto the release commit, so the tag is reachable and
+          # the next run does not recompute this version. If a PR merged
+          # meanwhile, merge master into the release commit and push again; the
+          # merge message is not a conventional commit, so it releases nothing.
+          version=$(node -p "require('./package.json').version")
+          for attempt in 1 2 3; do
+            if git push origin HEAD:master --follow-tags; then
+              exit 0
+            fi
+            git fetch origin master
+            if git merge-base --is-ancestor FETCH_HEAD HEAD; then
+              echo "::error::pushing the $version release commit to master failed, and not because master moved"
+              exit 1
+            fi
+            echo "::warning::master moved while $version was being released; merging it into the release commit (attempt $attempt)"
+            if ! git merge --no-edit -m "Merge master into the $version release commit" FETCH_HEAD; then
+              git merge --abort || true
+              echo "::error::merging the new master into the $version release commit conflicted"
+              exit 1
+            fi
+          done
+          echo "::error::master kept moving; gave up pushing the $version release commit after 3 attempts"
+          exit 1
