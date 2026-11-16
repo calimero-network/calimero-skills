@@ -1,6 +1,6 @@
 # merod Node Flags (init, run, config)
 
-Checked against `merod run --help` of 1.0.0-rc.29 and core's `operate/merod.mdx`. `init`, `run` and
+Checked against `merod run --help` of 1.0.0-rc.30 and core's `operate/merod.mdx`. `init`, `run` and
 `config` take the same flags; each is also a `config.toml` key (the flag without `--`) and an
 environment variable. A boolean takes an optional value: `--dev` is `--dev true`, and `--dev false`
 turns off a `dev = true` the file holds. A list flag replaces the whole list.

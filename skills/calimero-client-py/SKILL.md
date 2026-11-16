@@ -1,3 +1,11 @@
+---
+name: calimero-client-py
+description:
+  'The Python client for Calimero 1.0 (calimero-client-py): connecting with a trust policy, API keys
+  and passkeys, calls, views, events, instances, organizations and the Ops API. Use for Python
+  scripts, services and operator automation against a Calimero cluster.'
+---
+
 # calimero-client-py — Agent Instructions
 
 You are helping a developer call a Calimero 1.0 cluster from **Python**: scripts, backend services,

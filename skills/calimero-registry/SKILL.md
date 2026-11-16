@@ -1,3 +1,11 @@
+---
+name: calimero-registry
+description:
+  'Packing, signing and publishing Calimero apps with meroctl app pack, sign, inspect and publish:
+  the .mpk manifest, signer keys, registry and Cloud organization publishing, CI auto-publish. Use
+  when shipping a Calimero app to the registry.'
+---
+
 # calimero-registry — Agent Instructions
 
 You are helping a developer **package, sign and publish a Calimero app** to the App Registry with

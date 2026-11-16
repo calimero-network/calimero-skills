@@ -1,6 +1,6 @@
 {
   "name": "@calimero-network/agent-skills",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "AI agent skills for Calimero 1.0 development — Rust SDK, JS and Python clients, meroctl, merod, operators, registry publishing, and more.",
   "keywords": [
     "calimero",
@@ -37,9 +37,10 @@
     "validate:content": "node scripts/validate-content.js",
     "check:versions": "node scripts/check-versions.js",
     "check:versions:latest": "CHECK_LATEST_CORE=1 node scripts/check-versions.js",
-    "test": "node scripts/test.js && node scripts/validate-content.js && node scripts/check-versions.js"
+    "test": "node scripts/test.js && node scripts/test-install.js && node scripts/validate-content.js && node scripts/check-versions.js"
   },
   "devDependencies": {
+    "js-yaml": "^4.2.0",
     "markdownlint-cli2": "^0.21.0",
     "prettier": "^3.3.3"
   },

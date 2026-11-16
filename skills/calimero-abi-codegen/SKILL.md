@@ -1,3 +1,11 @@
+---
+name: calimero-abi-codegen
+description:
+  'Typed clients for a Calimero app generated from its ABI with meroctl app codegen (TypeScript,
+  Python, Swift, Kotlin, OpenAPI): the generated client, the ABI format, abi diff for breaking
+  changes. Use when a frontend or service calls a Calimero app with types.'
+---
+
 # calimero-abi-codegen — Agent Instructions
 
 You are helping a developer generate a **typed client for a Calimero app** from the app's ABI with

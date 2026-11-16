@@ -1,3 +1,11 @@
+---
+name: calimero-node
+description:
+  'Operating a Calimero 1.0 cluster with meroctl ops: the ops token and operator key, nodes,
+  placement, moves, backups, restores, recovery, quotas, release approvals and app upgrades. Use
+  when running or maintaining a cluster as its operator.'
+---
+
 # calimero-node — Agent Instructions
 
 You are helping a **node operator** run a Calimero 1.0 cluster: register and retire nodes, place and
@@ -5,7 +13,7 @@ move app instances, back them up and restore them, set quotas, approve releases 
 the cluster itself. The operator's commands are `meroctl ops ...`; the node binary is `merod` (see
 `calimero-merod`); everything else meroctl does is `calimero-meroctl`.
 
-This skill teaches core 1.0 (1.0.0-rc.29). The 0.x node (one node per context member, peers and
+This skill teaches core 1.0 (1.0.0-rc.30). The 0.x node (one node per context member, peers and
 gossip, `meroctl context join`, `peers`, `context sync`, an admin JWT) is gone; there is no operator
 command that reads or joins an app's data.
 

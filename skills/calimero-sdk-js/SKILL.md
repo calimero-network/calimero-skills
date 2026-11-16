@@ -1,10 +1,18 @@
+---
+name: calimero-sdk-js
+description:
+  'The gone 0.x JavaScript app SDK (@calimero-network/calimero-sdk-js, @State/@Logic, calimero-sdk
+  build) and what replaces it in Calimero 1.0. Use when a project still uses it, or when asked to
+  write a Calimero app in JavaScript or TypeScript.'
+---
+
 # calimero-sdk-js — Agent Instructions
 
 **The JavaScript app SDK is gone in Calimero 1.0.** This skill exists so an agent that finds
 `@calimero-network/calimero-sdk-js`, `@State` / `@Logic` decorators or `calimero-sdk build` in a
 project knows what to do instead. Do not write new code against it.
 
-## What is true now (core 1.0.0-rc.29)
+## What is true now (core 1.0.0-rc.30)
 
 - **Calimero apps are written in Rust** with core's component SDK (`calimero-sdk`) and built by
   `meroctl app build` into a `calimero:app` WebAssembly component (`wasm32-wasip2`). Load

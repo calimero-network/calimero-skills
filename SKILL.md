@@ -4,6 +4,18 @@ This package provides AI agent skills for building on the Calimero Network stack
 
 ## Available Skills
 
+Install the starter set for building an app (`calimero-core`, `calimero-rust-sdk`,
+`calimero-client-js`, `calimero-meroctl`, `calimero-abi-codegen`, `calimero-registry`) as Claude
+Code skills with one command; `all` installs every skill:
+
+```bash
+npx @calimero-network/agent-skills app
+```
+
+Several names install at once. The default target is Claude Code skills in `.claude/skills/`
+(`--global`: `~/.claude/skills/`); `--claude-md`, `--cursor` and `--copilot` write one block per
+skill into `CLAUDE.md`, `.cursorrules` or `.github/copilot-instructions.md` instead.
+
 | Skill                  | Install command                                           | When to use                                                   |
 | ---------------------- | --------------------------------------------------------- | ------------------------------------------------------------- |
 | `calimero-core`        | `npx @calimero-network/agent-skills calimero-core`        | How core 1.0 works: instances, Raft logs, orgs, auth, trust   |
@@ -55,7 +67,7 @@ Core concepts:
 - **Node** (`merod`) — runs app instances on its cluster; `merod local` starts a development cluster
 
 The SDK 0.12 model (contexts, CRDT state on every node, JSON-RPC, identities and executor keys) is
-gone since core 1.0.0-rc.9, and every skill here teaches core 1.0 (1.0.0-rc.29). Two skills now
+gone since core 1.0.0-rc.9, and every skill here teaches core 1.0 (1.0.0-rc.30). Two skills now
 exist mainly to redirect: core ships no JavaScript app SDK (`calimero-sdk-js`: write apps in Rust),
 and Calimero Desktop still runs the 0.x node, so its hash-token SSO does not apply to 1.0
 (`calimero-desktop`: sign in with passkeys through mero-js).

@@ -25,26 +25,53 @@ hallucinating APIs that don't exist.
 ## Install
 
 ```bash
-# Install a specific skill (writes to CLAUDE.md by default)
+# The starter set for building an app (core, rust-sdk, client-js, meroctl, abi-codegen, registry),
+# as Claude Code skills in .claude/skills/
+npx @calimero-network/agent-skills app
+
+# One skill, several, or every skill
 npx @calimero-network/agent-skills calimero-rust-sdk
+npx @calimero-network/agent-skills calimero-core calimero-meroctl
+npx @calimero-network/agent-skills all
 
-# Target a specific editor
-npx @calimero-network/agent-skills calimero-rust-sdk --cursor
-npx @calimero-network/agent-skills calimero-rust-sdk --copilot
+# For every project: Claude Code skills in ~/.claude/skills/
+npx @calimero-network/agent-skills app --global
 
-# List available skills
+# Another editor, or one CLAUDE.md block per skill
+npx @calimero-network/agent-skills app --cursor
+npx @calimero-network/agent-skills app --copilot
+npx @calimero-network/agent-skills app --claude-md
+
+# List the skills and sets
 npx @calimero-network/agent-skills --list
 ```
 
 ### Where skill files are written
 
-| Flag        | File                              |
-| ----------- | --------------------------------- |
-| (default)   | `CLAUDE.md`                       |
-| `--cursor`  | `.cursorrules`                    |
-| `--copilot` | `.github/copilot-instructions.md` |
+| Flag                        | Written to                                       |
+| --------------------------- | ------------------------------------------------ |
+| `--claude-skills` (default) | `.claude/skills/<skill>/` (a Claude Code skill)  |
+| `--claude-skills --global`  | `~/.claude/skills/<skill>/`                      |
+| `--claude-md`               | `CLAUDE.md`, one marked block per skill          |
+| `--cursor`                  | `.cursorrules`, one marked block per skill       |
+| `--copilot`                 | `.github/copilot-instructions.md`, one per skill |
 
-Running the install again updates the existing block without duplicating it.
+A Claude Code skill is a directory with a `SKILL.md` (frontmatter `name` and `description`, then the
+skill's instructions), its `references/` and its `rules/`. Claude Code reads only the descriptions
+up front and loads a skill when the task matches it, so installing every skill costs little context.
+The block targets put the whole text of each skill into a file the editor reads on every turn.
+
+Running the install again replaces what an earlier install of the same skill wrote: the skill's
+directory, or its block. Before 0.8.0 the default target was `CLAUDE.md`; if your `CLAUDE.md` still
+holds a `calimero-skills` block for a skill you now install as a Claude Code skill, the installer
+says so, and you can delete the block between its markers.
+
+### Sets
+
+| Name  | Skills                                                                                                                      |
+| ----- | --------------------------------------------------------------------------------------------------------------------------- |
+| `app` | `calimero-core`, `calimero-rust-sdk`, `calimero-client-js`, `calimero-meroctl`, `calimero-abi-codegen`, `calimero-registry` |
+| `all` | Every skill                                                                                                                 |
 
 ---
 
@@ -326,13 +353,15 @@ Each skill follows this layout:
 
 ```text
 skills/<skill-name>/
-├── SKILL.md          # Agent instructions: what to know, what to avoid
+├── SKILL.md          # Frontmatter (name, description), then what to know and what to avoid
 ├── references/       # Detailed API guides with real code examples
 └── rules/            # Hard rules: one file per rule, named after the rule
 ```
 
-The install script appends skill content to your editor's context file, wrapped in markers so
-re-running updates the block cleanly.
+The `description` in a skill's frontmatter is its only copy: the Claude Code target writes it into
+the generated `SKILL.md`, `--list` prints it, and the block targets strip the frontmatter. The
+Claude Code target copies `references/` and `rules/` beside the generated `SKILL.md`, and appends an
+index of them when the `SKILL.md` does not name each file.
 
 ## Validation
 
@@ -343,6 +372,7 @@ CI (and `npm test`) runs these checks; run them locally before opening a PR:
 | `npm run format:check`             | Prettier formatting (`.md`/`.json`/`.js`/`.ts`)                                                                                                                                                                                                                                                                                                                           |
 | `npm run lint:md`                  | Markdown structure (markdownlint)                                                                                                                                                                                                                                                                                                                                         |
 | `npm test` → `test.js`             | Every skill has `SKILL.md` + non-empty `references/` and `rules/`                                                                                                                                                                                                                                                                                                         |
+| `npm test` → `test-install.js`     | The installer: frontmatter is valid YAML with `name` and `description`, every skill installs to `.claude/skills` with its files and resolving links, `app`/`all`, idempotent re-runs, and unchanged CLAUDE.md/Cursor/Copilot blocks                                                                                                                                       |
 | `npm test` → `validate-content.js` | **Content rules** in fenced code blocks: core 1.0's meroctl (`call -i`, `instance create --name`, `org`/`team`, no `call --as`, no 0.x `--group-id`/`--application-id`/`context identity`/`peers`/`sync`, no JSON-RPC envelope, no merobox), no 0.x JS app SDK, no hash-token SSO and no deprecated `@calimero-network/calimero-client` import; rule self-tests run first |
 | `npm test` → `check-versions.js`   | Core version pins agree (`1.0.0-rc.N` consistent across skills)                                                                                                                                                                                                                                                                                                           |
 

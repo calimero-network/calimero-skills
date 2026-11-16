@@ -1,6 +1,6 @@
 # meroctl ops — Command Reference (core 1.0)
 
-Checked against `meroctl ops <command> --help` of 1.0.0-rc.29 and core's `operate/meroctl.mdx` and
+Checked against `meroctl ops <command> --help` of 1.0.0-rc.30 and core's `operate/meroctl.mdx` and
 `operate/runbooks.mdx`. Every command needs the ops token (`--ops-token` or `CALIMERO_OPS_TOKEN`).
 Those marked **signed** are operator decisions: the node answers `428 OPERATOR_SIGNATURE_REQUIRED`
 and meroctl signs with `--operator-key-file` (`CALIMERO_OPERATOR_KEY_FILE`). Output is JSON.

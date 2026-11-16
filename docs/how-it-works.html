@@ -42,9 +42,9 @@
 <h2>Target Files per Editor</h2>
 <div class="g3">
   <div class="cb">
-    <h4>Claude / Claude Code</h4>
-    <p>Writes to <span class="code">CLAUDE.md</span> in your project root. Claude Code reads this file automatically on every conversation start.</p>
-    <div class="typedef" style="margin-top:8px;"><span class="field">npx</span> @calimero-network/agent-skills &lt;skill&gt;</div>
+    <h4>Claude Code</h4>
+    <p>Writes a Claude Code skill to <span class="code">.claude/skills/&lt;skill&gt;/</span> (the default): a <span class="code">SKILL.md</span> with a name and description, plus its <span class="code">references/</span> and <span class="code">rules/</span>. Claude Code loads a skill only when the task matches its description. <span class="code">--global</span> writes <span class="code">~/.claude/skills/</span> for every project; <span class="code">--claude-md</span> writes a block into <span class="code">CLAUDE.md</span> instead, read on every turn.</p>
+    <div class="typedef" style="margin-top:8px;"><span class="field">npx</span> @calimero-network/agent-skills &lt;skill&gt;<br><span class="field">npx</span> @calimero-network/agent-skills &lt;skill&gt; --global<br><span class="field">npx</span> @calimero-network/agent-skills &lt;skill&gt; --claude-md</div>
   </div>
   <div class="cb">
     <h4>Cursor</h4>
@@ -61,17 +61,16 @@
 
 <div class="card gd">
 <h2>Installing Multiple Skills</h2>
-<p style="margin-bottom:12px;">Run the command multiple times to stack skills — each appends to the same file:</p>
+<p style="margin-bottom:12px;">Name several skills in one command, or a set: <span class="code">app</span> is the starter set for building an app (core, rust-sdk, client-js, meroctl, abi-codegen, registry), <span class="code">all</span> is every skill:</p>
 <div class="typedef">
-<span class="comment"># Install Rust SDK + client JS skills for a full-stack project</span><br>
-<span class="field">npx</span> @calimero-network/agent-skills calimero-rust-sdk<br>
-<span class="field">npx</span> @calimero-network/agent-skills calimero-client-js<br>
-<span class="field">npx</span> @calimero-network/agent-skills calimero-abi-codegen<br><br>
+<span class="comment"># The starter set for building an app, as Claude Code skills</span><br>
+<span class="field">npx</span> @calimero-network/agent-skills app<br><br>
+<span class="comment"># Specific skills</span><br>
+<span class="field">npx</span> @calimero-network/agent-skills calimero-rust-sdk calimero-client-js calimero-abi-codegen<br><br>
 <span class="comment"># Or for the Cursor editor:</span><br>
-<span class="field">npx</span> @calimero-network/agent-skills calimero-rust-sdk --cursor<br>
-<span class="field">npx</span> @calimero-network/agent-skills calimero-client-js --cursor
+<span class="field">npx</span> @calimero-network/agent-skills app --cursor
 </div>
-<p style="margin-top:12px;">Each skill is self-contained — order doesn't matter. Install only the skills relevant to your project to keep the context file focused.</p>
+<p style="margin-top:12px;">Each skill is self-contained — order doesn't matter. Re-running replaces what an earlier install of the same skill wrote. With the block targets (<span class="code">--claude-md</span>, <span class="code">--cursor</span>, <span class="code">--copilot</span>) every skill is read on every turn, so install only the ones your project needs.</p>
 </div>
 
 </div>

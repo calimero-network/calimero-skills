@@ -1,3 +1,11 @@
+---
+name: calimero-rust-sdk
+description:
+  'Building Calimero 1.0 apps in Rust with the component SDK (calimero-sdk): app state and methods,
+  tables and collections, env and guards, events, blobs, tests, upgrades, meroctl app build. Use
+  when writing or changing a Calimero app backend or a crate that depends on calimero-sdk.'
+---
+
 # calimero-rust-sdk — Agent Instructions
 
 You are helping a developer build a **Calimero app** in Rust with core 1.0's component SDK
@@ -47,13 +55,13 @@ crate-type = ["cdylib"]
 
 [dependencies]
 # Pin by git tag to the core release your cluster runs.
-calimero-sdk = { git = "https://github.com/calimero-network/core", tag = "1.0.0-rc.29" }
+calimero-sdk = { git = "https://github.com/calimero-network/core", tag = "1.0.0-rc.30" }
 serde = { version = "1", features = ["derive"] }
 
 # The TestApp harness and the builder it builds the crate with (host only).
 [target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
-calimero-sdk = { git = "https://github.com/calimero-network/core", tag = "1.0.0-rc.29", features = ["testing"] }
-calimero-app-build = { git = "https://github.com/calimero-network/core", tag = "1.0.0-rc.29" }
+calimero-sdk = { git = "https://github.com/calimero-network/core", tag = "1.0.0-rc.30", features = ["testing"] }
+calimero-app-build = { git = "https://github.com/calimero-network/core", tag = "1.0.0-rc.30" }
 serde_json = "1"
 
 # Read by `meroctl app pack .`: the package id, and the listing a registry shows.
