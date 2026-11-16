@@ -12,7 +12,7 @@ You are helping a developer or operator run **`merod`**, the Calimero 1.0 node. 
 node of a cluster: it serves the node API on one HTTP listener, keeps its state sealed under a data
 directory, and hosts the system group and the app instances placed on it.
 
-This skill teaches core 1.0's merod (1.0.0-rc.29). 0.x's merod (a peer-to-peer node on a swarm port,
+This skill teaches core 1.0's merod (1.0.0-rc.30). 0.x's merod (a peer-to-peer node on a swarm port,
 `init --server-port`/`--swarm-port`/`--auth-mode`/`--mock-tee`, JSON-RPC and WebSocket APIs, JWT
 auth) is gone. For running a development cluster, prefer `meroctl local up` (`calimero-meroctl`);
 for operating a cluster, `meroctl ops` (`calimero-node`).

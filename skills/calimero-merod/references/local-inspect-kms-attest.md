@@ -1,6 +1,6 @@
 # merod local, inspect, kms disk-key, attest, job nodes
 
-Checked against `merod <command> --help` of 1.0.0-rc.29 and core's `operate/merod.mdx`.
+Checked against `merod <command> --help` of 1.0.0-rc.30 and core's `operate/merod.mdx`.
 
 ## local: a development cluster in one process
 
@@ -37,7 +37,7 @@ the release's Docker image unless `--local`). In Docker by hand:
 
 ```bash
 docker run --rm -p 2501-2503:2501-2503 -v merod-local:/data \
-  ghcr.io/calimero-network/merod:1.0.0-rc.29 local --bind 0.0.0.0 --ops-token devtoken
+  ghcr.io/calimero-network/merod:1.0.0-rc.30 local --bind 0.0.0.0 --ops-token devtoken
 ```
 
 ## inspect: a stopped node's data directory
@@ -105,7 +105,7 @@ docker run -d --name n1 -p 2528:2528 -v n1-data:/data \
   -e MEROD_KMS_URL=https://kms.internal.example.com/ -e MEROD_KMS_IDENTITY=/data/disk-identity \
   -e MEROD_OPS_TOKEN_SHA256="$OPS_TOKEN_SHA256" -e MEROD_OPERATOR_KEY="$OPERATOR_PUBLIC_HEX" \
   -e MERO_TEE_VERSION="$RELEASE" -e MERO_TEE_PROFILE="$PROFILE" \
-  ghcr.io/calimero-network/merod:1.0.0-rc.29 run
+  ghcr.io/calimero-network/merod:1.0.0-rc.30 run
 ```
 
 How a mero-tee TDX image launches `merod` (its boot script and paths) is defined by mero-tee, not

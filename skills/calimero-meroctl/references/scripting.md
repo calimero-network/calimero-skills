@@ -31,7 +31,7 @@ done
 - name: Scenario and smoke test
   run: |
     curl -fsSL https://raw.githubusercontent.com/calimero-network/core/master/scripts/install.sh \
-      | sh -s -- merod meroctl --version 1.0.0-rc.29
+      | sh -s -- merod meroctl --version 1.0.0-rc.30
     meroctl local test apps/kv-store
     meroctl local up
     meroctl login --dev-passkey ./ci-passkey.json --name ci

@@ -13,7 +13,7 @@ operator builds on. Use it with a hands-on skill: `calimero-rust-sdk` (apps), `c
 or `calimero-client-py` (clients), `calimero-meroctl` (the CLI), `calimero-node` and
 `calimero-merod` (operators), `calimero-registry` (packages).
 
-This skill teaches core 1.0 (1.0.0-rc.29). The 0.x model (contexts on a peer-to-peer network,
+This skill teaches core 1.0 (1.0.0-rc.30). The 0.x model (contexts on a peer-to-peer network,
 gossip, CRDT state merged on every node, JSON-RPC, context identities and executor keys, JWTs) is
 gone since core 1.0.0-rc.9; see "What changed from 0.x" below.
 

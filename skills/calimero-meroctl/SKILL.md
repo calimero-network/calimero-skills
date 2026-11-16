@@ -14,7 +14,7 @@ and ships apps without a node (`app new|build|codegen|pack|publish`, see `calime
 talks to nodes: before it sends anything it fetches the node's attestation and judges the quote,
 then every request travels in the sealed channel.
 
-This skill teaches core 1.0's meroctl (1.0.0-rc.29). The 0.x CLI (contexts bound by `--group-id`,
+This skill teaches core 1.0's meroctl (1.0.0-rc.30). The 0.x CLI (contexts bound by `--group-id`,
 `context identity`, `peers`, JSON-RPC calls, merobox) is gone; see "What changed from 0.x" below.
 
 ## Names
@@ -39,7 +39,7 @@ curl -fsSL https://raw.githubusercontent.com/calimero-network/core/master/script
 
 # merod and meroctl, a pinned release
 curl -fsSL https://raw.githubusercontent.com/calimero-network/core/master/scripts/install.sh \
-  | sh -s -- merod meroctl --version 1.0.0-rc.29
+  | sh -s -- merod meroctl --version 1.0.0-rc.30
 
 # or Homebrew
 brew install calimero-network/tap/meroctl calimero-network/tap/merod
@@ -70,11 +70,12 @@ meroctl local down
 - **An `INSTANCE` argument** is an alias of the signed-in account or an app id (a context id works
   too). `instance create --alias` and `instance alias add` name one.
 - **`org` was `namespace`, and `team` was `group`,** before core 1.0.0-rc.29 (`teams`/`create-team`
-  were `groups`/`create-group`, `--org`/`--team` were `--namespace`/`--group`): the old spelling
-  still parses for one release, hidden. Write `org`, `team`, `--org` and `--team`.
+  were `groups`/`create-group`, `--org`/`--team` were `--namespace`/`--group`): from 1.0.0-rc.30 the
+  old spelling still parses but prints a warning naming its replacement, and a later release removes
+  it. Write `org`, `team`, `--org` and `--team`.
 - **`instance` was `context`** before core 1.0.0-rc.26: `meroctl context ...`, `--context` and `-c`
-  still parse for one release, hidden, and an answer's `contextId` is unchanged. Write `instance`,
-  `--instance` and `-i`.
+  still parse in 1.0.0-rc.30 with a warning (a later release removes them), and an answer's
+  `contextId` is unchanged. Write `instance`, `--instance` and `-i`.
 - **`call`** is `meroctl call -i INSTANCE METHOD [--args JSON] [--view [--min-index N]]`. `--view`
   is a read (`POST /apps/{app}/views`, no write); without it the call is an intent
   (`POST /apps/{app}/intents`). Both answer `{ index, result, receipt }`. Methods and argument names

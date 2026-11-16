@@ -67,7 +67,7 @@ Core concepts:
 - **Node** (`merod`) — runs app instances on its cluster; `merod local` starts a development cluster
 
 The SDK 0.12 model (contexts, CRDT state on every node, JSON-RPC, identities and executor keys) is
-gone since core 1.0.0-rc.9, and every skill here teaches core 1.0 (1.0.0-rc.29). Two skills now
+gone since core 1.0.0-rc.9, and every skill here teaches core 1.0 (1.0.0-rc.30). Two skills now
 exist mainly to redirect: core ships no JavaScript app SDK (`calimero-sdk-js`: write apps in Rust),
 and Calimero Desktop still runs the 0.x node, so its hash-token SSO does not apply to 1.0
 (`calimero-desktop`: sign in with passkeys through mero-js).
