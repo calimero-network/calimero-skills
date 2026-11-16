@@ -3,11 +3,15 @@
 ## Adding a new skill
 
 1. Create the directory: `skills/<skill-name>/`
-2. Add `SKILL.md` — agent instructions, key facts, what to avoid
+2. Add `SKILL.md` — YAML frontmatter with `name` (the directory name) and a one-line, quoted
+   `description` saying what the skill covers and when to use it (Claude Code loads the skill when
+   the description matches the task, and `--list` prints it), then agent instructions, key facts,
+   what to avoid
 3. Add `references/` — at least one `.md` file with real code examples
 4. Add `rules/` — at least one `.md` file for a hard rule (one rule per file)
 5. Run `npm test` to verify structure passes validation
-6. Add the skill to the table in `README.md` and `SKILL.md` (root)
+6. Add the skill to the table in `README.md` and `SKILL.md` (root), and to the `app` set in
+   `scripts/install.js` if building an app needs it
 
 ## Updating a skill
 

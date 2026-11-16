@@ -1,3 +1,11 @@
+---
+name: calimero-sdk-js
+description:
+  'The gone 0.x JavaScript app SDK (@calimero-network/calimero-sdk-js, @State/@Logic, calimero-sdk
+  build) and what replaces it in Calimero 1.0. Use when a project still uses it, or when asked to
+  write a Calimero app in JavaScript or TypeScript.'
+---
+
 # calimero-sdk-js — Agent Instructions
 
 **The JavaScript app SDK is gone in Calimero 1.0.** This skill exists so an agent that finds

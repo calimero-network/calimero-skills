@@ -1,3 +1,11 @@
+---
+name: calimero-core
+description:
+  'How Calimero core 1.0 works: app instances replicated by their own Raft logs, organizations,
+  teams and roles, accounts and passkeys, attestation and signed packages. Use for any Calimero
+  development, next to a hands-on skill, when you need the model behind the commands.'
+---
+
 # calimero-core — Agent Instructions
 
 You are helping a developer understand **how Calimero 1.0 works**: the model every app, client and

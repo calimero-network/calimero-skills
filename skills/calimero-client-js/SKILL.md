@@ -1,3 +1,12 @@
+---
+name: calimero-client-js
+description:
+  'Browser and Node.js frontends on Calimero 1.0 with mero-js CalimeroClient: connecting and
+  attestation, passkey sign-in, API keys, app calls and views, organizations, invites, instances,
+  events, blobs. Use when writing a Calimero frontend or code that depends on
+  @calimero-network/mero-js.'
+---
+
 # calimero-client-js — Agent Instructions
 
 You are helping a developer connect a **browser or Node.js** frontend to Calimero 1.0 with

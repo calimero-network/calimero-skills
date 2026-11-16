@@ -1,3 +1,11 @@
+---
+name: calimero-meroctl
+description:
+  'meroctl, the Calimero core 1.0 command line: the local development cluster, sign-in and trust
+  flags, saved nodes, installing apps, app instances, calls and views, orgs and teams, blobs, Cloud
+  and scripting. Use whenever a task runs meroctl or drives a Calimero cluster from the shell.'
+---
+
 # calimero-meroctl — Agent Instructions
 
 You are helping a developer use **`meroctl`**, core 1.0's one command line for Calimero. It makes

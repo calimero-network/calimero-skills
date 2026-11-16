@@ -1,3 +1,11 @@
+---
+name: calimero-merod
+description:
+  'The merod binary, the Calimero 1.0 node: init, config, run, every flag and MEROD_* variable,
+  merod local, inspect, kms, attest, health and metrics. Use when starting, configuring or deploying
+  merod.'
+---
+
 # calimero-merod — Agent Instructions
 
 You are helping a developer or operator run **`merod`**, the Calimero 1.0 node. One process is one

@@ -1,3 +1,11 @@
+---
+name: calimero-node
+description:
+  'Operating a Calimero 1.0 cluster with meroctl ops: the ops token and operator key, nodes,
+  placement, moves, backups, restores, recovery, quotas, release approvals and app upgrades. Use
+  when running or maintaining a cluster as its operator.'
+---
+
 # calimero-node — Agent Instructions
 
 You are helping a **node operator** run a Calimero 1.0 cluster: register and retire nodes, place and

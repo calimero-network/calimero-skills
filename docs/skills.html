@@ -16,7 +16,7 @@
 
 <div class="card ga">
 <h2>Available Skills</h2>
-<p style="margin-bottom:14px;">Each skill is a plain text file. Running <span class="code">npx calimero-skills &lt;skill-name&gt;</span> appends it to the correct file for your editor:</p>
+<p style="margin-bottom:14px;">Each skill is a directory of Markdown files. Running <span class="code">npx @calimero-network/agent-skills &lt;skill-name&gt;</span> installs it as a Claude Code skill, or, with a flag, into the instructions file of your editor:</p>
 <div class="fr"><div class="fp">calimero-core</div><div class="fd">How core 1.0 works: app instances on their own Raft logs, the system group, organizations and access, accounts and passkeys, attestation and the sealed channel.</div></div>
 <div class="fr"><div class="fp">calimero-rust-sdk</div><div class="fd">Rust apps on core 1.0's component SDK: <span class="code">#[app::state]</span>/<span class="code">#[app::logic]</span>, tables and collections, <span class="code">env</span> and <span class="code">guards</span>, events, testing, <span class="code">meroctl app build</span>.</div></div>
 <div class="fr"><div class="fp">calimero-sdk-js</div><div class="fd">The 0.x JS app SDK (<span class="code">@State</span>/<span class="code">@Logic</span>) is gone: what replaces it (Rust apps, mero-js clients).</div></div>
@@ -33,19 +33,22 @@
 <div class="card gb">
 <h2>Install All Skills at Once</h2>
 <div class="typedef">
-<span class="comment"># Install every skill for Claude Code + Cursor + Copilot</span><br>
+<span class="comment"># The starter set for building an app: core, rust-sdk, client-js, meroctl, abi-codegen, registry</span><br>
+<span class="field">npx @calimero-network/agent-skills app</span><br><br>
+<span class="comment"># Every skill (add --cursor or --copilot for those editors)</span><br>
 <span class="field">npx @calimero-network/agent-skills all</span><br><br>
-<span class="comment"># Install specific skills</span><br>
+<span class="comment"># Specific skills</span><br>
 <span class="field">npx @calimero-network/agent-skills calimero-node calimero-rust-sdk calimero-client-js</span>
 </div>
 </div>
 
 <div class="card gc">
 <h2>Where Skills Are Written</h2>
-<div class="fr"><div class="fp">Claude Code</div><div class="fd">Appended to <span class="code">CLAUDE.md</span> in your project root (or created if absent).</div></div>
-<div class="fr"><div class="fp">Cursor</div><div class="fd">Appended to <span class="code">.cursorrules</span> in your project root.</div></div>
-<div class="fr"><div class="fp">GitHub Copilot</div><div class="fd">Appended to <span class="code">.github/copilot-instructions.md</span>.</div></div>
-<p style="margin-top:12px;color:#8b949e;font-size:13px;">Run from your project root. Skills are additive — running the same skill twice does not duplicate content.</p>
+<div class="fr"><div class="fp">Claude Code (default)</div><div class="fd">A skill directory in <span class="code">.claude/skills/&lt;skill&gt;/</span>, loaded when the task matches its description; <span class="code">--global</span> writes <span class="code">~/.claude/skills/</span>.</div></div>
+<div class="fr"><div class="fp">--claude-md</div><div class="fd">Appended to <span class="code">CLAUDE.md</span> in your project root (or created if absent).</div></div>
+<div class="fr"><div class="fp">--cursor</div><div class="fd">Appended to <span class="code">.cursorrules</span> in your project root.</div></div>
+<div class="fr"><div class="fp">--copilot</div><div class="fd">Appended to <span class="code">.github/copilot-instructions.md</span>.</div></div>
+<p style="margin-top:12px;color:#8b949e;font-size:13px;">Run from your project root. Skills are additive — running the same skill twice replaces it rather than duplicating it.</p>
 </div>
 
 <div class="card gd">

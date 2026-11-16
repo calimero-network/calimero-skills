@@ -4,6 +4,18 @@ This package provides AI agent skills for building on the Calimero Network stack
 
 ## Available Skills
 
+Install the starter set for building an app (`calimero-core`, `calimero-rust-sdk`,
+`calimero-client-js`, `calimero-meroctl`, `calimero-abi-codegen`, `calimero-registry`) as Claude
+Code skills with one command; `all` installs every skill:
+
+```bash
+npx @calimero-network/agent-skills app
+```
+
+Several names install at once. The default target is Claude Code skills in `.claude/skills/`
+(`--global`: `~/.claude/skills/`); `--claude-md`, `--cursor` and `--copilot` write one block per
+skill into `CLAUDE.md`, `.cursorrules` or `.github/copilot-instructions.md` instead.
+
 | Skill                  | Install command                                           | When to use                                                   |
 | ---------------------- | --------------------------------------------------------- | ------------------------------------------------------------- |
 | `calimero-core`        | `npx @calimero-network/agent-skills calimero-core`        | How core 1.0 works: instances, Raft logs, orgs, auth, trust   |

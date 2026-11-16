@@ -1,3 +1,11 @@
+---
+name: calimero-rust-sdk
+description:
+  'Building Calimero 1.0 apps in Rust with the component SDK (calimero-sdk): app state and methods,
+  tables and collections, env and guards, events, blobs, tests, upgrades, meroctl app build. Use
+  when writing or changing a Calimero app backend or a crate that depends on calimero-sdk.'
+---
+
 # calimero-rust-sdk — Agent Instructions
 
 You are helping a developer build a **Calimero app** in Rust with core 1.0's component SDK

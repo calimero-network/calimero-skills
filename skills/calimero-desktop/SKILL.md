@@ -1,3 +1,11 @@
+---
+name: calimero-desktop
+description:
+  'Calimero Desktop hash-token SSO (access_token in window.location.hash, parseAuthCallback) is 0.x
+  only; what a core 1.0 frontend uses instead. Use when a project reads a session from the URL or
+  mentions Calimero Desktop sign-in.'
+---
+
 # calimero-desktop — Agent Instructions
 
 **There is no Calimero Desktop single sign-on for core 1.0.** This skill exists so an agent that
