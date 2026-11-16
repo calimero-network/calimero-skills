@@ -1,3 +1,9 @@
+## [0.5.1](https://github.com/calimero-network/calimero-skills/compare/v0.5.0...v0.5.1) (2026-11-16)
+
+### Bug Fixes
+
+* the published package keeps its npx bin ([#46](https://github.com/calimero-network/calimero-skills/issues/46)) ([50c4b0d](https://github.com/calimero-network/calimero-skills/commit/50c4b0d9599b5e07e3297176a35db4ce018c84e5))
+
 ## [0.5.0](https://github.com/calimero-network/calimero-skills/compare/v0.4.0...v0.5.0) (2026-11-16)
 
 ### Features
