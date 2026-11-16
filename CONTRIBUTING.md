@@ -19,7 +19,9 @@ When a library releases a breaking change:
 
 1. Update affected reference files with the new API
 2. Add a rule file if the old API is a common mistake
-3. Bump the version in `package.json`
+3. Title the pull request `fix(<skill>): ...` (or `feat(<skill>): ...` for something new): a merge
+   releases it to npm on its own. Don't edit `package.json`'s version; [RELEASING.md](RELEASING.md)
+   says how titles map to releases.
 
 ## File guidelines
 
