@@ -70,7 +70,7 @@ meroctl app origins remove com.example.kv https://kv.example.com --dev-passkey .
 meroctl instance create --name kv --path kv_store.wasm --alias kv          # installs the file first
 meroctl instance create --name kv --package com.example.kv --version 1.0.0 --alias kv
 meroctl instance create --name team-kv --package com.example.kv \
-  --namespace <org-id> --group <team-id> --params '{"title":"Team notes"}'
+  --org <org-id> --team <team-id> --params '{"title":"Team notes"}'
 meroctl instance list                                         # ls; --package P filters
 meroctl instance get kv
 meroctl instance update kv --version 1.1.0 --dev-passkey ./dev-passkey.json
@@ -78,7 +78,7 @@ meroctl instance watch kv --from 0 --limit 10                 # committed events
 meroctl instance alias add notes <app-id>
 meroctl instance alias list
 meroctl instance use kv                                       # the alias `default`
-meroctl instance access kv team --group <team-id>             # owner|org|team|accounts|public
+meroctl instance access kv team --team <team-id>             # owner|org|team|accounts|public
 meroctl instance access kv accounts --account <acct-1> --account <acct-2>
 meroctl instance metadata kv '{"color":"green"}'              # null clears it
 meroctl instance storage kv
@@ -91,9 +91,9 @@ meroctl instance delete kv                                    # del
 
 `instance create` flags: `--name` (required), one of `--package P [--version V]`, `--bundle HASH` or
 `--path FILE`, plus `--service S` (a multi-service application), `--params JSON` (`init`'s
-arguments), `--namespace ORG`, `--group TEAM` (with `--namespace`), `--alias ALIAS`.
-`instance update` takes `--version`, `--package`, `--service`, `--bundle` (not with
-`--version`/`--package`) and `--dev-passkey`; the state stays and the new code reads it.
+arguments), `--org ORG`, `--team TEAM` (with `--org`), `--alias ALIAS`. `instance update` takes
+`--version`, `--package`, `--service`, `--bundle` (not with `--version`/`--package`) and
+`--dev-passkey`; the state stays and the new code reads it.
 
 ## call
 
@@ -189,5 +189,5 @@ meroctl --ops-token "$TOKEN" --operator-key-file ./operator.key ops release 2.3.
 ```
 
 Also
-`ops cluster|metrics|remove-node|move|restore|backup-key|recovery-keygen|recover|quotas| set-quotas|pools|set-pools|prices|set-prices|outbound|packages|install|uninstall|upgrade| upgrade-namespace`.
+`ops cluster|metrics|remove-node|move|restore|backup-key|recovery-keygen|recover|quotas| set-quotas|pools|set-pools|prices|set-prices|outbound|packages|install|uninstall|upgrade| upgrade-org`.
 The Ops API has no read path into apps' data.

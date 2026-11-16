@@ -42,7 +42,7 @@ A `--dev-passkey` file is a passkey kept on disk, which only a development clust
 relying party accepts; `login` needs `--allow-mock`. The same file approves what an owner approves:
 
 ```bash
-meroctl namespace invite <org-id> --role member --uses 1 --dev-passkey ./dev-passkey.json
+meroctl org invite <org-id> --role member --uses 1 --dev-passkey ./dev-passkey.json
 meroctl instance update kv --version 1.1.0 --dev-passkey ./dev-passkey.json
 ```
 

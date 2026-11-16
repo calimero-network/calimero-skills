@@ -127,7 +127,7 @@ permissions:
 env:
   # The core release meroctl comes from. Keep it at or above the calimero-sdk
   # tag in logic/Cargo.toml.
-  MEROCTL_TAG: 1.0.0-rc.28
+  MEROCTL_TAG: 1.0.0-rc.29
   PACKAGE: com.yourorg.myapp
 
 jobs:

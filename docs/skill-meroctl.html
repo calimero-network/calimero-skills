@@ -63,19 +63,19 @@
 <div class="card gd">
 <h2>Organizations and Teams</h2>
 <div class="typedef">
-<span class="field">meroctl namespace create Acme</span>&nbsp;&nbsp;<span class="comment"># &#123; orgId &#125;</span><br>
-<span class="field">meroctl namespace create-group &lt;org-id&gt; eng</span>&nbsp;&nbsp;<span class="comment"># &#123; teamId &#125;</span><br>
-<span class="field">meroctl instance create --name eng-kv --package com.example.kv --namespace &lt;org-id&gt; --group &lt;team-id&gt;</span><br>
-<span class="field">meroctl namespace invite &lt;org-id&gt; --role member --uses 1 --dev-passkey ./dev-passkey.json</span>&nbsp;&nbsp;<span class="comment"># &#123; token &#125;</span><br><br>
+<span class="field">meroctl org create Acme</span>&nbsp;&nbsp;<span class="comment"># &#123; orgId &#125;</span><br>
+<span class="field">meroctl org create-team &lt;org-id&gt; eng</span>&nbsp;&nbsp;<span class="comment"># &#123; teamId &#125;</span><br>
+<span class="field">meroctl instance create --name eng-kv --package com.example.kv --org &lt;org-id&gt; --team &lt;team-id&gt;</span><br>
+<span class="field">meroctl org invite &lt;org-id&gt; --role member --uses 1 --dev-passkey ./dev-passkey.json</span>&nbsp;&nbsp;<span class="comment"># &#123; token &#125;</span><br><br>
 <span class="comment"># the invitee, signed in on their own</span><br>
-<span class="field">meroctl namespace join &lt;token&gt;</span>
+<span class="field">meroctl org join &lt;token&gt;</span>
 </div>
 </div>
 
 <div class="card ga">
 <h2>Key Rules</h2>
 <div class="fr"><div class="fp">--view for reads</div><div class="fd"><span class="code">meroctl call -i INSTANCE METHOD --args JSON</span> is a write (an intent); add <span class="code">--view</span> to read without a log entry. The instance is <span class="code">-i</span>, never positional.</div></div>
-<div class="fr"><div class="fp">No --group-id</div><div class="fd"><span class="code">context create</span> takes <span class="code">--name</span>, one of <span class="code">--package</span>/<span class="code">--bundle</span>/<span class="code">--path</span>, and <span class="code">--namespace</span> (with <span class="code">--group</span>) or nothing for the personal organization.</div></div>
+<div class="fr"><div class="fp">No --group-id</div><div class="fd"><span class="code">context create</span> takes <span class="code">--name</span>, one of <span class="code">--package</span>/<span class="code">--bundle</span>/<span class="code">--path</span>, and <span class="code">--org</span> (with <span class="code">--team</span>) or nothing for the personal organization.</div></div>
 <div class="fr"><div class="fp">Dev passkeys are dev only</div><div class="fd"><span class="code">--dev-passkey</span> and <span class="code">--allow-mock</span> work on development clusters; a real cluster takes an API key and <span class="code">--tee-profiles</span>.</div></div>
 <div class="fr"><div class="fp">Register node once</div><div class="fd"><span class="code">local up</span>, <span class="code">cloud use</span> or <span class="code">node add</span> + <span class="code">node use</span> save a default node; omit <span class="code">--node</span> after.</div></div>
 <div class="fr"><div class="fp">0.x is gone</div><div class="fd"><span class="code">context identity</span>, <span class="code">peers</span>, <span class="code">context sync</span>, the JSON-RPC envelope and merobox have no 1.0 meaning; the content linter flags them.</div></div>
