@@ -95,7 +95,8 @@ const RULES = [
   {
     id: 'namespace-is-org',
     langs: BASH,
-    check: (l) => OLD_ORG_CMD.test(l) || (MEROCTL.test(l) && /\s--(?:namespace|group)(?:\s|=)/.test(l)),
+    check: (l) =>
+      OLD_ORG_CMD.test(l) || (MEROCTL.test(l) && /\s--(?:namespace|group)(?:\s|=)/.test(l)),
     message:
       'Since core 1.0.0-rc.29 an organization is `meroctl org ...` (`teams`, `create-team`) and a team `meroctl team ...` (`subteams`), with `--org`/`--team`; `namespace`, `group` and `--namespace`/`--group` are the old spelling (hidden, for one release).',
   },
